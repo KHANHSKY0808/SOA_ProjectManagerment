@@ -63,3 +63,11 @@ registrations, and cancel the student's registration.
   faculty/topic status may change after validation. No topic capacity limit requested.
 - No production data/schema writes occur during verification. Legacy duplicate
   registrations must be reported/handled conservatively, never silently repaired.
+
+## Completion
+
+Implemented the four approved capabilities with student JWT ownership, faculty/status
+validation over REST, single-current-registration transactions, preserved cancellation
+history, versioned reference contracts and automated tests. All 225 affected-service
+tests and Django checks passed. Live Gateway/Consul testing and frontend work remain
+outside this task; no database schema/data or infrastructure changes were made.

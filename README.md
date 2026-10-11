@@ -178,7 +178,8 @@ From `api-gateway`, run `docker compose up -d --build` after the existing Consul
 container is available at port 8500. Verify service health in the Consul UI.
 See [gateway README](api-gateway/README.md) for settings, tests, failure behavior
 and Windows/Docker networking. Regist-service's health/registration does not
-imply registration business APIs are implemented. Database schemas are unchanged.
+verify registration business APIs or database readiness. Student registration APIs
+are implemented separately as documented below. Database schemas are unchanged.
 
 ## Topic CRUD
 
@@ -284,3 +285,34 @@ For Windows local identity development, academic may explicitly set
 AUTH_IDENTITY_DISCOVERY_ENABLED=false and AUTH_IDENTITY_BASE_URL=http://127.0.0.1:8001
 when Consul's host.docker.internal address is unreachable from Windows. Production
 defaults still use discovery; Gateway/Consul registration is not modified.
+
+## Student topic registration APIs
+
+`regist-service:8003` implements registration through Gateway, with locally validated
+student access JWTs (integer role 3). Identity comes only from JWT `user_id`.
+
+| Method | Gateway path | Behavior |
+| --- | --- | --- |
+| POST | `/registrations/api/v1/registrations/` | Register with `{"topic_id":"DT001","semester":"2026-1"}`; semester optional |
+| GET | `/registrations/api/v1/available-topics/` | Topic status 1 in the student's faculty; cursor-paginated |
+| GET | `/registrations/api/v1/registrations/` | Own registration history; optional `status=active` or `status=cancelled` |
+| DELETE | `/registrations/api/v1/registrations/{registration_id}/` | Cancel own registration, preserve history, allow later re-registration |
+
+A student may have at most one current registration across semesters. Eligibility
+uses faculty through each major, so different majors in the same faculty are allowed.
+Registration status 1 means current, 0 cancelled; other legacy statuses conservatively
+count as current. Same-topic/same-semester repeated creation returns the existing
+record when current eligibility still passes; other current registrations return 409.
+
+Academic-service provides self student/faculty context and batch major-to-faculty
+references; topic-service provides minimal paged open-topic/detail references.
+Regist-service resolves both through Consul, forwards JWTs over REST, and only maps
+and queries Registrations. Existing topic-service ownership/port/prefix are preserved.
+All three need the same `JWT_SIGNING_KEY`. See the [registration service contract](services/regist-service/README.md)
+for DTOs, cursor behavior, errors, client timeouts, development URLs and environment.
+
+No schema migration or new dependency is introduced. SQLite serializes the current
+registration check and insert across workers; contention returns 503. Eligibility
+is a point-in-time REST check, without a distributed transaction. Frontend registration
+screens remain placeholders. Automated tests use disposable databases and mocked
+network calls; live Gateway/Consul integration has not been exercised.

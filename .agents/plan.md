@@ -79,3 +79,16 @@ registration, 503 dependency/storage unavailable. Preserve /health/.
 - Roll back only this task's code/docs/config-example changes; preserve unrelated
   work. Deployed registration/cancellation data must not be deleted by code rollback.
 - Material changes to this scope require updates to both plans and renewed approval.
+
+## Delivery record
+
+- Provider contracts committed as `30da1a8`.
+- Registration APIs, transactions and tests committed as `d47f243`.
+- All affected Django checks passed. Full suites: regist-service 29 tests,
+  academic-services 146 tests, topic-service 50 tests (225 total), all passed.
+- Verification used existing virtual environments; no package installation,
+  production database change, migration, live server or external API call.
+- Network behavior was mocked; no live Gateway/Consul integration claim.
+- Documentation includes filtered cursor pagination, error codes, environment
+  configuration, approved cancellation status semantics and storage limitations.
+- Final delivery preserves unrelated fe/.agents changes.
