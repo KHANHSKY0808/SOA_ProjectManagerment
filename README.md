@@ -346,3 +346,11 @@ Gateway discovery remains enabled. See [registration troubleshooting](services/r
 có status giữ nguyên trạng thái hiện tại. Chỉ đề tài status 2 mới mở cho đăng ký.
 Không tự đổi dữ liệu cũ; admin cần chuyển đề tài đã duyệt sang 2 để mở đăng ký.
 Trạng thái bản ghi đăng ký vẫn giữ nguyên (1 đang đăng ký, 0 đã hủy).
+
+
+Khi `available-topics` báo `dependency_unavailable`, kiểm tra cả tên service
+trong `/health/`, không chỉ mã HTTP 200. Cổng 8001 phải trả `auth-service`,
+8002 phải trả `academic-service`, 8003 trả `regist-service`, 8004 trả
+`topic-service`. Chạy `manage.py` từ đúng thư mục service; chạy auth-service
+với `runserver 8002` vẫn có health 200 nhưng API học vụ sẽ trả 404.
+Mỗi cổng chỉ chạy một service; không khởi động thêm bản trùng khi service đã chạy.

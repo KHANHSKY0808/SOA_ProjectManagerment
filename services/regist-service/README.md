@@ -264,3 +264,11 @@ request or validation. An open failure circuit emits `stage=circuit`.
 No bearer tokens, response payloads, URLs, IDs or exception messages are logged.
 Keep the public safe 503 response; use the matching request ID to locate the
 underlying failure. Health 200 alone does not establish a successful protected lookup.
+
+
+If `service=topic-service operation=topic_page stage=request error=URLError`
+appears, verify topic-service is listening on port8004 and its direct health
+responds. Registration health alone does not check dependencies. Run only one
+regist-service process tree per port: duplicate Windows runserver instances can
+route requests to old code and send logs to another console. Stop only verified
+duplicates and keep one service instance per configured port.

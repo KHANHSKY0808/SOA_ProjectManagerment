@@ -49,3 +49,29 @@ Resolve the reported Vietnamese lookup-unavailable message in student registrati
 - Need user to refresh available-topics and provide the new Reference lookup failed console line because no connected authenticated browser session or access to existing service console is available. No cause or completed repair claimed.
 
 Targeted restart complete: launcher 19904, listener 23820 on 127.0.0.1:8003, Gateway registration health 200. Diagnostic logs at TEMP/soa-regist-diagnostic-22bebb07c7e8406dace5a9c225f2806b.{out,err}.log. Waiting for legitimate user refresh; no authenticated request or confirmed cause yet.
+
+Confirmed multiple duplicate root-venv regist-service processes; listener identity switched including old --noreload process30484. Removed only verified duplicate regist processes; sole remaining listener23820 with diagnostic logs. Gateway health200. Authenticated frontend refresh still required to verify lookup success and distinguish old code from dependency transport failure.
+
+
+## Confirmed runtime cause and repair
+- Captured authenticated available-topics failure: topic-service operation=topic_page stage=request error=URLError. Registration history returns 200; academic context passed before topic failure.
+- Direct topic health connection failed with WinError10061; no process/listener existed on8004. Missing topic-service runtime is the confirmed lookup failure cause.
+- Started existing topic-service venv manage.py runserver127.0.0.1:8004 --noreload in hidden window. Launcher41440/listener43540; logs TEMP/soa-topic-diagnostic-8797dc48e1644f4f9889b4016cc86bd1.{out,err}.log.
+- Topic direct health200, Gateway topic health200 after discovery refresh; Consul topic-service-8004 checks passing. Gateway registration health200.
+- Duplicate registration service processes removed; one diagnostic registration listener retained. Source diagnostic checks/tests passed previously (30 tests). No database/config/schema changes made for runtime repair.
+- Awaiting another authenticated available-topics refresh to confirm end-to-end success; do not claim that protected list has returned200 yet.
+
+
+## Corrected wrong service on academic port
+- After user restarts,8002 health returned service=auth-service and registration-context returned404. The logged academic context upstream404 matches this runtime misconfiguration.
+- Stopped only verified auth-service venv runserver8002 chain3348/19308/39636/34240; auth-service8001 retained.
+- Started academic-services existing venv from correct directory on127.0.0.1:8002 --noreload. Launcher27536/listener20768; TEMP/soa-academic-repair-7f772cab28674184b11827f54d37be5a.{out,err}.log.
+- Verified8001 auth health200,8002 academic health200,8004 topic health200 and Gateway academic health200. Academic registration-context now401 without token instead of404, proving correct protected route exists.
+- User requested to refresh after10-second circuit cooldown. Authenticated list success remains to be verified. No schema/data/config changes.
+
+
+## Resolution verified
+- User's legitimate browser refresh at10:54:18 produced available-topics200, academic registration-context200, major-departments200 and topic registration-topics200. Gateway log independently confirms available-topics200.
+- Subsequent user action at10:54:25 produced registration POST201 and history GET200. Agent did not issue any domain write; only observed existing service logs.
+- Runtime lookup failure resolved. Correct service identity on academic8002 and topic availability on8004 restored; safe diagnostic logging/tests/docs retained. All30 regist-service automated tests and Django check passed for source diagnostic change.
+- Existing multiple manual service processes remain a runtime maintenance concern; avoid launching duplicates. No schema, migration, dependency or production data edits by agent.
