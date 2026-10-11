@@ -1,6 +1,6 @@
 ﻿# Task: Student registration frontend
 
-Status: Approved by user ("ok"); implement with milestone commits.
+Status: Completed after user approval ("ok"), with milestone commits.
 
 ## Objective and scope
 Implement the four approved registration capabilities in fe for student role 3:
@@ -50,3 +50,12 @@ and cancel. Show the feature directly at /student and keep the existing
 - Status 0 is cancelled; all other statuses conservatively count as current.
 - No live student account or browser/backend integration is assumed available.
 - Earlier backend task/verification history remains recorded in existing commits.
+
+## Completion evidence
+
+Both student URLs provide open topics, registration, own current/history records
+and confirmed cancellation. Ambiguous writes require explicit history reconciliation;
+legacy current statuses and history outages disable conflicting writes. All 341
+frontend tests plus lint/typecheck/build passed. API contracts and service ownership
+are unchanged. No production data was accessed or mutated. Live account/browser
+integration and physical-device visual checks remain unverified.

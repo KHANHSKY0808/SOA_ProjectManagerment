@@ -1,6 +1,6 @@
 ﻿# Plan: Student registration UI at /student
 
-Status: Approved by user ("ok"). Implementation in progress.
+Status: Completed after user approval ("ok").
 
 ## Ordered implementation and expected files
 1. Add typed registration API adapter and response validation in
@@ -41,3 +41,16 @@ Status: Approved by user ("ok"). Implementation in progress.
 - Revert only this task's commits/files for rollback. No database/runtime rollback
   is needed because this task does not change backend state or running services.
 - Material scope changes require updating both planning files and renewed approval.
+
+## Delivery and verification
+
+- c0c8082: typed Gateway API adapter, response validation and 30 contract tests.
+- f8a3a0f: student page, request lifecycle, safe errors, registration/cancellation
+  confirmation, history reconciliation, responsive CSS and route/UI tests.
+- npm run test: 341 tests / 15 files passed; npm run lint, npm run typecheck and
+  npm run build passed. Build artifacts are ignored, not committed.
+- No backend/schema/infrastructure/dependency/lockfile/.env changes. No live
+  registration writes or external service calls. Existing fe/.agents modifications
+  remain untouched and uncommitted.
+- Verification uses jsdom and API mocks; no live student account/Gateway integration
+  or visual-device testing was performed. Documentation states these limitations.

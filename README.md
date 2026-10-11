@@ -30,7 +30,9 @@ an authenticated session and support logout. Nested admin CRUD routes are
 `/admin/departments`, `/admin/majors`, `/admin/students`, and `/admin/lecturers`.
 Sidebar/shortcut links update the URL, active menu, title and breadcrumb; browser
 Back/Forward follows page history. Each role has `/profile` as a development placeholder. `/admin/topics` and `/lecture/topics` provide topic lists, details, creation, editing and confirmed deletion for roles 1 and 2.
-Registration menu routes remain development placeholders (see frontend README).
+Students use `/student` or `/student/registrations` to browse eligible topics,
+register, view their history and cancel with confirmation. Admin registration
+management remains a development placeholder (see frontend README).
 Unknown URLs display 404. Login returns to a known requested route allowed for
 the authenticated role; external or unauthorized return destinations are rejected.
 Only the access token is saved in tab-scoped sessionStorage; F5 restores a valid
@@ -313,6 +315,16 @@ for DTOs, cursor behavior, errors, client timeouts, development URLs and environ
 
 No schema migration or new dependency is introduced. SQLite serializes the current
 registration check and insert across workers; contention returns 503. Eligibility
-is a point-in-time REST check, without a distributed transaction. Frontend registration
-screens remain placeholders. Automated tests use disposable databases and mocked
+is a point-in-time REST check, without a distributed transaction. The student frontend
+implements this workflow at `/student` and `/student/registrations`. Automated tests use disposable databases and mocked
 network calls; live Gateway/Consul integration has not been exercised.
+
+The student page shows current registration, open topics and registration history.
+Topic search covers loaded pages; explicit Load More follows the backend cursor,
+including filtered empty pages. Register accepts an optional semester. UI actions
+require a successfully loaded history and block another registration while a current
+one exists, including unknown legacy statuses. Registration/cancellation require
+confirmation and never retry automatically. Unknown write results require an explicit
+history check before another write is allowed; successful writes remain successful
+even when a subsequent refresh fails. Backend authorization and business rules remain
+authoritative. See [student frontend workflow](fe/README.md#đăng-ký-đề-tài-dành-cho-sinh-viên).
