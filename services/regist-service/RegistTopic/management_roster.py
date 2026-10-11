@@ -1,10 +1,11 @@
-"""Read-only topic roster; registration persistence stays inside its owner."""
+"""Topic roster management; registration persistence stays inside its owner."""
 from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from .clients import academic_client, DependencyUnavailable
 from .models import Registration
+from . import services
 from .views import RegistrationAPIView
 
 
@@ -65,3 +66,22 @@ class TopicRegistrationsView(RegistrationAPIView):
         return Response(RosterPage({"results": results,
                         "next_after": page[-1].pk if len(rows) > 100 else None,
                         "names_unavailable": incomplete}).data)
+
+
+class RegistrationStateDTO(serializers.Serializer):
+    registration_id = serializers.CharField()
+    topic_id = serializers.CharField()
+    status = serializers.IntegerField(allow_null=True)
+
+
+class TopicRegistrationDetailView(RegistrationAPIView):
+    permission_classes = [TopicManagerPermission]
+    http_method_names = ["get", "delete", "head", "options"]
+
+    def get(self, request, topic_id, registration_id):
+        obj = services.get_topic_registration(topic_id, registration_id)
+        return Response(RegistrationStateDTO(obj).data)
+
+    def delete(self, request, topic_id, registration_id):
+        services.cancel_topic_registration(request.auth["user_id"], topic_id, registration_id)
+        return Response(status=204)

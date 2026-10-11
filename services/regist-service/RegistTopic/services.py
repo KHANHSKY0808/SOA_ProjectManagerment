@@ -68,3 +68,19 @@ def available_topics(identity, after, authorization, request_id):
     departments = academic_client.departments([row["major_id"] for row in rows], authorization, request_id) if rows else {}
     return {"results": [row for row in rows if departments[row["major_id"]] == context["department_id"]],
             "next_after": page["next_after"]}
+
+
+def get_topic_registration(topic_id, registration_id):
+    obj = Registration.objects.filter(pk=registration_id, topic_id=topic_id).first()
+    if obj is None:
+        raise NotFound("Registration not found for this topic.")
+    return obj
+
+
+def cancel_topic_registration(actor, topic_id, registration_id):
+    with transaction.atomic():
+        acquire_write_lock()
+        obj = get_topic_registration(topic_id, registration_id)
+        if obj.status != 0:
+            Registration.objects.filter(pk=obj.pk, topic_id=topic_id).update(
+                status=0, updated_at=timezone.now(), updated_by=actor)

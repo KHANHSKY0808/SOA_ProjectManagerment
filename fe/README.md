@@ -362,3 +362,20 @@ lỗi/thử lại và Xem thêm sinh viên cho các trang100 dòng. Nếu tra c�
 vẫn giữ dữ liệu đăng ký theo mã và thông báo chưa đủ họ tên. Đóng popup/đổi trang
 hủy request, không cập nhật từ response cũ. Không tải toàn bộ hồ sơ sinh viên,
 không gửi lại thao tác ghi, không lộ email/số điện thoại/điểm số.
+
+
+### Hủy đăng ký sinh viên từ chi tiết đề tài
+
+Admin/giảng viên có nút **Hủy đăng ký** trên từng dòng sinh viên. Xác nhận
+hiển thị họ tên/mã sinh viên; **Quay lại** không gửi request. Xác nhận gửi DELETE
+`/registrations/api/v1/topics/{topic_id}/registrations/{registration_id}/`.
+Khi thành công, chỉ dòng đăng ký đó được bỏ khỏi danh sách; lịch sử vẫn giữ
+ở backend với status0. Các dòng khác và cursor phân trang được giữ nguyên.
+
+Trong lúc gửi, khóa nút xác nhận, đóng popup/Escape và thao tác danh sách để
+tránh gửi trùng. Nếu timeout/network/5xx, nút **Kiểm tra kết quả hủy** gọi GET
+đúng đăng ký. Chỉ status0 xác nhận đã hủy; nếu vẫn hiện tại, cần xác nhận lại
+thủ công. Lỗi kiểm tra giữ trạng thái chưa xác định, không tự gửi DELETE lại.
+Đóng popup sau khi request hoàn tất được phép; mở lại đọc danh sách mới. Đổi
+trang hủy việc chờ response, không bảo đảm hủy thao tác backend đã nhận.
+JWT401 đăng xuất;403 báo không có quyền;404 bỏ dòng đăng ký không còn tồn tại.

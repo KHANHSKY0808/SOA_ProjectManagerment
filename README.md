@@ -366,3 +366,11 @@ tra cứu tên bằng `POST /academic/api/v1/student-display-names/`; academic-s
 chỉ truy vấn Students và gọi hợp đồng tên nội bộ của auth-service qua REST.
 Cả hai API mới yêu cầu JWT role1/2; không thay đổi API đăng ký của sinh viên.
 Tên không khả dụng không làm mất danh sách; giao diện báo dữ liệu tên chưa đầy đủ.
+
+
+Admin và giảng viên có thể hủy đăng ký của từng sinh viên ngay trong Chi tiết
+đề tài, có bước xác nhận theo tên/mã sinh viên. API quản lý DELETE
+`/registrations/api/v1/topics/{topic_id}/registrations/{registration_id}/`
+chỉ chuyển đăng ký sang status0, giữ lịch sử và ghi người thao tác từ JWT.
+Backend kiểm tra đúng cặp đề tài/đăng ký và role1/2. GET cùng URL trả trạng thái
+chính xác để đối chiếu sau lỗi mạng; frontend không tự gửi lại yêu cầu hủy.

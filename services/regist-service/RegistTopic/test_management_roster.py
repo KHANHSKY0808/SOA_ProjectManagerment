@@ -89,3 +89,57 @@ class TopicRosterTests(TransactionTestCase):
             result = self.client.get(self.url)
             self.assertEqual(result.status_code, 503)
             self.assertNotIn("secret", str(result.data))
+
+
+    def test_management_cancellation_audit_history_and_idempotence(self):
+        for role in (1, 2):
+            for initial in (1, None, 2):
+                self.authenticate(role)
+                Registration.objects.all().delete()
+                Registration.objects.create(registration_id="R1", student_id="S1", topic_id="T1",
+                    status=initial, semester="2026-1", notes="keep", updated_by="student")
+                Registration.objects.create(registration_id="R2", student_id="S2", topic_id="T1", status=1)
+                url = self.url + "R1/"
+                self.assertEqual(self.client.get(url).data, {"registration_id": "R1", "topic_id": "T1", "status": initial})
+                response = self.client.delete(url, HTTP_X_REQUEST_ID="cancel-1")
+                self.assertEqual(response.status_code, 204)
+                self.assertEqual(response["X-Request-ID"], "cancel-1")
+                obj = Registration.objects.get(pk="R1")
+                self.assertEqual((obj.status, obj.updated_by, obj.student_id, obj.topic_id, obj.semester, obj.notes),
+                                 (0, "manager", "S1", "T1", "2026-1", "keep"))
+                timestamp = obj.updated_at
+                self.assertIsNotNone(timestamp)
+                self.assertEqual(self.client.delete(url).status_code, 204)
+                obj.refresh_from_db()
+                self.assertEqual(obj.updated_at, timestamp)
+                self.assertEqual(Registration.objects.get(pk="R2").status, 1)
+                self.assertEqual(self.client.get(url).data["status"], 0)
+                self.assertEqual(Registration.objects.count(), 2)
+        self.names.assert_not_called()
+
+    def test_management_cancel_permissions_and_topic_isolation(self):
+        Registration.objects.create(registration_id="R1", topic_id="T2", student_id="S1", status=1)
+        for role in (3, "1", True, None, 0):
+            self.authenticate(role)
+            for method in ("get", "delete"):
+                self.assertEqual(getattr(self.client, method)(self.url + "R1/").status_code, 403)
+        self.client.credentials()
+        self.assertEqual(self.client.delete(self.url + "R1/").status_code, 401)
+        self.authenticate(1)
+        for method in ("get", "delete"):
+            self.assertEqual(getattr(self.client, method)(self.url + "R1/").status_code, 404)
+            self.assertEqual(getattr(self.client, method)(self.url + "missing/").status_code, 404)
+        self.assertEqual(Registration.objects.get().status, 1)
+
+    def test_cancel_storage_failure_is_safe_and_rolls_back(self):
+        Registration.objects.create(registration_id="R1", topic_id="T1", student_id="S1", status=1)
+        from django.db.models.query import QuerySet
+        original_update = QuerySet.update
+        def failing_update(query, **values):
+            original_update(query, **values)
+            raise OperationalError("private SQL")
+        with patch.object(QuerySet, "update", failing_update):
+            result = self.client.delete(self.url + "R1/")
+        self.assertEqual(result.status_code, 503)
+        self.assertNotIn("private", str(result.data))
+        self.assertEqual(Registration.objects.get().status, 1)

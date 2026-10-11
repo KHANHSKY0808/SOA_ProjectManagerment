@@ -302,3 +302,32 @@ maximum10s); no retries. Academic lookup is rate-limited120/min per identity
 returns null names and names_unavailable=true. This flag also covers missing
 student/name data. No email, phone, GPA, notes or credentials are exposed.
 No new environment variables or schema changes are required.
+
+
+## Cancel registration from topic management
+
+Management endpoint (Gateway prefix `/registrations`):
+`/api/v1/topics/{topic_id}/registrations/{registration_id}/`.
+Both GET and DELETE require a locally validated bearer JWT with integer role1
+(admin) or2 (lecturer), using the same shared topic management policy as the
+roster. Student self-cancellation endpoints and permissions remain unchanged.
+
+- DELETE returns204 and soft-cancels the matching registration with status0.
+  The record, student/topic references, semester and historical fields remain.
+  UpdatedAt is server time and UpdatedBy comes only from JWT user_id. No body
+  fields are needed or trusted for actor/status. Already-cancelled records return
+  204 without changing audit metadata. Existing SQLite transaction/write lock
+  synchronizes this with registration creation. No academic/name dependency.
+- GET returns the exact state, including cancelled records, for reconciliation:
+  `{"registration_id":"R001","topic_id":"T001","status":0}`.
+  It exposes no student profile, names, notes or other private registration fields.
+
+Both operations scope the registration to the path topic; unknown/mismatched
+IDs404, missing/invalid JWT401, unauthorized roles403, unsupported methods405,
+storage failure503 with safe error response. X-Request-ID is forwarded in the
+response and write audit logging retains method/status/request ID only.
+Clients must accept only204 as successful cancellation, never retry uncertain
+DELETE automatically, and query this exact GET after timeout/network/5xx.
+Status0 confirms cancellation; a current status requires renewed explicit
+confirmation. A paginated roster alone is insufficient to establish success.
+No new environment variables, schema or migrations.

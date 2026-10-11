@@ -30,3 +30,21 @@ export async function getTopicRoster(id: string, after: string, signal: AbortSig
   return { results: page.results.map(({ registration_id, student_id, student_name, semester, status, created_at }) =>
     ({ registration_id, student_id, student_name, semester, status, created_at })), next_after: page.next_after, names_unavailable: page.names_unavailable }
 }
+
+
+const registrationPath = (topicId: string, registrationId: string) =>
+  `/registrations/api/v1/topics/${encodeURIComponent(topicId)}/registrations/${encodeURIComponent(registrationId)}/`
+
+export async function cancelTopicRegistration(topicId: string, registrationId: string, signal: AbortSignal): Promise<void> {
+  const response = await apiClient.delete(registrationPath(topicId, registrationId), { signal })
+  if (response.status !== 204) throw new Error('Invalid cancellation response')
+}
+
+export async function getTopicRegistrationState(topicId: string, registrationId: string, signal: AbortSignal): Promise<number | null> {
+  const { data } = await apiClient.get<unknown>(registrationPath(topicId, registrationId), { signal })
+  if (!data || typeof data !== 'object') throw new Error('Invalid registration state')
+  const row = data as Record<string, unknown>
+  if (row.topic_id !== topicId || row.registration_id !== registrationId ||
+      !(row.status === null || Number.isInteger(row.status))) throw new Error('Invalid registration state')
+  return row.status as number | null
+}
