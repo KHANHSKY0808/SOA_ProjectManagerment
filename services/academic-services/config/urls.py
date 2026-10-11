@@ -20,8 +20,11 @@ from django.urls import include, path
 from .health import health
 from LectureManager.display_names import TopicDisplayNamesView
 from profile_management import StudentProfileView, LecturerProfileView
+from registration_context import RegistrationContextView, MajorDepartmentsView
 
 urlpatterns = [
+    path("api/v1/registration-context/", RegistrationContextView.as_view()),
+    path("api/v1/major-departments/", MajorDepartmentsView.as_view()),
     path("api/v1/students/", StudentProfileView.as_view()),
     path("api/v1/students/<str:pk>/", StudentProfileView.as_view()),
     path("api/v1/lecturers/", LecturerProfileView.as_view()),

@@ -371,3 +371,22 @@ compensation; no project DB writes. Run `python manage.py check` and
 `python manage.py test`. Legacy academic-only contracts are preserved. Deploy
 both services together with matching environment secrets and the updated Gateway
 internal-route block; a build alone does not update a running Gateway container.
+
+## Student registration reference contracts
+
+These additive APIs require a bearer access JWT with integer role 3, validated
+locally. They never access Users or Topics. Existing CRUD/profile DTOs are unchanged.
+
+- `GET /api/v1/registration-context/`: derives the student from JWT `user_id`
+  (including text IDs) and returns `{"student_id":"SV001","department_id":"F1"}`.
+  Missing student, major or faculty returns 403.
+- `POST /api/v1/major-departments/`: body `{"major_ids":["M1","M2"]}` (maximum
+  100 IDs, each at most 255 characters). Returns
+  `{"departments":{"M1":"F1","M2":null}}`; missing majors/unassigned faculties
+  map to null. No identity/profile data is returned.
+
+Gateway prefix: `/academic`. Invalid input returns 400, invalid JWT 401, wrong
+role 403, storage unavailable 503. Callers must fail closed on missing faculty.
+Expected usage: one context request and one faculty batch per topic page (100).
+No additional endpoint throttle is installed; deployment rate limits belong at
+Gateway. Registration clients use a 3-second per-call timeout and no retries.

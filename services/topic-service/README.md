@@ -305,3 +305,21 @@ The UI uses PATCH for changed name/description/reference fields, preserving unto
 Callers must not automatically retry writes. After an ambiguous PATCH, GET detail and compare the submitted values, rather than treating existence as proof of update. After ambiguous DELETE, GET 404 means currently absent; GET 200 requires an explicit new confirmation. These are state checks, not a concurrency lock: late requests and other writers can still change the record. Closing or leaving the UI does not roll back a request already accepted by the server.
 
 Tests cover lecturer creation and edits/deletion of an admin-created topic, role/identity denial, immutable ID, nullable reference details during display outages and unchanged list/mutation DTOs on both API aliases. Use the existing service environment to run manage.py check/test; tests use a disposable database and mock network calls.
+
+## Student registration topic references
+
+These additive endpoints require integer JWT role 3 and preserve existing topic
+CRUD DTOs. They query only Topics and return minimal reference metadata:
+`{"topic_id":"DT001","name":"SOA","major_id":"M1","status":1}`.
+
+- `GET /api/v1/registration-topics/?after=DT000`: only status 1, ascending topic ID,
+  at most 100 records. Response `{"results":[...],"next_after":null}`; a non-null
+  cursor continues the next page. Cursor maximum length is 255.
+- `GET /api/v1/registration-topics/{topic_id}/`: one topic, including closed topics,
+  so registration clients can explicitly reject ineligible status.
+
+Gateway prefix: `/topics`. Invalid query 400, invalid JWT 401, wrong role 403,
+missing topic 404, storage unavailable 503. These APIs do not imply eligibility:
+regist-service compares faculty via academic-service before writing. Callers use
+bounded 3-second requests; no automatic retries. No additional provider throttle
+is installed; deployment rate limits can be enforced at Gateway.
