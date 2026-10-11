@@ -27,7 +27,7 @@ beforeEach(() => {
   ])
   mock.onGet('/academic/api/v1/lecturers/').reply(200, [lecturer, { lecturer_id: 'GV002', department_id: null, user: null }])
 })
-afterEach(() => { mock.restore(); setAccessToken(null); vi.restoreAllMocks() })
+afterEach(() => { mock.restore(); setAccessToken(null); vi.restoreAllMocks(); vi.unstubAllGlobals() })
 function renderPage(role: Role = 1) {
   return render(<AuthContext.Provider value={{ user: { user_id: 'test-user', first_name: null, last_name: null, role }, logout, login: vi.fn(), status: 'ready', restoreError: '', retryRestore: vi.fn() }}><TopicPage /></AuthContext.Provider>)
 }
@@ -251,11 +251,33 @@ describe('Topic list and creation', () => {
     expect(screen.getByRole('button', { name: 'Tạo đề tài' })).toHaveFocus()
   })
 
-  it('shows safe feedback if GUID generation is unavailable', async () => {
-    vi.mocked(crypto.randomUUID).mockImplementation(() => { throw new Error('insecure context') })
+  it('opens an HTTP draft without randomUUID and retains its ID through reconciliation and retry', async () => {
+    const fallbackId = '00000000-0000-4000-8000-000000000000'
+    const getRandomValues = vi.fn((bytes: Uint8Array) => bytes.fill(0))
+    vi.stubGlobal('crypto', { getRandomValues })
+    mock.onPost(base).timeout()
+    renderPage(); const form = await openForm(); fillForm(); fireEvent.submit(form)
+    const check = await screen.findByRole('button', { name: 'Kiểm tra kết quả' })
+    expect(JSON.parse(mock.history.post[0].data).topic_id).toBe(fallbackId)
+    mock.onGet(`${base}${fallbackId}/`).reply(404)
+    fireEvent.click(check)
+    expect(await screen.findByText(/Chưa tìm thấy đề tài với mã này/)).toBeVisible()
+    mock.onPost(base).reply(201, { ...rows[0], topic_id: fallbackId })
+    fireEvent.submit(form)
+    await waitFor(() => expect(mock.history.post).toHaveLength(2))
+    expect(JSON.parse(mock.history.post[1].data).topic_id).toBe(fallbackId)
+    expect(getRandomValues).toHaveBeenCalledOnce()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+
+  it.each(['missing', 'failed'])('shows safe feedback when secure randomness is %s', async failure => {
+    vi.stubGlobal('crypto', failure === 'missing' ? {} : {
+      getRandomValues: () => { throw new Error('private random-source details') },
+    })
     renderPage(); await screen.findByRole('table')
     fireEvent.click(screen.getByRole('button', { name: 'Tạo đề tài' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('HTTPS hoặc localhost')
+    expect(screen.getByRole('alert')).toHaveTextContent('Không thể sinh mã đề tài. Vui lòng thử lại hoặc cập nhật trình duyệt.')
+    expect(screen.queryByText('private random-source details')).not.toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(mock.history.post).toHaveLength(0)
   })

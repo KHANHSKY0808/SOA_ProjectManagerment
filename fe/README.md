@@ -253,7 +253,7 @@ Trang login sử dụng banner `public/img/banner_QNU.jpg` và logo `public/img/
 
 Popup tạo có tên (bắt buộc), mô tả (textarea, có thể bỏ trống), select giáo viên hướng dẫn và select ngành (bắt buộc). Ngành được bổ sung vì POST hiện yêu cầu `major_id`; không suy ra ngành từ khoa của giảng viên. Giảng viên lấy từ `/academic/api/v1/lecturers/`, dùng tên trong `user` và mã để phân biệt; thiếu tên hiển thị mã. Ngành lấy từ `/academic/api/majors/`; mã chữ bị vô hiệu hóa vì topic-service hiện chỉ xác thực được ngành có mã số. Không tự chọn ngành mặc định.
 
-Frontend sinh GUID bằng `crypto.randomUUID()` một lần khi mở bản nháp, cần HTTPS hoặc localhost. Mã không có ô nhập và giữ nguyên khi có lỗi gửi. `POST /topics/api/v1/topics/` gửi các trường:
+Frontend sinh UUID v4 một lần khi mở bản nháp: dùng `crypto.randomUUID()` khi có, hoặc `crypto.getRandomValues()` để hỗ trợ origin HTTP khi `randomUUID()` không khả dụng. Cả hai dùng nguồn ngẫu nhiên mật mã; không dùng `Math.random()` hoặc thời gian làm mã. Nếu trình duyệt không có nguồn ngẫu nhiên phù hợp, frontend báo lỗi và không gửi POST. Production vẫn cần HTTPS. Mã không có ô nhập và giữ nguyên khi có lỗi gửi. `POST /topics/api/v1/topics/` gửi các trường:
 
 ```json
 {

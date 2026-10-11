@@ -52,3 +52,22 @@ Runtime correction result: stopped only the six verified topic-service runserver
 - Verify the effective client config and a health GET using its resolved base, plus direct/Gateway topic health. No live DELETE. Existing automated configuration tests cover explicit development binding. Roll back by removing these two new env keys and restarting only topic-service; this restores the prior discovery setting.
 
 Local binding correction verified: effective REGISTRATION_CLIENT discovery=false/base=http://127.0.0.1:8003/timeout2; selected registration base health, direct topic health and Gateway topic health all returned200. Topic-service listener36500 (parent48344). Service-venv Django check and 8 targeted client/config tests passed. No live DELETE performed.
+
+## HTTP topic UUID repair - 2026-10-11 (approved; completed)
+Objective: allow opening a new topic draft at http://100.72.148.90:8080 without the HTTPS/localhost UUID error.
+Evidence: fe/src/features/topics/useTopics.ts calls crypto.randomUUID() directly; this method is unavailable in insecure HTTP contexts. Existing draft/request reconciliation already depends on retaining one GUID per draft.
+Scope: add a small UUID v4 helper that uses native crypto.randomUUID when available and crypto.getRandomValues otherwise, preserving UUID version/variant bits and one ID per draft. Update the draft hook, automated tests, and root/frontend documentation. Build and deploy the frontend to the existing Linux Nginx static directory, synchronizing only approved frontend source/docs to the server.
+Constraints: never use Math.random or timestamps for IDs; no new dependency, API/backend/database/schema/JWT/port/Nginx changes; no production topic creation during verification; preserve existing unrelated local/server work. HTTP support for this UUID operation does not replace production HTTPS.
+Acceptance: the create dialog opens with a valid UUID v4 when randomUUID is absent; repeated form edits/submission reconciliation retain the draft ID; native UUID behavior remains; missing/failing secure randomness produces safe feedback and no POST. Relevant and full frontend tests, lint and build pass. Deployed HTTP bundle is verified in a browser or equivalent browser-context smoke check without creating domain records.
+Risks/assumptions: browser must support crypto.getRandomValues. Existing Windows workspace and Linux source may differ, so inspect/compare affected files before syncing and preserve unrelated differences. Static deployment briefly changes browser bundle versions; retain private rollback copies of affected sources and prior served assets. No live topic creation is authorized.
+
+### HTTP UUID repair completion
+Approved by user (ok); completed and deployed on 2026-10-11.
+- Added topic-id.ts and topic-id.test.ts; updated useTopics.ts, TopicPage.test.tsx, root README.md and fe/README.md. Uses native randomUUID or cryptographic getRandomValues with UUID v4 version/variant bits; retains the existing draft ID and reconciliation behavior.
+- Local and Linux: all 410 frontend tests passed, lint passed, production build including TypeScript checks passed with VITE_API_BASE_URL=/.
+- Deployed assets first and atomically replaced /var/www/soa-frontend/index.html. Served HTML/JS/CSS matched the build; all four gateway health routes returned HTTP 200.
+- Chrome headless on the real HTTP origin confirmed insecure context, unavailable randomUUID, working create dialog, valid UUID v4 and a new ID for a new draft. API responses were mocked and zero mutation requests occurred. This does not verify a live topic POST.
+- No backend/configuration/dependency/schema changes. Server database SHA256 remained 19e9092aa1aa31f4d04bcf19abc53b2824f08b9d996a8270d16bc924d6d8c53d.
+- Private rollback source/served backups: /home/yang/.local/state/soa-config-backups/frontend-uuid-20261011T121556Z. Restore only affected source/docs and prior served frontend if rollback is needed.
+
+Final audit note: the database matched the baseline immediately after deployment, but differed at the final read-only audit while the application remained live. This task performed no database writes or restore; the cause of the later change was not investigated.

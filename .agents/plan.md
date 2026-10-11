@@ -38,3 +38,25 @@ Runtime correction result: stopped only the six verified topic-service runserver
 - Verify the effective client config and a health GET using its resolved base, plus direct/Gateway topic health. No live DELETE. Existing automated configuration tests cover explicit development binding. Roll back by removing these two new env keys and restarting only topic-service; this restores the prior discovery setting.
 
 Local binding correction verified: effective REGISTRATION_CLIENT discovery=false/base=http://127.0.0.1:8003/timeout2; selected registration base health, direct topic health and Gateway topic health all returned200. Topic-service listener36500 (parent48344). Service-venv Django check and 8 targeted client/config tests passed. No live DELETE performed.
+
+## HTTP topic UUID repair - 2026-10-11 (approved; completed)
+1. After approval, inspect relevant frontend configuration/tests and compare affected Windows/Linux files; create rollback copies of affected Linux sources and current /var/www/soa-frontend outside Git in a private backup directory.
+2. Add fe/src/features/topics/topic-id.ts implementing cryptographic UUID v4 generation, with native randomUUID fast path and getRandomValues fallback; add topic-id.test.ts covering fallback format/version/variant, missing/failing randomness and native branch.
+3. Update fe/src/features/topics/useTopics.ts to call the helper and provide an accurate safe generation error; update TopicPage.test.tsx with an HTTP-like missing-randomUUID dialog regression and no-write failure coverage, retaining one-GUID-per-draft and existing reconciliation tests.
+4. Update README.md and fe/README.md to describe UUID fallback and retain production HTTPS guidance. No changes to auth refresh, department duplicate handling or backend policies are included.
+5. Run focused frontend tests, then full tests, lint and production build with VITE_API_BASE_URL=/. Resolve failures before deployment; do not modify dependency manifests or locks.
+6. Sync only approved changed source/docs to Linux after verifying remote preconditions and backing up originals. Build on server using existing Node 24 Docker tooling. Stage/check output, deploy assets before replacing index.html at existing static root, and verify HTTP site/API routing and fallback in browser context without POSTing topics. Do not change Nginx/Gateway or other websites.
+7. Record changed files, test results, deployment and limitations in task/plan.
+Expected repository changes: fe/src/features/topics/topic-id.ts (new), fe/src/features/topics/topic-id.test.ts (new), fe/src/features/topics/useTopics.ts, fe/src/features/topics/TopicPage.test.tsx, README.md, fe/README.md, .agents/task.md, .agents/plan.md. Deployment additionally updates generated fe/dist and served frontend assets only; private rollback copies remain outside Git.
+Rollback: restore affected Linux source/docs and the prior served frontend from private backups; revert only this task's local source changes while preserving unrelated edits. No backend restart, database restore, migration or token rotation is required.
+
+### HTTP UUID repair completion
+Approved by user (ok); completed and deployed on 2026-10-11.
+- Added topic-id.ts and topic-id.test.ts; updated useTopics.ts, TopicPage.test.tsx, root README.md and fe/README.md. Uses native randomUUID or cryptographic getRandomValues with UUID v4 version/variant bits; retains the existing draft ID and reconciliation behavior.
+- Local and Linux: all 410 frontend tests passed, lint passed, production build including TypeScript checks passed with VITE_API_BASE_URL=/.
+- Deployed assets first and atomically replaced /var/www/soa-frontend/index.html. Served HTML/JS/CSS matched the build; all four gateway health routes returned HTTP 200.
+- Chrome headless on the real HTTP origin confirmed insecure context, unavailable randomUUID, working create dialog, valid UUID v4 and a new ID for a new draft. API responses were mocked and zero mutation requests occurred. This does not verify a live topic POST.
+- No backend/configuration/dependency/schema changes. Server database SHA256 remained 19e9092aa1aa31f4d04bcf19abc53b2824f08b9d996a8270d16bc924d6d8c53d.
+- Private rollback source/served backups: /home/yang/.local/state/soa-config-backups/frontend-uuid-20261011T121556Z. Restore only affected source/docs and prior served frontend if rollback is needed.
+
+Final audit note: the database matched the baseline immediately after deployment, but differed at the final read-only audit while the application remained live. This task performed no database writes or restore; the cause of the later change was not investigated.

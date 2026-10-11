@@ -4,6 +4,7 @@ import { listRecords } from '../academic/academic-api'
 import type { Lecturer, Major } from '../academic/academic-api'
 import { createTopic, deleteTopic, getTopic, getTopicDetail, listTopics, updateTopic } from './topic-api'
 import type { CreateTopic, Topic, TopicDetail, TopicUpdate, TopicStatus } from './topic-api'
+import { createTopicId } from './topic-id'
 
 export type TopicField = 'status' | 'name' | 'description' | 'advisor_id' | 'major_id'
 export const numericMajor = (id: string) => /^[0-9]+$/.test(id)
@@ -98,12 +99,12 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
   function open() {
     if (!canManage || locked.current || mode) return
     try {
-      const id = crypto.randomUUID()
+      const id = createTopicId()
       resetForm(); setMode('create'); setSelected(null)
       setDraft({ topic_id: id, name: '', description: '', advisor_id: '', major_id: '', ...(canSetStatus ? { status: 1 as const } : {}) })
       void loadOptions()
     } catch {
-      setListError('Không thể sinh mã đề tài. Vui lòng sử dụng HTTPS hoặc localhost.')
+      setListError('Không thể sinh mã đề tài. Vui lòng thử lại hoặc cập nhật trình duyệt.')
     }
   }
   async function loadDetail(row: Topic, editing: boolean) {
