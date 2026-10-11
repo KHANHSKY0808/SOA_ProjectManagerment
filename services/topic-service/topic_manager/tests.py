@@ -143,9 +143,47 @@ class TopicPersistenceTests(TransactionTestCase):
     def test_required_put_fields_and_patch_nullable(self):
         self.create()
         self.assertEqual(self.request("put", "/api/topics/DT001/", {"name": "x"}).status_code, 400)
-        response = self.request("patch", "/api/topics/DT001/", {"advisor_id": "", "status": None})
+        response = self.request("patch", "/api/topics/DT001/", {"advisor_id": ""})
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(Topic.objects.get().advisor_id)
+
+    def test_status_defaults_permissions_and_updates(self):
+        for prefix in ("/api/", "/api/v1/"):
+            collection = prefix + "topics/"
+            detail = collection + "DT001/"
+            for role, initial in ((1, 1), (2, 0)):
+                self.authenticate(role)
+                self.assertEqual(self.create(prefix).data["status"], initial)
+                for method, payload in (("put", self.data), ("patch", {"name": "Revision"})):
+                    self.assertEqual(self.request(method, detail, payload).status_code, 200)
+                    self.assertEqual(Topic.objects.get().status, initial)
+                Topic.objects.all().delete()
+            for status in (0, 1, 2):
+                self.authenticate(2)
+                self.assertEqual(self.request("post", collection, {**self.data, "status": status}).status_code, 403)
+                self.assertFalse(Topic.objects.exists())
+                self.authenticate(1)
+                self.assertEqual(self.request("post", collection, {**self.data, "status": status}).data["status"], status)
+                self.authenticate(2)
+                for method, payload in (("patch", {"status": status}), ("put", {**self.data, "status": status})):
+                    self.assertEqual(self.request(method, detail, payload).status_code, 403)
+                    self.assertEqual(Topic.objects.get().status, status)
+                self.authenticate(1)
+                for next_status in (0, 1, 2):
+                    for method, payload in (("patch", {"status": next_status}), ("put", {**self.data, "status": next_status})):
+                        self.assertEqual(self.request(method, detail, payload).status_code, 200)
+                        self.assertEqual(Topic.objects.get().status, next_status)
+                Topic.objects.all().delete()
+
+    def test_status_rejects_invalid_values_without_writes(self):
+        for status in (None, -1, 3, True, False, "1", 1.5):
+            self.assertEqual(self.request("post", "/api/topics/", {**self.data, "status": status}).status_code, 400)
+            self.assertFalse(Topic.objects.exists())
+        self.create()
+        for status in (None, -1, 3, True, "1", 1.5):
+            for method, payload in (("patch", {"status": status}), ("put", {**self.data, "status": status})):
+                self.assertEqual(self.request(method, "/api/topics/DT001/", payload).status_code, 400)
+                self.assertEqual(Topic.objects.get().status, 1)
 
     def test_authentication_and_roles(self):
         self.create()

@@ -1,0 +1,36 @@
+.student-registration { display: grid; gap: 22px; min-width: 0; }
+.student-registration .dash-surface { min-width: 0; }
+.registration-intro { display: flex; align-items: center; justify-content: space-between; gap: 24px; background: linear-gradient(115deg, #f1efff, #fff); }
+.registration-intro h2 { margin: 8px 0 12px; font-size: clamp(21px, 2.4vw, 28px); color: #302b74; }
+.registration-intro p { max-width: 680px; line-height: 1.7; }
+.registration-intro button { flex-shrink: 0; }
+.registration-eyebrow { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: .12em; color: #625ca1; }
+.registration-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 20px; }
+.registration-heading h2 { margin: 0; font-size: 19px; }
+.registration-heading label { min-width: 155px; }
+.registration-tag { color: #625b8c; background: #f3f1fb; border-radius: 20px; padding: 6px 12px; font-size: 12px; }
+.registration-current { border-top: 3px solid #6660b1; }
+.registration-current-card { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid #eeedf5; padding: 20px 0 0; }
+.registration-current-card + .registration-current-card { margin-top: 18px; }
+.registration-current-card h3 { margin: 8px 0; font-size: 18px; overflow-wrap: anywhere; }
+.registration-current-card p { font-size: 13px; color: #68657d; line-height: 1.7; }
+.registration-code { font-weight: 600; overflow-wrap: anywhere; }
+.registration-status { display: inline-block; border-radius: 5px; background: #edf7f0; color: #236347; padding: 5px 8px; font-size: 12px; }
+.registration-status.is-cancelled { background: #f0eff4; color: #68657d; }
+.academic button.registration-cancel { color: #a32c39; border-color: #d7a5ab; flex-shrink: 0; }
+.registration-search { margin-bottom: 20px; }
+.registration-search label { width: min(100%, 400px); }
+.registration-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
+.registration-warning { padding: 18px 22px; border: 1px solid #e4cd96; border-radius: 12px; background: #fffaf0; color: #70551c; line-height: 1.6; }
+.registration-warning p { margin-top: 0; }
+.registration-semester { margin-top: 22px; }
+.registration-dialog-actions { justify-content: flex-end; margin-top: 24px; }
+@media (max-width: 600px) {
+  .registration-intro, .registration-current-card { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .registration-intro button, .registration-current-card button { width: 100%; }
+  .registration-search { flex-wrap: wrap; }
+  .registration-search label { width: 100%; }
+  .registration-pagination { align-items: flex-start; flex-direction: column; }
+  .registration-heading { align-items: flex-start; }
+  .student-registration table { min-width: 450px; }
+}

@@ -70,7 +70,8 @@ Các trang dùng nested routes và `Outlet`; menu, shortcut và mục tài kho�
 
 | URL | Nội dung | Role |
 | --- | --- | --- |
-| `/admin`, `/lecture`, `/student` | Tổng quan theo vai trò | 1, 2, 3 tương ứng |
+| `/admin`, `/lecture` | Tổng quan theo vai trò | 1, 2 tương ứng |
+| `/student` | Đề tài mở, đăng ký hiện tại và lịch sử đăng ký | 3 |
 | `/admin/departments` | Quản lý khoa | 1 |
 | `/admin/majors` | Quản lý ngành | 1 |
 | `/admin/students` | Quản lý sinh viên | 1 |
@@ -79,7 +80,7 @@ Các trang dùng nested routes và `Outlet`; menu, shortcut và mục tài kho�
 | `/admin/topics` | Danh sách, chi tiết, thêm, sửa, xóa đề tài | 1 |
 | `/admin/registrations` | Đăng ký — Đang phát triển | 1 |
 | `/lecture/topics` | Danh sách, chi tiết, thêm, sửa, xóa đề tài | 2 |
-| `/student/registrations` | Đăng ký — Đang phát triển | 3 |
+| `/student/registrations` | Cùng giao diện đăng ký đề tài với `/student` | 3 |
 
 Khi truy cập trang bảo vệ lúc chưa đăng nhập, frontend ghi URL vào router state và chuyển sang `/login`. Đăng nhập thành công quay về URL đã yêu cầu nếu đây là route đã biết và đúng vai trò; giữ query/hash. Địa chỉ ngoài ứng dụng, đường dẫn không hợp lệ hoặc sai vai trò chuyển về tổng quan của tài khoản. State này không được lưu riêng qua reload trang login. URL không tồn tại hiển thị 404; đường dẫn dưới role vẫn qua guard trước khi hiển thị 404.
 
@@ -272,8 +273,92 @@ Mã nằm trong `features/topics/`: `topic-api.ts`, `useTopics.ts`, `TopicPage.t
 
 ### Chi tiết, sửa và xóa đề tài
 
-- **Chi tiết** gọi `GET /topics/api/v1/topics/{id}/`, hiển thị tên, mô tả, ngành, giảng viên, tệp đính kèm (chuỗi, không tự tải), trạng thái và thông tin cập nhật. Trạng thái hiển thị đúng giá trị API vì chưa có bảng quy đổi nghiệp vụ. Lỗi tải có nút thử lại; đóng popup hủy request đọc đang chờ.
-- **Sửa** lấy dữ liệu mới từ endpoint chi tiết. Chỉ role 1/2 nhận thêm `major_id` và `advisor_id` để điền select đúng theo mã, kể cả trùng/thiếu tên. Mã đề tài không đổi. `PATCH` chỉ gửi tên/mô tả/ngành/giảng viên đã thay đổi, giữ nguyên tệp, trạng thái, thời điểm tạo và trường không sửa. Tham chiếu cũ giữ nguyên được chấp nhận dù không còn trong lựa chọn; tham chiếu mới phải hợp lệ. Nếu không đổi gì thì không gửi PATCH.
+- **Chi tiết** gọi `GET /topics/api/v1/topics/{id}/`, hiển thị tên, mô tả, ngành, giảng viên, tệp đính kèm (chuỗi, không tự tải), trạng thái và thông tin cập nhật. Trạng thái hiển thị nhãn Chờ duyệt (0), Đã duyệt (1), Mở đăng ký (2); giá trị cũ ngoài danh sách hiển thị Chưa xác định. Lỗi tải có nút thử lại; đóng popup hủy request đọc đang chờ.
+- **Sửa** lấy dữ liệu mới từ endpoint chi tiết. Chỉ role 1/2 nhận thêm `major_id` và `advisor_id` để điền select đúng theo mã, kể cả trùng/thiếu tên. Mã đề tài không đổi. `PATCH` chỉ gửi tên/mô tả/ngành/giảng viên và trạng thái (chỉ admin) đã thay đổi, giữ nguyên tệp, thời điểm tạo và trường không sửa. Tham chiếu cũ giữ nguyên được chấp nhận dù không còn trong lựa chọn; tham chiếu mới phải hợp lệ. Nếu không đổi gì thì không gửi PATCH.
 - **Xóa** yêu cầu **Xác nhận xóa** trước khi gửi `DELETE /topics/api/v1/topics/{id}/`; Hủy không gửi request. 204 đóng popup và tải lại danh sách; 404 thông báo đề tài không còn tồn tại. 409 giữ đề tài và báo dữ liệu còn liên kết. Không có xóa dây chuyền.
 - PATCH/DELETE lỗi mạng, timeout hoặc 5xx khóa thao tác ghi và yêu cầu **Kiểm tra kết quả**, không tự gửi lại. Với sửa, GET phải trả đúng các giá trị vừa gửi mới xác nhận dữ liệu; nếu khác, giữ bản nháp và báo cần xem lại. Với xóa, GET 404 xác nhận đề tài đã vắng; GET 200 yêu cầu xác nhận xóa lại thủ công. Lỗi kiểm tra giữ trạng thái chưa xác định. Đây là đối chiếu trạng thái hiện tại, không bảo đảm không có ghi đồng thời hoặc kết quả backend đến muộn.
 - Bộ lọc tìm kiếm giữ nguyên sau tải lại thành công. Chặn gửi trùng/đóng popup khi ghi đang chờ; đổi trang hủy request frontend nhưng không bảo đảm hủy xử lý backend. Popup hỗ trợ Escape, vòng focus và khôi phục focus khi phần tử mở còn khả dụng.
+
+## Đăng ký đề tài dành cho sinh viên
+
+Role 3 sử dụng trực tiếp `/student` hoặc menu **Đăng ký đề tài** tại
+`/student/registrations`. Hai URL cung cấp cùng giao diện trong dashboard hiện có.
+Trang gồm đăng ký hiện tại, danh sách đề tài mở cùng khoa và lịch sử đăng ký.
+Các route admin/giảng viên vẫn được bảo vệ theo role; `/admin/registrations` vẫn
+là trang đang phát triển.
+
+API đi qua Axios client chung và Gateway với access JWT hiện có:
+
+| Thao tác | Request |
+| --- | --- |
+| Lịch sử của chính sinh viên | `GET /registrations/api/v1/registrations/` |
+| Đề tài mở cùng khoa | `GET /registrations/api/v1/available-topics/?after=...` |
+| Đăng ký | `POST /registrations/api/v1/registrations/` |
+| Hủy đăng ký | `DELETE /registrations/api/v1/registrations/{registration_id}/` |
+
+POST chỉ gửi `topic_id` và `semester` khi sinh viên nhập học kỳ (không bắt buộc,
+tối đa 255 ký tự; bỏ khoảng trắng hai đầu). Không gửi student_id, status hoặc
+thông tin audit. Đề tài/khoa/trạng thái/quyền sở hữu do backend kiểm tra lại.
+
+- **Đề tài mở:** tìm kiếm theo mã/tên chỉ áp dụng cho các trang đã tải và chỉ chạy
+  khi nhấn Tìm kiếm. Nhấn Tải thêm đề tài để tiếp tục theo next_after. Trang rỗng
+  nhưng còn cursor vẫn cho phép tải tiếp; lỗi tải thêm giữ lại các trang đã có.
+  Tải lại lấy trang đầu và cập nhật lịch sử. Không tự động tải toàn bộ đề tài.
+- **Đăng ký hiện tại:** trạng thái 0 là đã hủy; các trạng thái khác, kể cả null,
+  được coi là hiện tại theo hợp đồng backend. Có đăng ký hiện tại thì nút đăng ký
+  đề tài khác bị khóa. Dữ liệu legacy có nhiều đăng ký hiện tại hiển thị cảnh báo.
+- **Đăng ký/hủy:** có hộp xác nhận hỗ trợ bàn phím, giữ focus và chặn gửi trùng.
+  Hủy thành công giữ lịch sử và cho phép chọn lại sau khi xác nhận dữ liệu mới.
+  Tên đề tài chỉ được hiển thị khi có trong dữ liệu đã tải; lịch sử luôn dùng mã
+  đề tài từ backend, không giả lập tên giảng viên, ngành hoặc thông tin khác.
+- **Lịch sử:** lọc Tất cả / Hiện tại / Đã hủy ngay trên dữ liệu lịch sử đã tải.
+  Ngày giờ hiển thị theo trình duyệt; metadata null hiển thị dấu gạch ngang.
+- **Lỗi:** mã topic_closed, faculty_mismatch, registration_conflict và lỗi dịch vụ
+  được chuyển thành thông báo tiếng Việt an toàn. Không hiển thị nội dung lỗi
+  nội bộ. HTTP 401 gọi logout hiện có; lỗi tải lịch sử khóa thao tác ghi cho tới
+  khi tải lại thành công. Lỗi tải đề tài không chặn xem/hủy đăng ký đã xác nhận.
+- **Kết quả chưa rõ:** timeout, mất mạng, phản hồi mutation sai DTO, HTTP 5xx hoặc
+  409 yêu cầu nhấn **Kiểm tra kết quả** để tải lại lịch sử. Hủy nhận 404 cũng cần
+  kiểm tra lại. Khi kiểm tra thất bại, các thao tác ghi vẫn khóa; đóng hộp thoại
+  không bỏ khóa này. Không tự động gửi lại POST/DELETE. Kết quả thành công đã xác
+  nhận vẫn được giữ khi bước tải lại lịch sử tiếp theo thất bại.
+- **Vòng đời:** request dùng AbortSignal; chuyển trang/đăng xuất/hủy request cũ
+  không cho phản hồi muộn ghi đè dữ liệu hoặc đăng xuất phiên mới. Khi mở lại
+  trang, thao tác ghi chờ lịch sử được tải thành công.
+
+Mã nằm tại `src/features/registrations/`, nối route trong `src/app/App.tsx`.
+Không thêm package, thay lockfile, thay backend, schema hoặc môi trường chạy.
+Dùng proxy Gateway và cấu hình hiện có. Backend cần được triển khai các hợp đồng
+tra cứu academic/topic và cùng JWT_SIGNING_KEY như mô tả trong README service.
+
+Kiểm chứng: `npm run test` đạt **341 tests / 15 files**; `npm run lint`,
+`npm run typecheck` và `npm run build` đều đạt. Bao gồm 30 test API adapter,
+33 test luồng đăng ký và kiểm thử tích hợp route/session hiện có được cập nhật.
+Tests dùng jsdom/API mock; chưa kiểm chứng trình duyệt với tài khoản sinh viên và
+Gateway/backend thực. CSS có bố cục mobile và bảng cuộn ngang, nhưng chưa kiểm
+chứng trực quan trên thiết bị thực.
+
+
+### Quyền chỉnh trạng thái đề tài
+
+Admin có select trạng thái trong form tạo/sửa: Chờ duyệt (0), Đã duyệt (1),
+Mở đăng ký (2); mặc định tạo là 1. Giảng viên không có select này và frontend
+không gửi status: backend tạo ở 0 và chặn thao tác đổi trạng thái qua API.
+Luồng sinh viên chỉ nhận đề tài status 2 từ API available-topics. Đề tài cũ
+status 1 cần admin chủ động mở đăng ký; không tự chuyển dữ liệu hiện có.
+
+
+### Trạng thái và sinh viên đăng ký trong quản lý đề tài
+
+Bảng đề tài có cột Trạng thái: Chờ duyệt (0), Đã duyệt (1), Mở đăng ký (2);
+null/giá trị cũ hiển thị Chưa xác định. Popup Chi tiết của admin/giảng viên
+đọc thêm `/registrations/api/v1/topics/{topic_id}/registrations/` để hiển thị
+mã sinh viên, họ tên, học kỳ và ngày đăng ký. Chỉ liệt kê đăng ký hiện tại;
+đăng ký đã hủy không xuất hiện, trạng thái đăng ký cũ/null có nhãn cần kiểm tra.
+Sinh viên không có phần danh sách này và không gọi API quản lý.
+
+Danh sách tải độc lập với chi tiết đề tài, có trạng thái đang tải, rỗng,
+lỗi/thử lại và Xem thêm sinh viên cho các trang100 dòng. Nếu tra cứu họ tên lỗi,
+vẫn giữ dữ liệu đăng ký theo mã và thông báo chưa đủ họ tên. Đóng popup/đổi trang
+hủy request, không cập nhật từ response cũ. Không tải toàn bộ hồ sơ sinh viên,
+không gửi lại thao tác ghi, không lộ email/số điện thoại/điểm số.

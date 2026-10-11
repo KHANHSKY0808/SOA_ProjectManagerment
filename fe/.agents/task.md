@@ -1,36 +1,49 @@
-﻿# Task: Restore topic advisor and major display names in local development
+# Task: Consul discovery on a shared Docker Compose network
 
-Status: Awaiting explicit user approval.
+Status: Cancelled at the user’s explicit request. Do not implement or cut over this plan.
 
 ## Objective
-Restore topic advisor/major display-name enrichment by correcting the local topic-to-academic connection, following the reported missing names after topic UI changes.
+Remove the Windows/Docker DNS split that breaks topic-to-academic name lookup. Run Gateway, Consul and the four gateway-facing Django services on a shared Compose network, with discovery enabled and stable service DNS names.
 
-## Read-only findings
-- TopicTable still renders avisor_name and major_name. No name columns were removed.
-- The inspected topic retains major_id 1186 and advisor_id lecture in its owned Topics record.
-- topic-service local .env enables ACADEMIC_DISCOVERY_ENABLED=true. Its configured ACADEMIC_BASE_URL=http://127.0.0.1:8002 is ignored in discovery mode.
-- Consul resolves academic-service to http://host.docker.internal:8002; the health request from this Windows environment timed out.
-- http://127.0.0.1:8002/health/ succeeds. Academic/auth local internal lookup credentials and JWT settings in their .env files are configured consistently (values not exposed).
-- Optional enrichment catches dependency failures and returns null names, which the UI displays as an em dash.
+## Findings
+- Current Gateway and Consul run in Docker; auth, academic and topic run on Windows loopback.
+- The Docker-managed Windows hosts entry for host.docker.internal points to an old LAN IP. Container DNS differs, so a passing Consul check does not imply reachability from the Windows topic process.
+- Only api-gateway currently has a Dockerfile/Compose file.
+- Auth/academic/topic already use database/DB_ProjectManagerment.db. Regist currently exposes health/admin only, has no domain models, and defaults to its own db.sqlite3. Log also has no domain models and is outside gateway/discovery; it is not required for this request path.
 
 ## Scope
-- Set only ACADEMIC_DISCOVERY_ENABLED=false in services/topic-service/.env, preserving existing local ACADEMIC_BASE_URL=http://127.0.0.1:8002 and all other settings/secrets.
-- Restart only the verified local topic-service runserver on port 8004 so its process reloads .env.
-- Verify effective local settings, academic reachability and read-only name enrichment; no real topic writes.
-- Reuse documented Windows local-development configuration; no source, API, database or ownership changes.
+- Add root Compose deployment for api-gateway, consul, auth-service, academic-service, regist-service and topic-service on one private bridge network.
+- Preserve ports 8000/8001/8002/8003/8004/8500 and gateway prefixes. Expose local host ports on loopback; Django binds 0.0.0.0 inside containers.
+- Services register their Compose DNS names with Consul using unique IDs. Gateway and service clients use http://consul:8500, with discovery enabled for topic/academic/auth identity/name lookup clients.
+- Add reusable Django container build/entrypoint and explicit secret-safe build exclusions. Use existing dependency pins; no host package installations or automatic migrations.
+- Mount the existing shared database directory at the same relative application path for auth/academic/topic. Preserve table ownership and managed=False mappings. No schema or production data mutations.
+- Give the current registration skeleton its own persistent storage path through a minimal environment-selectable database setting; do not implement registration business logic or silently repoint its storage to another owner's tables.
+- Frontend stays on Windows/Vite and continues calling Gateway :8000. Log service remains unchanged and outside the main request path.
+- Add isolated deployment/configuration tests, CI checks and run/rollback documentation. Keep the existing gateway-only workflow available.
+- Build and test before switching running services. After reviewable artifacts/checks are ready, present the exact cutover and rollback commands for final approval; then stop only verified old processes/containers and start the new stack.
 
 ## Constraints
-- Before approval, write only current fe/.agents/task.md and plan.md.
-- Never print credentials, signing keys, tokens or full environment files. Local .env remains untracked.
-- Preserve Gateway/Consul registration, academic/auth service processes, ports and routes.
-- Use static loopback only for this Windows local environment. Do not change discovery defaults in source or production configuration.
+- Before plan approval, write only fe/.agents/task.md and plan.md.
+- Do not edit Windows hosts, firewall, existing per-service local .env files, dependencies, migrations or database schema.
+- Secrets are read from existing local service env files / environment, excluded from image contexts and never printed or committed. Committed examples contain placeholders only.
+- Preserve completed topic CRUD/UI work and other existing edits.
+- Do not remove old containers or volumes, run compose down -v, or delete databases. Rollback must retain the previous deployment.
 
 ## Acceptance criteria
-- Restarted topic process uses discovery=false and the existing loopback academic base URL.
-- Name lookup reaches academic and returns real names for existing references where available; names remain nullable for genuinely absent identity data.
-- Shared database and source remain untouched; existing topic CRUD changes preserved.
+- Compose validates and all images build with existing requirements.
+- Health endpoints and Consul registrations use container DNS, without LAN IP or host.docker.internal for internal stack traffic.
+- Discovery remains enabled; topic-to-academic and academic-to-auth lookup transport resolves within the shared network.
+- Isolated tests verify actual name enrichment, JWT handling and healthy service selection. Real deployment verification uses health/registry and authorized read-only contracts; no live topic/user writes or fabricated live user JWTs.
+- Existing Django checks/tests, Gateway tests and relevant CI pass. If no authenticated live session is available, document the final browser/account verification gap precisely.
+- Cutover happens only after a concrete reviewed deployment is approved; failed cutover restores old services without touching stored data.
 
-## Risks
-- Restart briefly interrupts topic requests. Verify listener/process identity and startup options before stopping it.
-- Current running process can differ from .env; restart is required for reliable configuration reload.
-- Missing records or independent auth lookup failures can still yield null names; diagnose those read-only if necessary before declaring recovery.
+## Risks and limitations
+- Container builds need network/package availability and disk space. Do not change dependency versions implicitly if builds fail.
+- SQLite shared-file writes remain a project deployment exception and can contend across containers; Docker networking does not solve write contention.
+- Current fixed ports are occupied, so final cutover interrupts local requests briefly.
+- Per-process environment can override .env; Compose must explicitly set container transport options and shared secret consistency without exposing values.
+- Existing example files contain credential-like literals; replace literals with placeholders in touched examples, but do not rotate live credentials without a separately approved action.
+- Registration and logging domain features are not implemented by this networking task.
+
+## Cancellation
+The user cancelled the Docker Compose/network plan. No infrastructure implementation or runtime cutover was performed. Existing containers, running services, configuration and database remain unchanged by this plan. Earlier topic CRUD changes remain in place.

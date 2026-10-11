@@ -30,7 +30,9 @@ an authenticated session and support logout. Nested admin CRUD routes are
 `/admin/departments`, `/admin/majors`, `/admin/students`, and `/admin/lecturers`.
 Sidebar/shortcut links update the URL, active menu, title and breadcrumb; browser
 Back/Forward follows page history. Each role has `/profile` as a development placeholder. `/admin/topics` and `/lecture/topics` provide topic lists, details, creation, editing and confirmed deletion for roles 1 and 2.
-Registration menu routes remain development placeholders (see frontend README).
+Students use `/student` or `/student/registrations` to browse eligible topics,
+register, view their history and cancel with confirmation. Admin registration
+management remains a development placeholder (see frontend README).
 Unknown URLs display 404. Login returns to a known requested route allowed for
 the authenticated role; external or unauthorized return destinations are rejected.
 Only the access token is saved in tab-scoped sessionStorage; F5 restores a valid
@@ -178,7 +180,8 @@ From `api-gateway`, run `docker compose up -d --build` after the existing Consul
 container is available at port 8500. Verify service health in the Consul UI.
 See [gateway README](api-gateway/README.md) for settings, tests, failure behavior
 and Windows/Docker networking. Regist-service's health/registration does not
-imply registration business APIs are implemented. Database schemas are unchanged.
+verify registration business APIs or database readiness. Student registration APIs
+are implemented separately as documented below. Database schemas are unchanged.
 
 ## Topic CRUD
 
@@ -284,3 +287,82 @@ For Windows local identity development, academic may explicitly set
 AUTH_IDENTITY_DISCOVERY_ENABLED=false and AUTH_IDENTITY_BASE_URL=http://127.0.0.1:8001
 when Consul's host.docker.internal address is unreachable from Windows. Production
 defaults still use discovery; Gateway/Consul registration is not modified.
+
+## Student topic registration APIs
+
+`regist-service:8003` implements registration through Gateway, with locally validated
+student access JWTs (integer role 3). Identity comes only from JWT `user_id`.
+
+| Method | Gateway path | Behavior |
+| --- | --- | --- |
+| POST | `/registrations/api/v1/registrations/` | Register with `{"topic_id":"DT001","semester":"2026-1"}`; semester optional |
+| GET | `/registrations/api/v1/available-topics/` | Topic status 2 in the student's faculty; cursor-paginated |
+| GET | `/registrations/api/v1/registrations/` | Own registration history; optional `status=active` or `status=cancelled` |
+| DELETE | `/registrations/api/v1/registrations/{registration_id}/` | Cancel own registration, preserve history, allow later re-registration |
+
+A student may have at most one current registration across semesters. Eligibility
+uses faculty through each major, so different majors in the same faculty are allowed.
+Registration status 1 means current, 0 cancelled; other legacy statuses conservatively
+count as current. Same-topic/same-semester repeated creation returns the existing
+record when current eligibility still passes; other current registrations return 409.
+
+Academic-service provides self student/faculty context and batch major-to-faculty
+references; topic-service provides minimal paged open-topic/detail references.
+Regist-service resolves both through Consul, forwards JWTs over REST, and only maps
+and queries Registrations. Existing topic-service ownership/port/prefix are preserved.
+All three need the same `JWT_SIGNING_KEY`. See the [registration service contract](services/regist-service/README.md)
+for DTOs, cursor behavior, errors, client timeouts, development URLs and environment.
+
+No schema migration or new dependency is introduced. SQLite serializes the current
+registration check and insert across workers; contention returns 503. Eligibility
+is a point-in-time REST check, without a distributed transaction. The student frontend
+implements this workflow at `/student` and `/student/registrations`. Automated tests use disposable databases and mocked
+network calls; live Gateway/Consul integration has not been exercised.
+
+The student page shows current registration, open topics and registration history.
+Topic search covers loaded pages; explicit Load More follows the backend cursor,
+including filtered empty pages. Register accepts an optional semester. UI actions
+require a successfully loaded history and block another registration while a current
+one exists, including unknown legacy statuses. Registration/cancellation require
+confirmation and never retry automatically. Unknown write results require an explicit
+history check before another write is allowed; successful writes remain successful
+even when a subsequent refresh fails. Backend authorization and business rules remain
+authoritative. See [student frontend workflow](fe/README.md#đăng-ký-đề-tài-dành-cho-sinh-viên).
+
+If the student page receives Gateway `{"detail":"Service unavailable."}`, check
+whether `regist-service` has a passing Consul instance. Running Django on 8003
+alone does not register it: configure its ignored local `.env` with
+`CONSUL_AUTO_REGISTER=true` and the common JWT signing key, then restart that service.
+For Windows callers unable to reach Consul's advertised `host.docker.internal`
+academic/topic addresses, use explicit local-development loopback client settings;
+Gateway discovery remains enabled. See [registration troubleshooting](services/regist-service/README.md#troubleshooting-gateway-service-unavailable).
+
+
+### Trạng thái đề tài
+
+`0`: Chờ duyệt; `1`: Đã duyệt; `2`: Mở đăng ký. Giảng viên tạo đề tài luôn
+ở trạng thái 0 và không được gửi trường status khi tạo/sửa. Admin tạo mặc định
+ở trạng thái 1, được chọn 0/1/2 trong form thêm/sửa và qua API. PUT/PATCH không
+có status giữ nguyên trạng thái hiện tại. Chỉ đề tài status 2 mới mở cho đăng ký.
+Không tự đổi dữ liệu cũ; admin cần chuyển đề tài đã duyệt sang 2 để mở đăng ký.
+Trạng thái bản ghi đăng ký vẫn giữ nguyên (1 đang đăng ký, 0 đã hủy).
+
+
+Khi `available-topics` báo `dependency_unavailable`, kiểm tra cả tên service
+trong `/health/`, không chỉ mã HTTP 200. Cổng 8001 phải trả `auth-service`,
+8002 phải trả `academic-service`, 8003 trả `regist-service`, 8004 trả
+`topic-service`. Chạy `manage.py` từ đúng thư mục service; chạy auth-service
+với `runserver 8002` vẫn có health 200 nhưng API học vụ sẽ trả 404.
+Mỗi cổng chỉ chạy một service; không khởi động thêm bản trùng khi service đã chạy.
+
+
+### Danh sách sinh viên đăng ký theo đề tài
+
+Quản lý đề tài hiển thị trạng thái ngay trên bảng. Chi tiết đề tài cho admin
+và giảng viên có danh sách sinh viên đang đăng ký (mã, tên, học kỳ, ngày đăng ký),
+loại đăng ký đã hủy. API mới: `GET /registrations/api/v1/topics/{id}/registrations/`
+với cursor `after` và tối đa100 dòng/trang. Regist-service sở hữu dữ liệu đăng ký,
+tra cứu tên bằng `POST /academic/api/v1/student-display-names/`; academic-service
+chỉ truy vấn Students và gọi hợp đồng tên nội bộ của auth-service qua REST.
+Cả hai API mới yêu cầu JWT role1/2; không thay đổi API đăng ký của sinh viên.
+Tên không khả dụng không làm mất danh sách; giao diện báo dữ liệu tên chưa đầy đủ.

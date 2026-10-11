@@ -1,6 +1,7 @@
 import { apiClient } from '../../services/api-client'
 
 export interface Topic {
+  status: number | null
   topic_id: string
   name: string
   description: string | null
@@ -8,7 +9,15 @@ export interface Topic {
   // This spelling is part of the published topic-service response contract.
   avisor_name: string | null
 }
+export type TopicStatus = 0 | 1 | 2
+export const topicStatusLabels: Record<TopicStatus, string> = {
+  0: 'Chờ duyệt', 1: 'Đã duyệt', 2: 'Mở đăng ký',
+}
+export function topicStatusLabel(status: number | null) {
+  return status === 0 || status === 1 || status === 2 ? topicStatusLabels[status] : 'Chưa xác định'
+}
 export interface CreateTopic {
+  status?: TopicStatus
   topic_id: string
   name: string
   description: string
@@ -18,20 +27,20 @@ export interface CreateTopic {
 
 export interface TopicDetail extends Topic {
   file_url: string | null
-  status: number | null
   created_at: string | null
   updated_at: string | null
   updated_by: string | null
   major_id?: string
   advisor_id?: string | null
 }
-export type TopicUpdate = Partial<Pick<CreateTopic, 'name' | 'description' | 'major_id' | 'advisor_id'>>
+export type TopicUpdate = Partial<Pick<CreateTopic, 'name' | 'description' | 'major_id' | 'advisor_id' | 'status'>>
 
 const path = '/topics/api/v1/topics/'
 function topic(value: unknown): Topic {
   if (!value || typeof value !== 'object') throw new Error('Invalid topic response')
   const row = value as Record<string, unknown>
   if (typeof row.topic_id !== 'string' || !row.topic_id || typeof row.name !== 'string' ||
+      !(row.status === null || Number.isInteger(row.status)) ||
       !['description', 'major_name', 'avisor_name'].every(key => row[key] === null || typeof row[key] === 'string')) {
     throw new Error('Invalid topic response')
   }

@@ -1,0 +1,216 @@
+from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
+import threading
+from unittest.mock import patch
+
+from django.db import IntegrityError, OperationalError, connection, connections
+from django.test import TransactionTestCase
+from django.test.utils import CaptureQueriesContext
+from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.test import APIClient
+from rest_framework_simplejwt.tokens import AccessToken
+
+from . import clients, services
+from .models import Registration
+
+URL = "/api/v1/registrations/"
+
+
+class RegistrationAPITests(TransactionTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        with connection.schema_editor() as editor:
+            editor.create_model(Registration)
+
+    @classmethod
+    def tearDownClass(cls):
+        with connection.schema_editor() as editor:
+            editor.delete_model(Registration)
+        super().tearDownClass()
+
+    def setUp(self):
+        Registration.objects.all().delete()
+        self.client = APIClient()
+        self.authenticate()
+        self.context = self.mock(clients.academic_client, "context", {"student_id": "SV1", "department_id": "F1"})
+        self.departments = self.mock(clients.academic_client, "departments", {"M2": "F1"})
+        self.topic = self.mock(clients.topic_client, "topic", {"topic_id": "T1", "name": "SOA", "major_id": "M2", "status": 2})
+        self.page = self.mock(clients.topic_client, "page", {"results": [], "next_after": None})
+        self.mock(clients, "fetch_json", side_effect=AssertionError("Live network forbidden"))
+
+    def tearDown(self):
+        Registration.objects.all().delete()
+        super().tearDown()
+
+    def mock(self, obj, name, value=None, **kwargs):
+        patcher = patch.object(obj, name, return_value=value, **kwargs)
+        result = patcher.start()
+        self.addCleanup(patcher.stop)
+        return result
+
+    def authenticate(self, role=3, identity="SV1", expired=False):
+        token = AccessToken()
+        token["user_id"], token["role"] = identity, role
+        if expired:
+            token.set_exp(lifetime=timedelta(seconds=-1))
+        self.token = str(token)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    def create(self, **kwargs):
+        return self.client.post(URL, {"topic_id": "T1", **kwargs}, format="json")
+
+    def test_register_list_cancel_and_register_again(self):
+        result = self.create()
+        self.assertEqual(result.status_code, 201, result.data)
+        pk = result.data["registration_id"]
+        record = Registration.objects.get(pk=pk)
+        self.assertEqual((record.student_id, record.updated_by, record.status), ("SV1", "SV1", 1))
+        self.assertEqual(self.client.get(URL).data, [result.data])
+        self.assertEqual(self.create().status_code, 200)
+        self.assertEqual(self.create(semester="different").status_code, 409)
+        self.topic.return_value = {**self.topic.return_value, "topic_id": "T2"}
+        self.assertEqual(self.create(topic_id="T2").status_code, 409)
+        for _ in range(2):
+            self.assertEqual(self.client.delete(URL + pk + "/").status_code, 204)
+        self.assertEqual(len(self.client.get(URL + "?status=cancelled").data), 1)
+        self.assertEqual(self.client.get(URL + "?status=active").data, [])
+        self.assertEqual(self.create(topic_id="T2").status_code, 201)
+        self.assertEqual(Registration.objects.count(), 2)
+
+    def test_semester_and_repeated_cancel_preserve_history(self):
+        result = self.create(semester="2026-1")
+        self.assertEqual(result.data["semester"], "2026-1")
+        self.assertEqual(self.create(semester="2026-1").status_code, 200)
+        pk = result.data["registration_id"]
+        self.client.delete(URL + pk + "/")
+        obj = Registration.objects.get(pk=pk)
+        self.assertEqual(obj.created_at.isoformat().replace("+00:00", "Z"), result.data["created_at"])
+        updated = obj.updated_at
+        self.client.delete(URL + pk + "/")
+        obj.refresh_from_db()
+        self.assertEqual(obj.updated_at, updated)
+
+    def test_owner_filter_and_cancel(self):
+        Registration.objects.create(registration_id="other", student_id="SV2", topic_id="T1", status=1)
+        self.assertEqual(self.client.get(URL + "?student_id=SV2").data, [])
+        self.assertEqual(self.client.delete(URL + "other/").status_code, 404)
+        self.assertEqual(self.client.delete(URL + "missing/").status_code, 404)
+        self.assertEqual(Registration.objects.get().status, 1)
+
+    def test_same_faculty_different_major_and_open_topic_only(self):
+        # Context supplies faculty F1; topic major M2 is independently resolved.
+        self.assertEqual(self.create().status_code, 201)
+        Registration.objects.all().delete()
+        for status in (0, 1, None):
+            self.topic.return_value["status"] = status
+            response = self.create()
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.data["code"], "topic_closed")
+        self.topic.return_value["status"] = 2
+        for department in (None, "F2"):
+            self.departments.return_value = {"M2": department}
+            response = self.create()
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.data["code"], "faculty_mismatch")
+        self.assertFalse(Registration.objects.exists())
+
+    def test_available_topics_are_filtered_and_keep_cursor(self):
+        rows = [{"topic_id": f"T{i}", "name": "SOA", "major_id": f"M{i}", "status": 2} for i in range(3)]
+        self.page.return_value = {"results": rows, "next_after": "T2"}
+        self.departments.return_value = {"M0": "F1", "M1": "F2", "M2": None}
+        result = self.client.get("/api/v1/available-topics/?after=T0")
+        self.assertEqual(result.data, {"results": [rows[0]], "next_after": "T2"})
+        self.page.assert_called_once_with("T0", f"Bearer {self.token}", result["X-Request-ID"])
+        self.page.return_value = {"results": [], "next_after": None}
+        self.departments.reset_mock()
+        self.assertEqual(self.client.get("/api/v1/available-topics/").data["results"], [])
+        self.departments.assert_not_called()
+
+    def test_role_identity_token_and_input_denials(self):
+        for role in (1, 2, "3", True, None):
+            self.authenticate(role)
+            for method, path in (("get", URL), ("post", URL), ("delete", URL + "id/"), ("get", "/api/v1/available-topics/")):
+                self.assertEqual(getattr(self.client, method)(path).status_code, 403)
+        for identity in (None, "", 12):
+            self.authenticate(identity=identity)
+            self.assertEqual(self.create().status_code, 401)
+        self.authenticate(expired=True)
+        self.assertEqual(self.create().status_code, 401)
+        self.client.credentials(HTTP_AUTHORIZATION="Bearer invalid")
+        self.assertEqual(self.create().status_code, 401)
+        self.client.credentials()
+        self.assertEqual(self.create().status_code, 401)
+        self.authenticate()
+        for field in ("student_id", "status", "updated_by", "registration_id"):
+            self.assertEqual(self.create(**{field: "override"}).status_code, 400)
+        self.assertEqual(self.create(topic_id="").status_code, 400)
+        self.assertEqual(self.client.get(URL + "?status=unknown").status_code, 400)
+        self.assertEqual(self.client.get("/api/v1/available-topics/?after=" + "x" * 256).status_code, 400)
+        self.assertFalse(Registration.objects.exists())
+
+    def test_dependency_failures_never_write_and_cancellation_is_independent(self):
+        created = self.create()
+        pk = created.data["registration_id"]
+        self.context.side_effect = clients.DependencyUnavailable()
+        self.assertEqual(self.client.delete(URL + pk + "/").status_code, 204)
+        for error, status in ((clients.DependencyUnavailable(), 503), (PermissionDenied(), 403)):
+            self.context.side_effect = error
+            self.assertEqual(self.create().status_code, status)
+        self.context.side_effect = None
+        self.topic.side_effect = NotFound()
+        self.assertEqual(self.create().status_code, 404)
+        self.topic.side_effect = clients.DependencyUnavailable()
+        self.assertEqual(self.create().status_code, 503)
+        self.topic.side_effect = None
+        self.departments.side_effect = clients.DependencyUnavailable()
+        self.assertEqual(self.create().status_code, 503)
+        self.assertFalse(services.current_registrations("SV1").exists())
+
+    def test_legacy_statuses_and_duplicate_records_fail_closed(self):
+        for status in (None, 2, -1):
+            Registration.objects.all().delete()
+            Registration.objects.create(registration_id="legacy", student_id="SV1", topic_id="old", status=status)
+            self.assertEqual(self.create().status_code, 409)
+            self.assertEqual(len(self.client.get(URL + "?status=active").data), 1)
+        Registration.objects.create(registration_id="second", student_id="SV1", topic_id="T1", status=1)
+        self.assertEqual(self.create().status_code, 409)
+
+    def test_owned_queries_audit_and_storage_errors(self):
+        with CaptureQueriesContext(connection) as queries, self.assertLogs("RegistTopic.views", level="INFO") as logs:
+            result = self.client.post(URL, {"topic_id": "T1"}, format="json", HTTP_X_REQUEST_ID="registration-1")
+        self.assertEqual(result.status_code, 201)
+        self.assertEqual(result["X-Request-ID"], "registration-1")
+        self.assertNotIn(self.token, str(logs.output))
+        for query in queries:
+            for table in ("Users", "Students", "Topics", "Majors", "Faculties"):
+                self.assertNotIn('"' + table + '"', query["sql"])
+        with patch.object(services, "acquire_write_lock", side_effect=OperationalError("private SQL")):
+            result = self.create()
+            self.assertEqual(result.status_code, 503)
+            self.assertNotIn("private", str(result.data))
+        Registration.objects.all().delete()
+        with patch.object(Registration.objects, "create", side_effect=IntegrityError("private schema")):
+            self.assertEqual(self.create().status_code, 409)
+        self.assertFalse(Registration.objects.exists())
+
+    def test_concurrent_registration_has_at_most_one_current_record(self):
+        barrier = threading.Barrier(2)
+        def attempt(topic_id):
+            connections.close_all()
+            try:
+                barrier.wait(timeout=5)
+                obj, created = services.register("SV1", {"topic_id": topic_id}, "Bearer test", "race")
+                return 201 if created else 200
+            except services.RegistrationConflict:
+                return 409
+            except OperationalError:
+                return 503  # Shared-cache test SQLite may immediately reject lock contention.
+            finally:
+                connections.close_all()
+        self.topic.side_effect = lambda topic_id, *args: {"topic_id": topic_id, "major_id": "M2", "name": "SOA", "status": 2}
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(attempt, ["T1", "T2"]))
+        self.assertEqual(results.count(201), 1, results)
+        self.assertTrue(all(status in (201, 409, 503) for status in results))
+        self.assertEqual(services.current_registrations("SV1").count(), 1)

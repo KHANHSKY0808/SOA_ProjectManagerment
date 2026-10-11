@@ -9,8 +9,8 @@ import { TopicPage } from './TopicPage'
 const base = '/topics/api/v1/topics/'
 const guid = '68317f4b-7445-45bf-8cbb-0c3ba05c5a50'
 const rows = [
-  { topic_id: 'DT001', name: 'Quản lý đồ án', description: 'SOA', avisor_name: 'An Nguyễn', major_name: 'Phần mềm' },
-  { topic_id: 'DT002', name: 'Hệ thống thư viện', description: null, avisor_name: null, major_name: null },
+  { status: 1, topic_id: 'DT001', name: 'Quản lý đồ án', description: 'SOA', avisor_name: 'An Nguyễn', major_name: 'Phần mềm' },
+  { status: null, topic_id: 'DT002', name: 'Hệ thống thư viện', description: null, avisor_name: null, major_name: null },
 ]
 const lecturer = { lecturer_id: 'GV001', department_id: '1', user: { first_name: 'An', last_name: 'Nguyễn' } }
 const logout = vi.fn()
@@ -20,6 +20,7 @@ beforeEach(() => {
   vi.spyOn(crypto, 'randomUUID').mockReturnValue(guid)
   mock = new MockAdapter(apiClient, { onNoMatch: 'throwException' })
   mock.onGet(base).reply(200, rows)
+  mock.onGet('/registrations/api/v1/topics/DT001/registrations/').reply(200, { results: [], next_after: null, names_unavailable: false })
   mock.onGet('/academic/api/majors/').reply(200, [
     { major_id: '2', name: 'Phần mềm', department_id: '1' },
     { major_id: 'CNTT', name: 'Mã chữ', department_id: '1' },
@@ -47,11 +48,11 @@ describe('Topic list and creation', () => {
   it('shows four business columns, topic actions and nullable names', async () => {
     renderPage()
     const table = await screen.findByRole('table', { name: 'Danh sách đề tài' })
-    expect(within(table).getAllByRole('columnheader').map(cell => cell.textContent)).toEqual(['Mã đề tài', 'Tên đề tài', 'Giáo viên hướng dẫn', 'Tên ngành', 'Thao tác'])
+    expect(within(table).getAllByRole('columnheader').map(cell => cell.textContent)).toEqual(['Mã đề tài', 'Tên đề tài', 'Giáo viên hướng dẫn', 'Tên ngành', 'Trạng thái', 'Thao tác'])
     expect(within(table).getByText('An Nguyễn')).toBeVisible()
     expect(within(table).getByText('Phần mềm')).toBeVisible()
     expect(within(table).getAllByText('—')).toHaveLength(2)
-    expect(mock.history.get.map(request => request.url)).toEqual([base])
+    expect(mock.history.get.filter(request => !request.url?.startsWith('/registrations/')).map(request => request.url)).toEqual([base])
   })
   it('searches by code or name only when Search is submitted', async () => {
     renderPage(); await screen.findByRole('table')
@@ -84,7 +85,7 @@ describe('Topic list and creation', () => {
     expect(await screen.findByText('Đã tạo đề tài.')).toBeVisible()
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(await screen.findByText(guid)).toBeVisible()
-    expect(JSON.parse(mock.history.post[0].data)).toEqual({ topic_id: guid, name: 'Đề tài mới', description: 'Mô tả SOA', advisor_id: 'GV001', major_id: '2' })
+    expect(JSON.parse(mock.history.post[0].data)).toEqual({ topic_id: guid, name: 'Đề tài mới', description: 'Mô tả SOA', advisor_id: 'GV001', major_id: '2', ...(role === 1 ? { status: 1 } : {}) })
     expect(mock.history.post[0].headers?.Authorization).toBe('Bearer test-token')
     expect(crypto.randomUUID).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('button', { name: 'Tạo đề tài' })).toHaveFocus()
@@ -210,7 +211,7 @@ describe('Topic list and creation', () => {
     expect(screen.queryByRole('button', { name: 'Sửa DT001' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Xóa DT001' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Xem chi tiết DT001' })).toBeVisible()
-    expect(mock.history.get.map(request => request.url)).toEqual([base])
+    expect(mock.history.get.filter(request => !request.url?.startsWith('/registrations/')).map(request => request.url)).toEqual([base])
   })
   it('aborts pending reference requests when the popup closes', async () => {
     let complete!: (response: [number, unknown]) => void
@@ -301,7 +302,7 @@ describe('Topic detail, edit and delete', () => {
     expect(within(dialog).getByText(/Mô tả chi tiết/)).toBeVisible()
     expect(within(dialog).getByText('/files/topic.pdf')).toBeVisible()
     expect(within(dialog).getByText('2026-10-10T08:00:00Z')).toBeVisible()
-    expect(mock.history.get.map(request => request.url)).toEqual([base, base + 'DT001/'])
+    expect(mock.history.get.filter(request => !request.url?.startsWith('/registrations/')).map(request => request.url)).toEqual([base, base + 'DT001/'])
     fireEvent.keyDown(dialog, { key: 'Escape' })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(opener).toHaveFocus()
@@ -324,7 +325,7 @@ describe('Topic detail, edit and delete', () => {
     mock.onGet(base + 'DT001/').reply(() => new Promise<[number, unknown]>(resolve => { complete = resolve }))
     renderPage(2); await screen.findByRole('table')
     fireEvent.click(screen.getByRole('button', { name: 'Xem chi tiết DT001' }))
-    await waitFor(() => expect(mock.history.get).toHaveLength(2))
+    await waitFor(() => expect(mock.history.get.filter(request => !request.url?.startsWith('/registrations/'))).toHaveLength(2))
     fireEvent.click(screen.getByRole('button', { name: 'Đóng' }))
     expect(mock.history.get[1].signal?.aborted).toBe(true)
     await act(async () => complete([401, {}]))
@@ -596,5 +597,135 @@ describe('Topic detail, edit and delete', () => {
     expect(history()[0].signal?.aborted).toBe(true)
     await act(async () => complete([401, {}]))
     expect(logout).not.toHaveBeenCalled()
+  })
+})
+
+
+describe('Topic status permissions', () => {
+  it.each([0, 1, 2])('admin selects status %s when creating', async status => {
+    renderPage(1); const form = await openForm(); fillForm()
+    expect(screen.getByLabelText('Trạng thái')).toHaveValue('1')
+    fireEvent.change(screen.getByLabelText('Trạng thái'), { target: { value: String(status) } })
+    mock.onPost(base).reply(201, {})
+    fireEvent.submit(form)
+    await screen.findByText('Đã tạo đề tài.')
+    expect(JSON.parse(mock.history.post[0].data).status).toBe(status)
+  })
+  it.each([0, 1, 2])('admin patches only changed status %s', async status => {
+    mock.onGet(base + 'DT001/').reply(200, { ...detail, status: (status + 1) % 3 })
+    renderPage(1); await screen.findByRole('table')
+    fireEvent.click(screen.getByRole('button', { name: 'Sửa DT001' }))
+    const form = await screen.findByRole('form', { name: 'Sửa đề tài' })
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Lưu thay đổi' })).toBeEnabled())
+    fireEvent.change(screen.getByLabelText('Trạng thái'), { target: { value: String(status) } })
+    mock.onPatch(base + 'DT001/').reply(200, {})
+    fireEvent.submit(form)
+    await screen.findByText('Đã cập nhật đề tài.')
+    expect(JSON.parse(mock.history.patch[0].data)).toEqual({ status })
+  })
+  it('lecturer cannot edit status and does not send it', async () => {
+    const form = await openEdit(2)
+    expect(screen.queryByLabelText('Trạng thái')).not.toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Tên đề tài'), { target: { value: 'Revision' } })
+    mock.onPatch(base + 'DT001/').reply(200, {})
+    fireEvent.submit(form)
+    await screen.findByText('Đã cập nhật đề tài.')
+    expect(JSON.parse(mock.history.patch[0].data)).toEqual({ name: 'Revision' })
+  })
+  it('lecturer creation omits the status control', async () => {
+    renderPage(2); await openForm()
+    expect(screen.queryByLabelText('Trạng thái')).not.toBeInTheDocument()
+  })
+  it('reconciles a timed-out status edit without retrying the write', async () => {
+    const form = await openEdit(1)
+    fireEvent.change(screen.getByLabelText('Trạng thái'), { target: { value: '2' } })
+    mock.onPatch(base + 'DT001/').timeout()
+    fireEvent.submit(form)
+    const check = await screen.findByRole('button', { name: 'Kiểm tra kết quả' })
+    mock.onGet(base + 'DT001/').reply(200, { ...detail, status: 2 })
+    fireEvent.click(check)
+    await screen.findByText('Đã xác nhận dữ liệu cập nhật.')
+    expect(mock.history.patch).toHaveLength(1)
+  })
+  it.each([[0, 'Chờ duyệt'], [1, 'Đã duyệt'], [2, 'Mở đăng ký'], [null, 'Chưa xác định'], [9, 'Chưa xác định']])('displays status %s safely', async (status, label) => {
+    mock.onGet(base + 'DT001/').reply(200, { ...detail, status })
+    renderPage(); await screen.findByRole('table')
+    fireEvent.click(screen.getByRole('button', { name: 'Xem chi tiết DT001' }))
+    expect(await within(screen.getByRole('dialog')).findByText(label as string)).toBeVisible()
+  })
+})
+
+
+describe('Topic roster detail', () => {
+  const rosterUrl = '/registrations/api/v1/topics/DT001/registrations/'
+  const student = { registration_id: 'R001', student_id: 'S1', student_name: 'Nguyễn An', semester: '2026-1', status: 1, created_at: '2026-10-11T01:00:00Z' }
+  async function openRoster(role: Role = 1) {
+    mock.onGet(base + 'DT001/').reply(200, detail)
+    const view = renderPage(role); await screen.findByRole('table')
+    fireEvent.click(screen.getByRole('button', { name: 'Xem chi tiết DT001' }))
+    await within(screen.getByRole('dialog')).findByText(detail.name)
+    return view
+  }
+  it.each([1, 2] as const)('shows registered students for manager role %s', async role => {
+    mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
+    await openRoster(role)
+    const table = await screen.findByRole('table', { name: 'Danh sách sinh viên đăng ký' })
+    expect(within(table).getByText('S1')).toBeVisible()
+    expect(within(table).getByText('Nguyễn An')).toBeVisible()
+    expect(within(table).getByText('2026-1')).toBeVisible()
+    expect(mock.history.get.find(request => request.url === rosterUrl)?.headers?.Authorization).toBe('Bearer test-token')
+  })
+  it('does not request or show roster for student role', async () => {
+    await openRoster(3)
+    expect(screen.queryByRole('region', { name: 'Sinh viên đăng ký đề tài' })).not.toBeInTheDocument()
+    expect(mock.history.get.some(request => request.url?.startsWith('/registrations/'))).toBe(false)
+  })
+  it('shows empty and incomplete name states correctly', async () => {
+    await openRoster()
+    expect(await screen.findByText('Chưa có sinh viên đăng ký đề tài này.')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Đóng' }))
+    mock.onGet(rosterUrl).reply(200, { results: [{ ...student, student_name: null, status: null }], next_after: null, names_unavailable: true })
+    fireEvent.click(screen.getByRole('button', { name: 'Xem chi tiết DT001' }))
+    expect(await screen.findByText('Chưa có tên')).toBeVisible()
+    expect(screen.getByText(/Chưa tra cứu được đầy đủ/)).toBeVisible()
+    expect(screen.getByText(/Cần kiểm tra trạng thái đăng ký/)).toBeVisible()
+  })
+  it('keeps core topic detail on roster failure and retries read only', async () => {
+    mock.onGet(rosterUrl).reply(503, { detail: 'private payload' })
+    await openRoster()
+    expect(await screen.findByText(/Không thể tải danh sách sinh viên/)).toBeVisible()
+    expect(within(screen.getByRole('dialog')).getByText(detail.name)).toBeVisible()
+    expect(screen.queryByText('Chưa có sinh viên đăng ký đề tài này.')).not.toBeInTheDocument()
+    mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
+    fireEvent.click(screen.getByRole('button', { name: 'Tải lại danh sách sinh viên' }))
+    expect(await screen.findByText('Nguyễn An')).toBeVisible()
+    expect(mock.history.post).toHaveLength(0)
+  })
+  it('loads another page while keeping current rows', async () => {
+    const results = Array.from({ length: 100 }, (_, i) => ({ ...student, registration_id: `R${String(i).padStart(3, '0')}`, student_id: `S${i}` }))
+    mock.onGet(rosterUrl).reply(200, { results, next_after: 'R099', names_unavailable: false })
+    mock.onGet(rosterUrl + '?after=R099').reply(200, { results: [{ ...student, registration_id: 'R100', student_id: 'S100' }], next_after: null, names_unavailable: false })
+    await openRoster()
+    fireEvent.click(await screen.findByRole('button', { name: 'Xem thêm sinh viên' }))
+    expect(await screen.findByText('S100')).toBeVisible()
+    expect(screen.getByText('S0')).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Xem thêm sinh viên' })).not.toBeInTheDocument()
+  })
+  it('aborts closed roster reads and ignores late 401', async () => {
+    let complete!: (response: [number, unknown]) => void
+    mock.onGet(rosterUrl).reply(() => new Promise<[number, unknown]>(resolve => { complete = resolve }))
+    await openRoster()
+    await waitFor(() => expect(mock.history.get.some(request => request.url === rosterUrl)).toBe(true))
+    expect(screen.getByText('Đang tải sinh viên đăng ký…')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Đóng' }))
+    expect(mock.history.get.find(request => request.url === rosterUrl)?.signal?.aborted).toBe(true)
+    await act(async () => complete([401, {}]))
+    expect(logout).not.toHaveBeenCalled()
+  })
+  it.each([401, 403])('handles roster HTTP %s safely', async status => {
+    mock.onGet(rosterUrl).reply(status, {})
+    await openRoster()
+    if (status === 401) await waitFor(() => expect(logout).toHaveBeenCalledOnce())
+    else expect(await screen.findByText('Bạn không có quyền xem danh sách sinh viên.')).toBeVisible()
   })
 })
