@@ -1,6 +1,7 @@
 import { apiClient } from '../../services/api-client'
 
 export interface Topic {
+  status: number | null
   topic_id: string
   name: string
   description: string | null
@@ -26,7 +27,6 @@ export interface CreateTopic {
 
 export interface TopicDetail extends Topic {
   file_url: string | null
-  status: number | null
   created_at: string | null
   updated_at: string | null
   updated_by: string | null
@@ -40,6 +40,7 @@ function topic(value: unknown): Topic {
   if (!value || typeof value !== 'object') throw new Error('Invalid topic response')
   const row = value as Record<string, unknown>
   if (typeof row.topic_id !== 'string' || !row.topic_id || typeof row.name !== 'string' ||
+      !(row.status === null || Number.isInteger(row.status)) ||
       !['description', 'major_name', 'avisor_name'].every(key => row[key] === null || typeof row[key] === 'string')) {
     throw new Error('Invalid topic response')
   }

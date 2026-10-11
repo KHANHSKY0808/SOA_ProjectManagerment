@@ -390,3 +390,28 @@ role 403, storage unavailable 503. Callers must fail closed on missing faculty.
 Expected usage: one context request and one faculty batch per topic page (100).
 No additional endpoint throttle is installed; deployment rate limits belong at
 Gateway. Registration clients use a 3-second per-call timeout and no retries.
+
+
+## Student display names for topic management
+
+`POST /api/v1/student-display-names/` (Gateway `/academic`) is a read-only
+batch contract for integer JWT roles1/admin and2/lecturer. Body:
+`{"student_ids":["S001","S002"]}`. Up to100 IDs, each at most255 characters,
+64KiB request limit, deduplicated; only student_ids is accepted. The lookup uses
+only academic-owned Students to select existing student identities before
+calling the existing service-authenticated auth name contract. It never reads
+Users through the database and returns no profile/contact/grade fields.
+
+Example response:
+`{"student_names":{"S001":"Nguyễn An","S002":null},"names_unavailable":true}`.
+Unknown students or unavailable/empty names yield null and a true incomplete-name
+flag. Empty batches return an empty mapping and false. Auth lookup reuses
+IDENTITY_NAMES_CLIENT timeout (default2s), discovery, service token and circuit
+fallback; no retries or new configuration. The existing display-name throttle
+limits combined lookups to120/min per authenticated identity, per process cache.
+
+Missing/invalid JWT401; role3/other roles403; invalid body400; excessive rate429;
+academic storage unavailable503. Identity lookup failure returns200 with null
+names so management can still display registration IDs. Consumers must preserve
+rows and indicate incomplete names; they must not treat name lookup failure as
+an empty roster. Registration ownership and filtering remain in regist-service.

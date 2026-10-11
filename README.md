@@ -354,3 +354,15 @@ trong `/health/`, không chỉ mã HTTP 200. Cổng 8001 phải trả `auth-serv
 `topic-service`. Chạy `manage.py` từ đúng thư mục service; chạy auth-service
 với `runserver 8002` vẫn có health 200 nhưng API học vụ sẽ trả 404.
 Mỗi cổng chỉ chạy một service; không khởi động thêm bản trùng khi service đã chạy.
+
+
+### Danh sách sinh viên đăng ký theo đề tài
+
+Quản lý đề tài hiển thị trạng thái ngay trên bảng. Chi tiết đề tài cho admin
+và giảng viên có danh sách sinh viên đang đăng ký (mã, tên, học kỳ, ngày đăng ký),
+loại đăng ký đã hủy. API mới: `GET /registrations/api/v1/topics/{id}/registrations/`
+với cursor `after` và tối đa100 dòng/trang. Regist-service sở hữu dữ liệu đăng ký,
+tra cứu tên bằng `POST /academic/api/v1/student-display-names/`; academic-service
+chỉ truy vấn Students và gọi hợp đồng tên nội bộ của auth-service qua REST.
+Cả hai API mới yêu cầu JWT role1/2; không thay đổi API đăng ký của sinh viên.
+Tên không khả dụng không làm mất danh sách; giao diện báo dữ liệu tên chưa đầy đủ.

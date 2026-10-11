@@ -272,3 +272,33 @@ responds. Registration health alone does not check dependencies. Run only one
 regist-service process tree per port: duplicate Windows runserver instances can
 route requests to old code and send logs to another console. Stop only verified
 duplicates and keep one service instance per configured port.
+
+
+## Topic management roster
+
+`GET /api/v1/topics/{topic_id}/registrations/?after=R099` (Gateway prefix
+`/registrations`) requires a bearer JWT with integer role1/admin or role2/lecturer.
+The existing shared topic-management policy allows both roles to read any topic
+roster. Student role3 and other roles receive403; missing/invalid JWT401.
+Only registration-owned records are queried; no foreign table or ORM access.
+Cancelled status0 records are excluded. Nonzero and legacy null statuses remain
+current, consistent with existing registration policy. Order is registration_id
+ascending, up to100 rows/page; next_after is null on the final page. An unknown
+topic with no registrations returns an empty page (topic existence is handled
+by topic-service, not duplicated here). Unknown query fields or oversized cursor400;
+unsupported writes405; registration storage failure503 with safe error DTO.
+
+Example response:
+
+```json
+{"results":[{"registration_id":"R001","student_id":"S001","student_name":"Nguyễn An","semester":"2026-1","status":1,"created_at":"2026-10-11T03:00:00Z"}],"next_after":null,"names_unavailable":false}
+```
+
+Names are enriched through a bounded read-only POST to academic-service
+`/api/v1/student-display-names/` using the same bearer token and X-Request-ID.
+Existing ACADEMIC_CLIENT discovery and timeout configuration applies (default3s,
+maximum10s); no retries. Academic lookup is rate-limited120/min per identity
+(shared display-name lookup bucket). Name failure keeps the roster and IDs,
+returns null names and names_unavailable=true. This flag also covers missing
+student/name data. No email, phone, GPA, notes or credentials are exposed.
+No new environment variables or schema changes are required.

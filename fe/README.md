@@ -346,3 +346,19 @@ Mở đăng ký (2); mặc định tạo là 1. Giảng viên không có select 
 không gửi status: backend tạo ở 0 và chặn thao tác đổi trạng thái qua API.
 Luồng sinh viên chỉ nhận đề tài status 2 từ API available-topics. Đề tài cũ
 status 1 cần admin chủ động mở đăng ký; không tự chuyển dữ liệu hiện có.
+
+
+### Trạng thái và sinh viên đăng ký trong quản lý đề tài
+
+Bảng đề tài có cột Trạng thái: Chờ duyệt (0), Đã duyệt (1), Mở đăng ký (2);
+null/giá trị cũ hiển thị Chưa xác định. Popup Chi tiết của admin/giảng viên
+đọc thêm `/registrations/api/v1/topics/{topic_id}/registrations/` để hiển thị
+mã sinh viên, họ tên, học kỳ và ngày đăng ký. Chỉ liệt kê đăng ký hiện tại;
+đăng ký đã hủy không xuất hiện, trạng thái đăng ký cũ/null có nhãn cần kiểm tra.
+Sinh viên không có phần danh sách này và không gọi API quản lý.
+
+Danh sách tải độc lập với chi tiết đề tài, có trạng thái đang tải, rỗng,
+lỗi/thử lại và Xem thêm sinh viên cho các trang100 dòng. Nếu tra cứu họ tên lỗi,
+vẫn giữ dữ liệu đăng ký theo mã và thông báo chưa đủ họ tên. Đóng popup/đổi trang
+hủy request, không cập nhật từ response cũ. Không tải toàn bộ hồ sơ sinh viên,
+không gửi lại thao tác ghi, không lộ email/số điện thoại/điểm số.

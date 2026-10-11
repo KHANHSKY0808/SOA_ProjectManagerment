@@ -89,7 +89,8 @@ class ReferenceClient:
     def call(self, path, authorization, request_id, validate, data=None, missing=None):
         config = getattr(settings, self.setting)
         # Log operation names only: paths/queries can contain student-selected IDs.
-        operation = ("context" if path == "/api/v1/registration-context/" else
+        operation = ("student_names" if path == "/api/v1/student-display-names/" else
+                     "context" if path == "/api/v1/registration-context/" else
                      "departments" if path == "/api/v1/major-departments/" else
                      "topic_page" if path.startswith("/api/v1/registration-topics/?") else "topic_detail")
         correlation = request_id if re.fullmatch(r"[A-Za-z0-9._-]{1,128}", request_id) else "invalid"
@@ -128,6 +129,17 @@ class ReferenceClient:
 
 
 class AcademicClient(ReferenceClient):
+    def student_names(self, student_ids, authorization, request_id):
+        ids = list(dict.fromkeys(student_ids))
+        def validate(payload):
+            names = payload["student_names"]
+            if (not isinstance(names, dict) or set(names) != set(ids)
+                    or any(value is not None and not isinstance(value, str) for value in names.values())
+                    or type(payload.get("names_unavailable")) is not bool):
+                raise ValueError("Invalid student names DTO")
+        return self.call("/api/v1/student-display-names/", authorization, request_id,
+                         validate, {"student_ids": ids})
+
     def context(self, identity, authorization, request_id):
         def validate(payload):
             if not isinstance(payload, dict) or payload.get("student_id") != identity or not valid_id(payload.get("department_id")):

@@ -4,7 +4,7 @@ import { apiClient, setAccessToken } from '../../services/api-client'
 import { createTopic, deleteTopic, getTopic, getTopicDetail, listTopics, updateTopic } from './topic-api'
 
 const base = '/topics/api/v1/topics/'
-const row = { topic_id: 'guid-1', name: 'SOA', description: null, major_name: null, avisor_name: 'An' }
+const row = { status: null, topic_id: 'guid-1', name: 'SOA', description: null, major_name: null, avisor_name: 'An' }
 const detail = { ...row, major_id: '2', advisor_id: 'GV1', file_url: null, status: 0,
   created_at: null, updated_at: null, updated_by: null }
 let mock: MockAdapter
@@ -29,7 +29,7 @@ describe('Topic Gateway API', () => {
     mock.onGet(`${base}guid%201/`).reply(200, { ...row, topic_id: 'guid 1' })
     expect((await getTopic('guid 1', new AbortController().signal)).topic_id).toBe('guid 1')
   })
-  it.each([{}, [null], [{ ...row, major_name: 1 }], [{ ...row, topic_id: '' }]])('rejects malformed list responses %#', async (data) => {
+  it.each([{}, [null], [{ ...row, status: undefined }], [{ ...row, status: true }], [{ ...row, major_name: 1 }], [{ ...row, topic_id: '' }]])('rejects malformed list responses %#', async (data) => {
     mock.onGet(base).reply(200, data)
     await expect(listTopics(new AbortController().signal)).rejects.toThrow()
   })
@@ -48,7 +48,7 @@ describe('Topic Gateway API', () => {
     { ...detail, created_at: {} }, { ...detail, file_url: undefined },
   ])('rejects malformed detail metadata %#', async data => {
     mock.onGet(`${base}guid-1/`).reply(200, data)
-    await expect(getTopicDetail('guid-1', new AbortController().signal)).rejects.toThrow('Invalid topic detail')
+    await expect(getTopicDetail('guid-1', new AbortController().signal)).rejects.toThrow()
   })
   it('encodes mutation IDs, sends only the PATCH DTO and forwards JWT/signal', async () => {
     const signal = new AbortController().signal

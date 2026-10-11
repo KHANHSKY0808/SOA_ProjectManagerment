@@ -45,6 +45,19 @@ class ReferenceClientTests(SimpleTestCase):
         self.assertNotIn("unsafe", str(logs.output))
 
     @patch.object(clients, "fetch_json")
+    def test_student_names_contract_and_invalid_responses(self, fetch):
+        fetch.return_value = {"student_names": {"S1": "An"}, "names_unavailable": False}
+        self.assertEqual(self.academic.student_names(["S1", "S1"], "Bearer t", "id"), fetch.return_value)
+        fetch.assert_called_once_with("http://academic.test:8002/api/v1/student-display-names/",
+            {"Authorization": "Bearer t", "X-Request-ID": "id"}, 3, {"student_ids": ["S1"]})
+        for payload in ({}, {"student_names": {}, "names_unavailable": False},
+                        {"student_names": {"S1": 123}, "names_unavailable": False},
+                        {"student_names": {"S1": None}, "names_unavailable": "false"}):
+            fetch.return_value = payload
+            with self.assertRaises(clients.DependencyUnavailable):
+                clients.AcademicClient("academic-service", "ACADEMIC_CLIENT").student_names(["S1"], "Bearer t", "id")
+
+    @patch.object(clients, "fetch_json")
     def test_static_contracts_and_deduplicated_batches(self, fetch):
         fetch.return_value = {"student_id": "SV1", "department_id": "F1"}
         self.academic.context("SV1", "Bearer test", "request-1")
