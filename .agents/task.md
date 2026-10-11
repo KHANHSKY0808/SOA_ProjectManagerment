@@ -1,67 +1,51 @@
-﻿# Task: Fix student registration service-unavailable error
+# Task: Diagnose student registration dependency_unavailable
 
-Status: Completed. Local runtime configuration repaired and routing verified.
+Status: Approved by user (ok); read-only diagnosis performed, awaiting failing authenticated request evidence.
 
 ## Objective
-Restore the failing API flow reported as topic detail with detail "Service
-unavailable." at http://localhost:5173/student/registrations.
+Resolve the reported Vietnamese lookup-unavailable message in student registration after topic status changes.
 
-## Read-only findings
-- StudentRegistrationPage requests /registrations/api/v1/registrations/ and
-  /registrations/api/v1/available-topics/. It does not call topic detail directly.
-- The exact string "Service unavailable." exists in Gateway Nginx config/rendering
-  for no healthy upstream and for translated upstream 502/504 failures.
-- topic-service storage/dependency errors and regist-service dependency errors have
-  different messages. The reported string points toward Gateway; the exact failed
-  Network request still needs verification.
-- Local listeners exist on 8000, 8500 and 8001-8004. Django ports 8001-8004 are
-  listening on 127.0.0.1, which alone does not establish container reachability.
-- No live HTTP/Consul/Docker inspection or state change has been performed yet.
+## Evidence and scope
+- Frontend maps dependency_unavailable to the exact reported message.
+- Registration context, topic lookup and major/faculty lookup can all produce this code on transport, upstream auth/status or DTO failures.
+- Ports 8001-8004, 8000 and 8500 have listeners. Registration development config points to academic 127.0.0.1:8002 and topic 127.0.0.1:8004 with discovery disabled explicitly.
+- Current topic and registration processes use autoreload; stale code is not established as the cause.
+- Diagnose bounded read-only local HTTP/REST calls, safe configuration and relevant logs. Repair only the identified client/contract/config defect.
 
-## Scope and constraints
-- Diagnose local Gateway, Consul and registration/topic/academic transport with
-  read-only bounded requests, safe logs/config inspection and process identity.
-- Fix only the confirmed route/discovery/reachability or reference-client cause.
-  Preserve ports, names, prefixes, service boundaries, JWT policy and database.
-- If needed, adjust only relevant non-secret local transport settings and restart
-  only the verified affected Django process/instance. Do not print .env secrets,
-  process command-line secrets, tokens or user profile data.
-- Do not restart/recreate containers, change Windows hosts/firewall, implement
-  the cancelled Compose migration, install dependencies, change schemas/migrations,
-  touch unrelated fe/.agents edits, or create live registration/topic records.
-- Any Gateway infrastructure change, broader deployment/network migration or other
-  material scope expansion requires a revised plan and renewed approval.
-- Add regression tests for code changes; commit meaningful repair milestones per
-  the user's existing preference. Local .env values are never committed.
+## Constraints
+- Before approval only root .agents/task.md and plan.md may be changed; no HTTP calls yet.
+- Preserve status meanings 0 pending, 1 approved, 2 open; preserve registration record status semantics.
+- No production domain writes, fabricated JWTs, credentials disclosure, database/schema/migrations, installs, container or infrastructure changes.
+- Existing database file and fe/.agents modifications are unrelated current workspace changes and must be preserved.
+- A targeted service restart is permitted only after identity/port/startup command verification and only if evidence requires it.
 
 ## Acceptance criteria
-- Identify the exact failing request and distinguish no upstream, unreachable
-  service, service exception and downstream validation failure with evidence.
-- Gateway reaches a healthy regist-service; topic/academic references are reachable
-  through configured discovery/development transport without bypassing auth.
-- Existing student registration list/open-topic flow returns correct results with
-  an available legitimate student session, or report the precise authenticated
-  verification gap. Do not forge real-user tokens.
-- No live mutation or schema change. Relevant tests/checks pass for changed code.
-- Document the cause, repair, safe verification and rollback; preserve unrelated work.
+- Identify failing dependency and concrete cause from actual response/transport evidence; do not mask 503 with an empty list or bypass validation/authentication.
+- Repair the confirmed cause with automated regression tests for source changes.
+- Affected Django check/test passes; frontend tests/typecheck/lint/build if frontend changes.
+- Verify read-only local routing and dependency behavior; authenticated verification requires a legitimate available session, otherwise report that gap.
 
 ## Assumptions and risks
-- Source-only search cannot distinguish missing registry instances from live
-  connection/timeouts. A generic frontend error is not evidence of a bad DTO.
-- Loopback-only listeners may be unreachable from Docker; Consul address/health
-  and current container routing must be checked rather than assumed.
-- Restarting an affected Django development service can briefly interrupt requests;
-  verify its executable, directory and port ownership before any targeted restart.
-- Live JWT/session may be unavailable. A protected endpoint returning 401 proves
-  basic routing, not student eligibility or an end-to-end successful detail read.
+- User confirms failure occurs when opening the student available-topics list.
+- Missing legitimate session may limit reproducing protected lookups. Do not print bearer tokens or personal data in logs/results.
+- Current environment and database can change independently while diagnosing. Avoid broad resets or replacing user work.
 
-## Outcome
 
-Cause confirmed: absent regist .env left Consul auto-registration disabled and
-Gateway with no registration upstream. Created local ignored configuration with
-shared JWT and explicit Windows development client transport, restarted only
-regist-service, and verified its healthy discovery/routing. Direct/Proxy health
-and protected-route responses now behave correctly; all 29 tests and Django check
-passed. Authenticated browser verification remains unavailable; no production
-record or database schema was changed. Only documentation/planning files are
-committed; the real .env stays ignored.
+## Read-only diagnosis findings
+- Direct health for academic/topic/regist and Gateway registration health returns 200.
+- Academic registration-context, topic registration-topics and regist available-topics respond 401 without credentials as expected; this proves reachability, not authenticated success.
+- JWT_SIGNING_KEY values in the four local .env files are present and equal (values never displayed). Active process environment overrides are not verified.
+- Configured database paths resolve to the shared database with expected tables. Topic status counts show one open (2) and one legacy null record; no data was changed.
+- Existing processes use runserver autoreload. No restart or configuration change performed without evidence of a cause.
+- Browser inventory returned no connected apps or browsers, so there is no available legitimate authenticated session for reproducing protected read requests.
+- Requested failing Network request name/status/response from the user, excluding credentials. Exact failed dependency and cause remain unconfirmed; no speculative repair performed.
+
+
+## Follow-up evidence and diagnostic instrumentation
+- User supplied available-topics response code dependency_unavailable and generic reference-services detail. Exact dependency remains unknown.
+- Added safe warning logs in RegistTopic/clients.py identifying service, operation, failure stage, exception type, upstream HTTP status and sanitized request ID. No paths, payloads, credentials or exception text logged.
+- Added automated tests for HTTP/timeout/DTO/circuit diagnostic logs and absence of credentials, personal IDs and log injection.
+- manage.py check passed; all 30 regist-service tests passed. README documents diagnostics.
+- Need user to refresh available-topics and provide the new Reference lookup failed console line because no connected authenticated browser session or access to existing service console is available. No cause or completed repair claimed.
+
+Targeted restart complete: launcher 19904, listener 23820 on 127.0.0.1:8003, Gateway registration health 200. Diagnostic logs at TEMP/soa-regist-diagnostic-22bebb07c7e8406dace5a9c225f2806b.{out,err}.log. Waiting for legitimate user refresh; no authenticated request or confirmed cause yet.

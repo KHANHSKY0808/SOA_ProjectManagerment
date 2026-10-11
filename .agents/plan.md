@@ -1,85 +1,37 @@
-﻿# Plan: Diagnose and repair student registration 503
+# Plan: Repair student registration lookup failure
 
-Status: Completed after approval; local configuration repair verified.
+Status: Approved by user (ok); diagnosis in progress.
 
-1. Read-only local diagnosis after approval: identify failed registration API using
-   available browser/session or bounded unauthenticated requests; compare Gateway
-   versus direct service responses. Read relevant Consul health/service entries,
-   safe Gateway connectivity/discovery logs and effective non-secret transport
-   settings. Inspect only process identity/listeners and relevant paths, no secrets.
-2. Trace available-topics and registration validation through regist-service's
-   academic/topic clients. Verify healthy service addresses from each caller's
-   network context. Use current public health and authorized read-only contracts;
-   never issue registration/cancellation/topic writes for diagnosis.
-3. Choose the smallest evidence-backed repair within approved scope. Expected
-   possible files: relevant service config/settings.py or config/consul.py and tests;
-   RegistTopic/clients.py and test_clients.py if a client defect is confirmed;
-   local untracked transport-only .env values if configuration is the cause.
-   No speculative frontend fallback, static hidden production dependency or JWT
-   bypass. If only runtime configuration is wrong, do not invent source changes.
-4. For a required Django restart, record the verified existing process/instance,
-   original bind/transport values and rollback command first. Change/restart only
-   the affected service, preserve other listeners/containers and existing data.
-   Re-registration may use the existing affected service's register_consul command
-   when needed. No container/infrastructure mutation is included in this plan.
-5. Add regression tests for confirmed source changes. Run targeted tests followed
-   by affected manage.py check/test; frontend lint/test/typecheck/build only if
-   frontend code actually changes. No dependency installation or migrations.
-6. Verify local health, Consul healthy instance and Gateway reachability again.
-   Verify read-only student data with a legitimate session if available; otherwise
-   report the remaining session-specific gap. No fabricated production JWTs.
-7. Update only relevant README run/troubleshooting guidance if behavior/settings
-   change. Expected docs: root README, regist/topic/academic README as affected,
-   plus these root planning files. Commit important source/doc milestones without
-   unrelated frontend planning files, secrets, logs or databases.
+1. After approval, compare bounded local health and unauthenticated read endpoint responses through Gateway/direct services, inspect safe active configuration and relevant existing logs. Use legitimate connected session only if available; never fabricate credentials or create/cancel registrations to diagnose.
+2. Trace failing student action through academic registration-context, topic registration-topics and academic major-departments contracts. Check transport, JWT configuration equality without displaying secrets, status 2 eligibility and DTO validation. Read Consul state only when relevant to actual active routing.
+3. Apply the smallest confirmed fix. Expected possible files: services/regist-service/RegistTopic/{clients,services,test_clients,test_api}.py, services/topic-service/topic_manager/{registration_lookup,test_registration_lookup}.py; academic registration context/major-department handlers and their tests if confirmed defective; affected service config/settings.py and config tests if needed. Local ignored .env transport values may be corrected without exposing or committing secrets.
+4. If runtime reload is necessary, verify process ID, executable, working directory and command, record prior startup/config for rollback, then restart only the affected Django service in a hidden window. Keep ports, service names and Gateway prefixes unchanged. No container restart or infrastructure changes.
+5. Add regression tests for source fixes. Run smallest relevant tests then affected manage.py check/test. Frontend changes limited to confirmed registration DTO/error-handling defects with tests and existing npm checks; do not hide upstream failures.
+6. Update root/affected service/frontend READMEs only when behavior/config/run guidance changes. Record actual cause, changed files, verification and remaining session limits in task/plan and delivery.
 
 ## Rollback
-Restore only changed non-secret transport values and the affected service's prior
-verified startup command/registration. Revert task-specific code/docs commits if
-needed. Do not delete database files, containers, volumes or legacy registrations.
-If the necessary fix falls outside scope, document findings and request approval
-for an updated concrete plan before applying it.
+Revert only new follow-up edits, preserving previously approved status implementation and unrelated workspace modifications. Restore only altered local config values and the affected service's verified prior startup command. No database or domain record changes are included. If diagnosis requires schema, infrastructure, secrets rotation or broader changes, request a revised approval first.
 
-## Confirmed diagnosis and targeted restart record
-- Gateway /registrations/health/ and both student GET APIs return 503; direct
-  regist health returns 200 and protected GET returns 401 as expected without JWT.
-- Consul has no regist-service instances; active Gateway configuration explicitly
-  returns 503 for /registrations/. Docker-to-host regist health is reachable (200).
-- services/regist-service/.env is absent. All three other service files have the
-  same configured JWT_SIGNING_KEY (only equality checked, never printed).
-- Consul advertises host.docker.internal for academic/topic, but that hostname's
-  health URLs are unreachable from the Windows caller. For this Windows-local
-  development process, configure explicit ACADEMIC/TOPIC_DISCOVERY_ENABLED=false
-  and loopback BASE_URL values; Gateway still uses Consul discovery normally.
-- Add the ignored local regist .env with common JWT key, registry auto-registration
-  enabled, existing regist-service-8003 identity and unchanged host/health settings.
-- Verified original listener PID 50408, Django autoreloader parent PID 35624,
-  root venv Python launcher; both are manage.py runserver 8003 processes. Only
-  those verified processes may be stopped. Replacement uses root venv Python,
-  working directory services/regist-service, manage.py runserver 8003 --noreload,
-  hidden window, temporary stdout/stderr files outside the repository.
-- Rollback: stop only replacement PID after identity verification, restore the
-  prior absence of local .env (securely remove only this created file), and run
-  original root venv Python with manage.py runserver 8003 in that directory.
-  Deregister only this instance if reverting the registration. No other process,
-  container, host/firewall setting or database is changed.
 
-## Repair verification
+## Read-only diagnosis findings
+- Direct health for academic/topic/regist and Gateway registration health returns 200.
+- Academic registration-context, topic registration-topics and regist available-topics respond 401 without credentials as expected; this proves reachability, not authenticated success.
+- JWT_SIGNING_KEY values in the four local .env files are present and equal (values never displayed). Active process environment overrides are not verified.
+- Configured database paths resolve to the shared database with expected tables. Topic status counts show one open (2) and one legacy null record; no data was changed.
+- Existing processes use runserver autoreload. No restart or configuration change performed without evidence of a cause.
+- Browser inventory returned no connected apps or browsers, so there is no available legitimate authenticated session for reproducing protected read requests.
+- Requested failing Network request name/status/response from the user, excluding credentials. Exact failed dependency and cause remain unconfirmed; no speculative repair performed.
 
-- Created only ignored services/regist-service/.env, using the existing common
-  JWT key (never printed/committed), registry auto-registration and explicit
-  Windows-local academic/topic client URLs.
-- Restarted only verified old registration launcher/listener. Replacement launcher
-  PID 25972 and Python listener PID 30484; other services/containers untouched.
-- Consul passing regist-service-8003 now exists with passing HTTP/agent checks.
-- Gateway registration health: 200. Gateway registration history/open-topic and
-  Vite-proxied open-topic requests without credentials: 401, no longer Gateway 503.
-- Academic registration context and topic registration lookup via configured
-  loopback URLs: 401 without credentials, confirming reachable protected routes.
-- Root-venv manage.py check passed; manage.py test passed all 29 regist tests.
-- No source code, frontend, dependency, infrastructure or database change was
-  needed. Updated README troubleshooting; no new implementation regression tests
-  are required for an ignored local runtime configuration repair.
-- No browser connection was available; actual authenticated student read and
-  downstream faculty filtering remain unverified. No forged JWT or live domain
-  write was used to fill this gap. User can refresh the existing student page.
+
+## Follow-up evidence and diagnostic instrumentation
+- User supplied available-topics response code dependency_unavailable and generic reference-services detail. Exact dependency remains unknown.
+- Added safe warning logs in RegistTopic/clients.py identifying service, operation, failure stage, exception type, upstream HTTP status and sanitized request ID. No paths, payloads, credentials or exception text logged.
+- Added automated tests for HTTP/timeout/DTO/circuit diagnostic logs and absence of credentials, personal IDs and log injection.
+- manage.py check passed; all 30 regist-service tests passed. README documents diagnostics.
+- Need user to refresh available-topics and provide the new Reference lookup failed console line because no connected authenticated browser session or access to existing service console is available. No cause or completed repair claimed.
+
+## Targeted registration logging restart
+- Verified current 8003 listener PID 25244; parent chain 23160 -> 4784 -> 46164 -> VS Code terminal PowerShell 14936. All four Python processes run repository root venv manage.py runserver 8003.
+- Stop only verified Python chain PIDs 46164,4784,23160,25244 after rechecking identities. Leave PowerShell terminal and other service processes untouched.
+- Replacement: root venv Python, working directory services/regist-service, manage.py runserver 127.0.0.1:8003 --noreload, hidden window; stdout/stderr files under OS TEMP, no source config change.
+- Rollback: stop only replacement launcher/listener after identity verification; run root venv manage.py runserver 8003 from services/regist-service in original terminal. Original config unchanged. Historical dormant processes without this listener are not touched.

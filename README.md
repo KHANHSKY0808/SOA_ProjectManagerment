@@ -296,7 +296,7 @@ student access JWTs (integer role 3). Identity comes only from JWT `user_id`.
 | Method | Gateway path | Behavior |
 | --- | --- | --- |
 | POST | `/registrations/api/v1/registrations/` | Register with `{"topic_id":"DT001","semester":"2026-1"}`; semester optional |
-| GET | `/registrations/api/v1/available-topics/` | Topic status 1 in the student's faculty; cursor-paginated |
+| GET | `/registrations/api/v1/available-topics/` | Topic status 2 in the student's faculty; cursor-paginated |
 | GET | `/registrations/api/v1/registrations/` | Own registration history; optional `status=active` or `status=cancelled` |
 | DELETE | `/registrations/api/v1/registrations/{registration_id}/` | Cancel own registration, preserve history, allow later re-registration |
 
@@ -336,3 +336,13 @@ alone does not register it: configure its ignored local `.env` with
 For Windows callers unable to reach Consul's advertised `host.docker.internal`
 academic/topic addresses, use explicit local-development loopback client settings;
 Gateway discovery remains enabled. See [registration troubleshooting](services/regist-service/README.md#troubleshooting-gateway-service-unavailable).
+
+
+### Trạng thái đề tài
+
+`0`: Chờ duyệt; `1`: Đã duyệt; `2`: Mở đăng ký. Giảng viên tạo đề tài luôn
+ở trạng thái 0 và không được gửi trường status khi tạo/sửa. Admin tạo mặc định
+ở trạng thái 1, được chọn 0/1/2 trong form thêm/sửa và qua API. PUT/PATCH không
+có status giữ nguyên trạng thái hiện tại. Chỉ đề tài status 2 mới mở cho đăng ký.
+Không tự đổi dữ liệu cũ; admin cần chuyển đề tài đã duyệt sang 2 để mở đăng ký.
+Trạng thái bản ghi đăng ký vẫn giữ nguyên (1 đang đăng ký, 0 đã hủy).

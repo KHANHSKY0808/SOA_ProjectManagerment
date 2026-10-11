@@ -5,7 +5,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied
 from . import clients
 
 CONFIG = {"DISCOVERY_ENABLED": False, "BASE_URL": "http://academic.test:8002", "TIMEOUT_SECONDS": 3}
-TOPIC = {"topic_id": "T1", "major_id": "M1", "name": "SOA", "status": 1}
+TOPIC = {"topic_id": "T1", "major_id": "M1", "name": "SOA", "status": 2}
 
 
 @override_settings(ACADEMIC_CLIENT=CONFIG, TOPIC_CLIENT={**CONFIG, "BASE_URL": "http://topic.test:8004"})
@@ -13,6 +13,36 @@ class ReferenceClientTests(SimpleTestCase):
     def setUp(self):
         self.academic = clients.AcademicClient("academic-service", "ACADEMIC_CLIENT")
         self.topic = clients.TopicClient("topic-service", "TOPIC_CLIENT")
+
+    @patch.object(clients, "fetch_json")
+    def test_failure_logs_identify_stage_without_credentials_or_private_values(self, fetch):
+        for error in (TimeoutError("secret-token private-student"),
+                      HTTPError("http://private-host", 401, "secret-token", {}, None)):
+            fetch.side_effect = error
+            client = clients.TopicClient("topic-service", "TOPIC_CLIENT")
+            with self.assertLogs("RegistTopic.clients", level="WARNING") as logs:
+                with self.assertRaises(clients.DependencyUnavailable):
+                    client.topic("private-student", "Bearer secret-token", "lookup-123")
+            output = str(logs.output)
+            for value in ("service=topic-service", "operation=topic_detail", "stage=request", "request_id=lookup-123"):
+                self.assertIn(value, output)
+            self.assertIn("upstream_status=401" if isinstance(error, HTTPError) else "error=TimeoutError", output)
+            for value in ("secret-token", "private-student", "private-host"):
+                self.assertNotIn(value, output)
+        fetch.side_effect = None
+        fetch.return_value = {"private-student": "secret-token"}
+        with self.assertLogs("RegistTopic.clients", level="WARNING") as logs:
+            with self.assertRaises(clients.DependencyUnavailable):
+                self.academic.context("private-student", "Bearer secret-token", "lookup-123")
+        self.assertIn("operation=context stage=validation", str(logs.output))
+        self.assertNotIn("secret-token", str(logs.output))
+        self.assertNotIn("private-student", str(logs.output))
+        self.academic.open_until = float("inf")
+        with self.assertLogs("RegistTopic.clients", level="WARNING") as logs:
+            with self.assertRaises(clients.DependencyUnavailable):
+                self.academic.context("private-student", "Bearer secret-token", "unsafe\nvalue")
+        self.assertIn("stage=circuit request_id=invalid", str(logs.output))
+        self.assertNotIn("unsafe", str(logs.output))
 
     @patch.object(clients, "fetch_json")
     def test_static_contracts_and_deduplicated_batches(self, fetch):
@@ -82,6 +112,7 @@ class ReferenceClientTests(SimpleTestCase):
     def test_page_order_closed_status_and_cursor_validation(self, fetch):
         for payload in ({}, {"results": [TOPIC, TOPIC], "next_after": None},
                         {"results": [{**TOPIC, "status": 0}], "next_after": None},
+                        {"results": [{**TOPIC, "status": 1}], "next_after": None},
                         {"results": [], "next_after": "T1"}, {"results": [TOPIC], "next_after": "T1"}):
             fetch.return_value = payload
             with self.assertRaises(clients.DependencyUnavailable):

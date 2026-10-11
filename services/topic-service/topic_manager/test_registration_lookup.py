@@ -18,10 +18,10 @@ class RegistrationLookupTests(SimpleTestCase):
 
     @patch.object(Topic.objects, "filter")
     def test_open_topics_cursor_and_minimal_dto(self, topics):
-        rows = [Topic(topic_id=f"T{i:03}", name="SOA", major_id="M1", status=1) for i in range(101)]
+        rows = [Topic(topic_id=f"T{i:03}", name="SOA", major_id="M1", status=2) for i in range(101)]
         topics.return_value.order_by.return_value.__getitem__.return_value = rows
         result = self.client.get("/api/v1/registration-topics/?after=T000")
-        topics.assert_called_once_with(status=1, topic_id__gt="T000")
+        topics.assert_called_once_with(status=2, topic_id__gt="T000")
         self.assertEqual(len(result.data["results"]), 100)
         self.assertEqual(result.data["next_after"], "T099")
         self.assertEqual(set(result.data["results"][0]), {"topic_id", "name", "major_id", "status"})

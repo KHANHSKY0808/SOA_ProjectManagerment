@@ -35,7 +35,7 @@ class RegistrationAPITests(TransactionTestCase):
         self.authenticate()
         self.context = self.mock(clients.academic_client, "context", {"student_id": "SV1", "department_id": "F1"})
         self.departments = self.mock(clients.academic_client, "departments", {"M2": "F1"})
-        self.topic = self.mock(clients.topic_client, "topic", {"topic_id": "T1", "name": "SOA", "major_id": "M2", "status": 1})
+        self.topic = self.mock(clients.topic_client, "topic", {"topic_id": "T1", "name": "SOA", "major_id": "M2", "status": 2})
         self.page = self.mock(clients.topic_client, "page", {"results": [], "next_after": None})
         self.mock(clients, "fetch_json", side_effect=AssertionError("Live network forbidden"))
 
@@ -102,12 +102,12 @@ class RegistrationAPITests(TransactionTestCase):
         # Context supplies faculty F1; topic major M2 is independently resolved.
         self.assertEqual(self.create().status_code, 201)
         Registration.objects.all().delete()
-        for status in (0, 2, None):
+        for status in (0, 1, None):
             self.topic.return_value["status"] = status
             response = self.create()
             self.assertEqual(response.status_code, 400)
             self.assertEqual(response.data["code"], "topic_closed")
-        self.topic.return_value["status"] = 1
+        self.topic.return_value["status"] = 2
         for department in (None, "F2"):
             self.departments.return_value = {"M2": department}
             response = self.create()
@@ -116,7 +116,7 @@ class RegistrationAPITests(TransactionTestCase):
         self.assertFalse(Registration.objects.exists())
 
     def test_available_topics_are_filtered_and_keep_cursor(self):
-        rows = [{"topic_id": f"T{i}", "name": "SOA", "major_id": f"M{i}", "status": 1} for i in range(3)]
+        rows = [{"topic_id": f"T{i}", "name": "SOA", "major_id": f"M{i}", "status": 2} for i in range(3)]
         self.page.return_value = {"results": rows, "next_after": "T2"}
         self.departments.return_value = {"M0": "F1", "M1": "F2", "M2": None}
         result = self.client.get("/api/v1/available-topics/?after=T0")
@@ -208,7 +208,7 @@ class RegistrationAPITests(TransactionTestCase):
                 return 503  # Shared-cache test SQLite may immediately reject lock contention.
             finally:
                 connections.close_all()
-        self.topic.side_effect = lambda topic_id, *args: {"topic_id": topic_id, "major_id": "M2", "name": "SOA", "status": 1}
+        self.topic.side_effect = lambda topic_id, *args: {"topic_id": topic_id, "major_id": "M2", "name": "SOA", "status": 2}
         with ThreadPoolExecutor(max_workers=2) as pool:
             results = list(pool.map(attempt, ["T1", "T2"]))
         self.assertEqual(results.count(201), 1, results)

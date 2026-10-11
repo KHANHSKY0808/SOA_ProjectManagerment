@@ -44,7 +44,7 @@ class RegistrationTopicView(APIView):
             return Response(TopicReferenceDTO(obj).data)
         query = LookupQueryDTO(data=request.query_params)
         query.is_valid(raise_exception=True)
-        rows = list(Topic.objects.filter(status=1, topic_id__gt=query.validated_data["after"])
+        rows = list(Topic.objects.filter(status=2, topic_id__gt=query.validated_data["after"])
                     .order_by("topic_id")[:101])
         return Response({"results": TopicReferenceDTO(rows[:100], many=True).data,
                          "next_after": rows[99].pk if len(rows) > 100 else None})

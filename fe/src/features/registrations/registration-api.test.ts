@@ -6,7 +6,7 @@ import { cancelRegistration, isCurrent, listAvailableTopics, listRegistrations, 
 const base = '/registrations/api/v1/'
 const row = { registration_id: 'R1', topic_id: 'T1', semester: null, status: 1,
   created_at: '2026-10-11T03:00:00Z', updated_at: null }
-const topic = { topic_id: 'T1', major_id: 'M1', name: 'SOA', status: 1 }
+const topic = { topic_id: 'T1', major_id: 'M1', name: 'SOA', status: 2 }
 const signal = new AbortController().signal
 let mock: MockAdapter
 beforeEach(() => { mock = new MockAdapter(apiClient, { onNoMatch: 'throwException' }); setAccessToken('student-token') })
@@ -38,7 +38,7 @@ describe('Student registration Gateway contract', () => {
   })
   it.each([
     { results: [topic], next_after: 'T0' }, { results: [], next_after: '' },
-    { results: [{ ...topic, status: 0 }], next_after: null }, { results: [topic, topic], next_after: null },
+    { results: [{ ...topic, status: 0 }], next_after: null }, { results: [{ ...topic, status: 1 }], next_after: null }, { results: [topic, topic], next_after: null },
     { results: [{ ...topic, major_id: null }], next_after: null }, { results: [], next_after: 'T0' },
   ])('rejects malformed/non-progressing pages %#', async data => {
     mock.onGet(base + 'available-topics/?after=T0').reply(200, data)

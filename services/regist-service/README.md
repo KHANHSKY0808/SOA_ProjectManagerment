@@ -46,7 +46,7 @@ cancel. Another student's registration ID returns the same 404 as an unknown ID.
 ### Business rules and history
 
 - At most one current registration per student, across all semesters.
-- Topic `status` must be exactly integer 1.
+- Topic `status` must be exactly integer 2.
 - The student's faculty and topic's faculty must exist and match. Faculty is
   resolved from each record's major through academic-service; two different majors
   within the same faculty are allowed.
@@ -64,7 +64,7 @@ Available-topic response:
 
 ```json
 {
-  "results":[{"topic_id":"DT001","name":"SOA","major_id":"M1","status":1}],
+  "results":[{"topic_id":"DT001","name":"SOA","major_id":"M1","status":2}],
   "next_after":null
 }
 ```
@@ -243,3 +243,24 @@ This service currently has no token-authenticated internal contract; the setting
 does not introduce endpoints or change public authorization. User JWTs and Consul
 ACL credentials remain separate. Never commit a real token or send it to the
 frontend. See the root README for coordinated provisioning and rotation.
+
+
+### Topic eligibility status
+
+Only topic `status: 2` means open for registration. Status 0 is pending approval
+and status 1 is approved but closed to new registrations. Both the paginated
+topic-client contract and registration write validation enforce status 2.
+Historical registrations and their status meanings (1 current, 0 cancelled)
+remain unchanged. No existing topic data is automatically reclassified.
+
+
+### Diagnosing reference lookup failures
+
+For `dependency_unavailable` on available-topics, the regist-service console
+emits `Reference lookup failed` with service, operation, stage, exception class,
+upstream HTTP status (when applicable) and the response X-Request-ID. Operations
+are context, topic_page, departments or topic_detail; stages are discovery,
+request or validation. An open failure circuit emits `stage=circuit`.
+No bearer tokens, response payloads, URLs, IDs or exception messages are logged.
+Keep the public safe 503 response; use the matching request ID to locate the
+underlying failure. Health 200 alone does not establish a successful protected lookup.

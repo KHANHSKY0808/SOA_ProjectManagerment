@@ -9,8 +9,8 @@ const base = '/registrations/api/v1/'
 const records = base + 'registrations/'
 const available = base + 'available-topics/'
 const topics = [
-  { topic_id: 'T1', name: 'Quản lý đồ án', major_id: 'M1', status: 1 },
-  { topic_id: 'T2', name: 'Thư viện số', major_id: 'M2', status: 1 },
+  { topic_id: 'T1', name: 'Quản lý đồ án', major_id: 'M1', status: 2 },
+  { topic_id: 'T2', name: 'Thư viện số', major_id: 'M2', status: 2 },
 ]
 const record = { registration_id: 'R1', topic_id: 'T1', semester: null, status: 1,
   created_at: '2026-10-11T03:00:00Z', updated_at: '2026-10-11T03:00:00Z' }

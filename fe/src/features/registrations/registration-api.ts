@@ -8,7 +8,7 @@ export interface Registration {
   created_at: string | null
   updated_at: string | null
 }
-export interface AvailableTopic { topic_id: string; name: string; major_id: string; status: 1 }
+export interface AvailableTopic { topic_id: string; name: string; major_id: string; status: 2 }
 export interface TopicPage { results: AvailableTopic[]; next_after: string | null }
 export interface RegisterInput { topic_id: string; semester?: string }
 
@@ -51,11 +51,11 @@ export async function listAvailableTopics(after: string, signal: AbortSignal): P
   let previous = after
   const results: AvailableTopic[] = page.results.map(value => {
     const row = object(value)
-    if (!id(row.topic_id) || row.topic_id <= previous || typeof row.name !== 'string' || !id(row.major_id) || row.status !== 1) {
+    if (!id(row.topic_id) || row.topic_id <= previous || typeof row.name !== 'string' || !id(row.major_id) || row.status !== 2) {
       throw new Error('Invalid available topic')
     }
     previous = row.topic_id
-    return { topic_id: row.topic_id, name: row.name, major_id: row.major_id, status: 1 }
+    return { topic_id: row.topic_id, name: row.name, major_id: row.major_id, status: 2 }
   })
   const cursor = page.next_after as string | null
   // The backend cursor belongs to the source page before faculty filtering.

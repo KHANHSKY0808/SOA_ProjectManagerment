@@ -33,7 +33,7 @@ def register(identity, data, authorization, request_id):
     context = academic_client.context(identity, authorization, request_id)
     topic = topic_client.topic(data["topic_id"], authorization, request_id)
     departments = academic_client.departments([topic["major_id"]], authorization, request_id)
-    if topic["status"] != 1:
+    if topic["status"] != 2:
         raise ValidationError({"topic_id": "Topic is not open for registration."}, code="topic_closed")
     if not departments[topic["major_id"]] or departments[topic["major_id"]] != context["department_id"]:
         raise ValidationError({"topic_id": "Topic must belong to the student's faculty."}, code="faculty_mismatch")

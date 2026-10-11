@@ -1,6 +1,7 @@
 """Bounded REST clients with healthy-instance discovery and failure circuits."""
 import ipaddress
 import json
+import logging
 import re
 import threading
 import time
@@ -11,6 +12,9 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from django.conf import settings
 from rest_framework.exceptions import APIException, NotFound, PermissionDenied
+
+
+LOG = logging.getLogger(__name__)
 
 
 class DependencyUnavailable(APIException):
@@ -84,11 +88,20 @@ class ReferenceClient:
 
     def call(self, path, authorization, request_id, validate, data=None, missing=None):
         config = getattr(settings, self.setting)
+        # Log operation names only: paths/queries can contain student-selected IDs.
+        operation = ("context" if path == "/api/v1/registration-context/" else
+                     "departments" if path == "/api/v1/major-departments/" else
+                     "topic_page" if path.startswith("/api/v1/registration-topics/?") else "topic_detail")
+        correlation = request_id if re.fullmatch(r"[A-Za-z0-9._-]{1,128}", request_id) else "invalid"
         with self.lock:
             if time.monotonic() < self.open_until:
+                LOG.warning("Reference lookup unavailable service=%s operation=%s stage=circuit request_id=%s",
+                            self.service, operation, correlation)
                 raise DependencyUnavailable()
+        stage = "discovery"
         try:
             base = self.base_url(config)
+            stage = "request"
             try:
                 result = fetch_json(base + path, {"Authorization": authorization, "X-Request-ID": request_id},
                                     config["TIMEOUT_SECONDS"], data)
@@ -98,8 +111,12 @@ class ReferenceClient:
                         self.failures, self.open_until = 0, 0
                     raise missing[1] from None
                 raise
+            stage = "validation"
             validate(result)
-        except (OSError, HTTPException, ValueError, KeyError, TypeError, AttributeError):
+        except (OSError, HTTPException, ValueError, KeyError, TypeError, AttributeError) as exc:
+            LOG.warning("Reference lookup failed service=%s operation=%s stage=%s error=%s upstream_status=%s request_id=%s",
+                        self.service, operation, stage, type(exc).__name__,
+                        exc.code if isinstance(exc, HTTPError) else "none", correlation)
             with self.lock:
                 self.failures += 1
                 if self.failures >= 3:
@@ -155,7 +172,7 @@ class TopicClient(ReferenceClient):
             previous = after
             for row in rows:
                 validate_topic(row)
-                if row["status"] != 1 or row["topic_id"] <= previous:
+                if row["status"] != 2 or row["topic_id"] <= previous:
                     raise ValueError("Invalid topic order/status")
                 previous = row["topic_id"]
             if cursor is not None and (not rows or len(rows) != 100 or cursor != previous):

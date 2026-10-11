@@ -56,7 +56,7 @@ class TopicAPIView(GenericAPIView):
         dto = self.get_serializer(data=request.data, partial=partial)
         dto.is_valid(raise_exception=True)
         obj = services.save_topic(dto.validated_data, str(request.auth["user_id"]),
-                                  request.headers.get("Authorization", ""), pk, partial)
+                                  request.headers.get("Authorization", ""), pk, partial, role=request.auth["role"])
         return Response(topic_response(obj, request.headers.get("Authorization", "")),
                         status=201 if pk is None else 200)
 

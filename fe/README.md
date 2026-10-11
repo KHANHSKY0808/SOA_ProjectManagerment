@@ -273,8 +273,8 @@ Mã nằm trong `features/topics/`: `topic-api.ts`, `useTopics.ts`, `TopicPage.t
 
 ### Chi tiết, sửa và xóa đề tài
 
-- **Chi tiết** gọi `GET /topics/api/v1/topics/{id}/`, hiển thị tên, mô tả, ngành, giảng viên, tệp đính kèm (chuỗi, không tự tải), trạng thái và thông tin cập nhật. Trạng thái hiển thị đúng giá trị API vì chưa có bảng quy đổi nghiệp vụ. Lỗi tải có nút thử lại; đóng popup hủy request đọc đang chờ.
-- **Sửa** lấy dữ liệu mới từ endpoint chi tiết. Chỉ role 1/2 nhận thêm `major_id` và `advisor_id` để điền select đúng theo mã, kể cả trùng/thiếu tên. Mã đề tài không đổi. `PATCH` chỉ gửi tên/mô tả/ngành/giảng viên đã thay đổi, giữ nguyên tệp, trạng thái, thời điểm tạo và trường không sửa. Tham chiếu cũ giữ nguyên được chấp nhận dù không còn trong lựa chọn; tham chiếu mới phải hợp lệ. Nếu không đổi gì thì không gửi PATCH.
+- **Chi tiết** gọi `GET /topics/api/v1/topics/{id}/`, hiển thị tên, mô tả, ngành, giảng viên, tệp đính kèm (chuỗi, không tự tải), trạng thái và thông tin cập nhật. Trạng thái hiển thị nhãn Chờ duyệt (0), Đã duyệt (1), Mở đăng ký (2); giá trị cũ ngoài danh sách hiển thị Chưa xác định. Lỗi tải có nút thử lại; đóng popup hủy request đọc đang chờ.
+- **Sửa** lấy dữ liệu mới từ endpoint chi tiết. Chỉ role 1/2 nhận thêm `major_id` và `advisor_id` để điền select đúng theo mã, kể cả trùng/thiếu tên. Mã đề tài không đổi. `PATCH` chỉ gửi tên/mô tả/ngành/giảng viên và trạng thái (chỉ admin) đã thay đổi, giữ nguyên tệp, thời điểm tạo và trường không sửa. Tham chiếu cũ giữ nguyên được chấp nhận dù không còn trong lựa chọn; tham chiếu mới phải hợp lệ. Nếu không đổi gì thì không gửi PATCH.
 - **Xóa** yêu cầu **Xác nhận xóa** trước khi gửi `DELETE /topics/api/v1/topics/{id}/`; Hủy không gửi request. 204 đóng popup và tải lại danh sách; 404 thông báo đề tài không còn tồn tại. 409 giữ đề tài và báo dữ liệu còn liên kết. Không có xóa dây chuyền.
 - PATCH/DELETE lỗi mạng, timeout hoặc 5xx khóa thao tác ghi và yêu cầu **Kiểm tra kết quả**, không tự gửi lại. Với sửa, GET phải trả đúng các giá trị vừa gửi mới xác nhận dữ liệu; nếu khác, giữ bản nháp và báo cần xem lại. Với xóa, GET 404 xác nhận đề tài đã vắng; GET 200 yêu cầu xác nhận xóa lại thủ công. Lỗi kiểm tra giữ trạng thái chưa xác định. Đây là đối chiếu trạng thái hiện tại, không bảo đảm không có ghi đồng thời hoặc kết quả backend đến muộn.
 - Bộ lọc tìm kiếm giữ nguyên sau tải lại thành công. Chặn gửi trùng/đóng popup khi ghi đang chờ; đổi trang hủy request frontend nhưng không bảo đảm hủy xử lý backend. Popup hỗ trợ Escape, vòng focus và khôi phục focus khi phần tử mở còn khả dụng.
@@ -337,3 +337,12 @@ Kiểm chứng: `npm run test` đạt **341 tests / 15 files**; `npm run lint`,
 Tests dùng jsdom/API mock; chưa kiểm chứng trình duyệt với tài khoản sinh viên và
 Gateway/backend thực. CSS có bố cục mobile và bảng cuộn ngang, nhưng chưa kiểm
 chứng trực quan trên thiết bị thực.
+
+
+### Quyền chỉnh trạng thái đề tài
+
+Admin có select trạng thái trong form tạo/sửa: Chờ duyệt (0), Đã duyệt (1),
+Mở đăng ký (2); mặc định tạo là 1. Giảng viên không có select này và frontend
+không gửi status: backend tạo ở 0 và chặn thao tác đổi trạng thái qua API.
+Luồng sinh viên chỉ nhận đề tài status 2 từ API available-topics. Đề tài cũ
+status 1 cần admin chủ động mở đăng ký; không tự chuyển dữ liệu hiện có.

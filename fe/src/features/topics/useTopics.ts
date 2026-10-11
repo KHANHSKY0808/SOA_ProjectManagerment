@@ -3,9 +3,9 @@ import { normalizeApiError } from '../../services/api-error'
 import { listRecords } from '../academic/academic-api'
 import type { Lecturer, Major } from '../academic/academic-api'
 import { createTopic, deleteTopic, getTopic, getTopicDetail, listTopics, updateTopic } from './topic-api'
-import type { CreateTopic, Topic, TopicDetail, TopicUpdate } from './topic-api'
+import type { CreateTopic, Topic, TopicDetail, TopicUpdate, TopicStatus } from './topic-api'
 
-export type TopicField = 'name' | 'description' | 'advisor_id' | 'major_id'
+export type TopicField = 'status' | 'name' | 'description' | 'advisor_id' | 'major_id'
 export const numericMajor = (id: string) => /^[0-9]+$/.test(id)
 type DialogMode = 'create' | 'detail' | 'edit' | 'delete' | null
 const fields = ['name', 'description', 'advisor_id', 'major_id'] as const
@@ -14,7 +14,7 @@ const ambiguousWrite = (cause: unknown) => {
   return failure.kind === 'network' || failure.kind === 'timeout' || failure.kind === 'unknown' || (failure.status ?? 0) >= 500
 }
 
-export function useTopics(canManage: boolean, logout: () => void) {
+export function useTopics(canManage: boolean, logout: () => void, canSetStatus = false) {
   const [rows, setRows] = useState<Topic[]>([])
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState('')
@@ -100,7 +100,7 @@ export function useTopics(canManage: boolean, logout: () => void) {
     try {
       const id = crypto.randomUUID()
       resetForm(); setMode('create'); setSelected(null)
-      setDraft({ topic_id: id, name: '', description: '', advisor_id: '', major_id: '' })
+      setDraft({ topic_id: id, name: '', description: '', advisor_id: '', major_id: '', ...(canSetStatus ? { status: 1 as const } : {}) })
       void loadOptions()
     } catch {
       setListError('Không thể sinh mã đề tài. Vui lòng sử dụng HTTPS hoặc localhost.')
@@ -117,8 +117,8 @@ export function useTopics(canManage: boolean, logout: () => void) {
       if (editing) {
         if (typeof result.major_id !== 'string' || !result.major_id ||
             !(result.advisor_id === null || typeof result.advisor_id === 'string')) throw new Error('Missing management references')
-        const value = { topic_id: result.topic_id, name: result.name, description: result.description ?? '',
-          major_id: result.major_id, advisor_id: result.advisor_id ?? '' }
+        const value: CreateTopic = { topic_id: result.topic_id, name: result.name, description: result.description ?? '',
+          major_id: result.major_id, advisor_id: result.advisor_id ?? '', ...(canSetStatus && (result.status === 0 || result.status === 1 || result.status === 2) ? { status: result.status } : {}) }
         original.current = value; setDraft(value)
       }
       setDetail(result)
@@ -144,8 +144,8 @@ export function useTopics(canManage: boolean, logout: () => void) {
     if (!locked.current) dismiss()
   }
   function change(key: TopicField, value: string) {
-    if (locked.current || uncertain) return
-    setDraft(previous => previous && { ...previous, [key]: value })
+    if (locked.current || uncertain || (key === 'status' && !canSetStatus)) return
+    setDraft(previous => previous && { ...previous, [key]: key === 'status' ? (value === '' ? undefined : Number(value) as TopicStatus) : value })
     setErrors(previous => ({ ...previous, [key]: undefined }))
   }
   async function saved(message: string) {
@@ -161,11 +161,13 @@ export function useTopics(canManage: boolean, logout: () => void) {
     if (!values.name) invalid.name = 'Vui lòng nhập tên đề tài.'
     if (changed('advisor_id') && !lecturers.some(row => row.lecturer_id === draft.advisor_id)) invalid.advisor_id = 'Vui lòng chọn giáo viên hướng dẫn.'
     if (changed('major_id') && (!majors.some(row => row.major_id === draft.major_id) || !numericMajor(draft.major_id))) invalid.major_id = 'Vui lòng chọn ngành có mã số hợp lệ.'
+    if (canSetStatus && (!editing || changed('status')) && ![0, 1, 2].includes(values.status as number)) invalid.status = 'Vui lòng chọn trạng thái hợp lệ.'
     setErrors(invalid)
     const first = Object.keys(invalid)[0] as TopicField | undefined
     if (first) return first
     const patch: TopicUpdate = {}
     for (const key of fields) if (changed(key)) patch[key] = key === 'description' ? values[key].trim() : values[key]
+    if (canSetStatus && changed('status') && values.status !== undefined) patch.status = values.status
     if (editing && !Object.keys(patch).length) { close(); setNotice('Không có thay đổi.'); return }
     pendingPatch.current = patch
     locked.current = true; setBusy(true); setFormError('')
@@ -173,7 +175,10 @@ export function useTopics(canManage: boolean, logout: () => void) {
     mutation.current = controller
     try {
       if (editing) await updateTopic(draft.topic_id, patch, controller.signal)
-      else await createTopic(values, controller.signal)
+      else {
+        const { status, ...input } = values
+        await createTopic(canSetStatus ? { ...input, status } : input, controller.signal)
+      }
       if (!controller.signal.aborted) {
         await saved(editing ? 'Đã cập nhật đề tài.' : 'Đã tạo đề tài.')
       }
@@ -187,7 +192,7 @@ export function useTopics(canManage: boolean, logout: () => void) {
       if (failure.status === 400 && failure.details && typeof failure.details === 'object') {
         const details = failure.details as Record<string, unknown>
         const next: Partial<Record<TopicField, string>> = {}
-        for (const key of fields) if (key in details) next[key] = 'Giá trị không hợp lệ. Vui lòng kiểm tra lại.'
+        for (const key of [...fields, 'status'] as const) if (key in details) next[key] = 'Giá trị không hợp lệ. Vui lòng kiểm tra lại.'
         setErrors(next)
         return Object.keys(next)[0] as TopicField | undefined
       }
@@ -250,7 +255,7 @@ export function useTopics(canManage: boolean, logout: () => void) {
   const visibleRows = rows.filter(row => [row.topic_id, row.name].some(value => value.toLocaleLowerCase('vi').includes(normalized)))
   return { rows: visibleRows, total: rows.length, loading, listError, query, setQuery,
     search: () => setAppliedQuery(query.trim()), reload, mode, selected, detail, detailLoading, detailError, retryDetail,
-    draft, majors, lecturers, optionsReady, optionsLoading, optionsError, loadOptions, formError, errors, busy,
+    canSetStatus, draft, majors, lecturers, optionsReady, optionsLoading, optionsError, loadOptions, formError, errors, busy,
     uncertain, notice, open, show, close, change, save, remove, checkResult }
 }
 export type TopicState = ReturnType<typeof useTopics>

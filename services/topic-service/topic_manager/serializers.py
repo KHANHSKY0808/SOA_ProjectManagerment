@@ -7,11 +7,13 @@ class TopicRequestDTO(serializers.Serializer):
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     file_url = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     major_id = serializers.CharField(max_length=255)
-    status = serializers.IntegerField(required=False, allow_null=True)
+    status = serializers.ChoiceField(choices=(0, 1, 2), required=False)
     advisor_id = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True)
 
     def to_internal_value(self, data):
         if isinstance(data, dict):
+            if "status" in data and type(data["status"]) is not int:
+                raise serializers.ValidationError({"status": "Expected integer 0, 1 or 2."})
             unknown = set(data) - set(self.fields)
             if unknown:
                 raise serializers.ValidationError({key: "Unknown or server-controlled field." for key in unknown})

@@ -93,11 +93,10 @@ POST and PUT request example:
 
 `topic_id`, `name`, `major_id` are required for POST/PUT. IDs have a maximum
 length of 255; required strings cannot be blank. `topic_id` is immutable; PUT
-must include the existing ID. Optional fields accept null, and text fields
-accept blank strings. Blank advisor_id is normalized to null. Status is a
-nullable integer; no enum or lifecycle transitions are assumed. file_url is a
+must include the existing ID. Optional fields except status accept null, and text fields
+accept blank strings. Blank advisor_id is normalized to null. Status accepts only JSON integers 0 (pending approval), 1 (approved), or 2 (open for registration); null is rejected. file_url is a
 stored string, not an upload or remote fetch. Unknown fields are rejected.
-PUT clears omitted optional fields; PATCH preserves omitted fields. For example,
+PUT clears omitted optional fields except status; both PUT and PATCH preserve omitted status. For example,
 `PATCH /api/v1/topics/DT001/` with `{"name":"Revised title"}` changes only the name
 and server audit metadata.
 
@@ -310,9 +309,9 @@ Tests cover lecturer creation and edits/deletion of an admin-created topic, role
 
 These additive endpoints require integer JWT role 3 and preserve existing topic
 CRUD DTOs. They query only Topics and return minimal reference metadata:
-`{"topic_id":"DT001","name":"SOA","major_id":"M1","status":1}`.
+`{"topic_id":"DT001","name":"SOA","major_id":"M1","status":2}`.
 
-- `GET /api/v1/registration-topics/?after=DT000`: only status 1, ascending topic ID,
+- `GET /api/v1/registration-topics/?after=DT000`: only status 2, ascending topic ID,
   at most 100 records. Response `{"results":[...],"next_after":null}`; a non-null
   cursor continues the next page. Cursor maximum length is 255.
 - `GET /api/v1/registration-topics/{topic_id}/`: one topic, including closed topics,
@@ -323,3 +322,19 @@ missing topic 404, storage unavailable 503. These APIs do not imply eligibility:
 regist-service compares faculty via academic-service before writing. Callers use
 bounded 3-second requests; no automatic retries. No additional provider throttle
 is installed; deployment rate limits can be enforced at Gateway.
+
+
+## Topic approval and opening registration
+
+JWT role 1 (admin) creates topics with status 1 by default and may explicitly
+submit status 0, 1 or 2 on POST/PUT/PATCH. Role 2 (lecturer) creates topics with
+status 0 and cannot submit status on any write (403 for valid supplied status).
+Malformed or out-of-range status returns 400 for either role. Omission on PUT or
+PATCH preserves the stored status. Other topic management permissions remain unchanged.
+
+For example, admin `PATCH /api/v1/topics/DT001/` with `{"status":2}` opens
+registration. Status 1 means approved only: the student registration collection
+includes only status 2, and regist-service independently validates that status.
+The detail lookup still returns closed topics so callers can report ineligibility.
+Existing rows, including legacy null statuses, are not rewritten; an admin must
+explicitly open approved topics. Existing registration records are unaffected.

@@ -11,7 +11,7 @@ import './topics.css'
 export function TopicPage() {
   const { user, logout } = useAuth()
   const canManage = user?.role === 1 || user?.role === 2
-  const state = useTopics(canManage, logout)
+  const state = useTopics(canManage, logout, user?.role === 1)
   return <section className="academic dash-surface" aria-label="Quản lý đề tài">
     <div className="academic-toolbar">
       <TopicSearch query={state.query} onChange={state.setQuery} onSearch={state.search} />

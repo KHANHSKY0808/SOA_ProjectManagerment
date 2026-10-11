@@ -8,7 +8,15 @@ export interface Topic {
   // This spelling is part of the published topic-service response contract.
   avisor_name: string | null
 }
+export type TopicStatus = 0 | 1 | 2
+export const topicStatusLabels: Record<TopicStatus, string> = {
+  0: 'Chờ duyệt', 1: 'Đã duyệt', 2: 'Mở đăng ký',
+}
+export function topicStatusLabel(status: number | null) {
+  return status === 0 || status === 1 || status === 2 ? topicStatusLabels[status] : 'Chưa xác định'
+}
 export interface CreateTopic {
+  status?: TopicStatus
   topic_id: string
   name: string
   description: string
@@ -25,7 +33,7 @@ export interface TopicDetail extends Topic {
   major_id?: string
   advisor_id?: string | null
 }
-export type TopicUpdate = Partial<Pick<CreateTopic, 'name' | 'description' | 'major_id' | 'advisor_id'>>
+export type TopicUpdate = Partial<Pick<CreateTopic, 'name' | 'description' | 'major_id' | 'advisor_id' | 'status'>>
 
 const path = '/topics/api/v1/topics/'
 function topic(value: unknown): Topic {

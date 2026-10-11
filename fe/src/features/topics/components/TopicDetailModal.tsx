@@ -1,3 +1,4 @@
+import { topicStatusLabel } from '../topic-api'
 import { Modal } from '../../academic/components/Modal'
 import type { TopicState } from '../useTopics'
 
@@ -14,7 +15,7 @@ export function TopicDetailModal({ state }: { state: TopicState }) {
       <dt>Giáo viên hướng dẫn</dt><dd>{row.avisor_name || '—'}</dd>
       <dt>Tên ngành</dt><dd>{row.major_name || '—'}</dd>
       <dt>Tệp đính kèm</dt><dd>{row.file_url || '—'}</dd>
-      <dt>Trạng thái</dt><dd>{row.status ?? '—'}</dd>
+      <dt>Trạng thái</dt><dd>{topicStatusLabel(row.status)}</dd>
       <dt>Ngày tạo</dt><dd>{row.created_at || '—'}</dd>
       <dt>Cập nhật lần cuối</dt><dd>{row.updated_at || '—'}</dd>
       <dt>Người cập nhật</dt><dd>{row.updated_by || '—'}</dd>
