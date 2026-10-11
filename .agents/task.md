@@ -1,73 +1,52 @@
-# Task: Student topic registration APIs
+﻿# Task: Student registration frontend
 
-Status: Approved by user; implement and commit each important milestone.
+Status: Approved by user ("ok"); implement with milestone commits.
 
-## Objective
-Implement four student-facing capabilities in regist-service: register a topic,
-list topics open for registration in the student's faculty, list the student's
-registrations, and cancel the student's registration.
+## Objective and scope
+Implement the four approved registration capabilities in fe for student role 3:
+open topics in the student's faculty, register, view own registration history,
+and cancel. Show the feature directly at /student and keep the existing
+/student/registrations menu URL working with the same screen.
 
-## Scope
-- regist-service owns and maps only the existing Registrations table.
-- Validate JWTs locally; require integer role 3 and derive StudentId from JWT user_id.
-- Obtain student/faculty and topic data through documented, authenticated REST
-  contracts in academic-services and topic-service; add minimal supporting APIs.
-- Preserve the repository's documented existing topic-service:8004 ownership
-  exception, current ports, gateway prefixes, auth contract and existing DTOs.
-- Add automated tests and update root/affected service documentation and environment examples.
-- No frontend work, package installation, schema changes, migrations, live service
-  startup, infrastructure changes or edits to real .env secrets.
-
-## Rules and proposed semantics
-- A student may have at most one current registration, across all semesters.
-- Register only when topic status is exactly integer 1 and both faculties exist
-  and match. Faculty is derived through Students.MajorId -> Majors.FacultyId and
-  Topics.MajorId -> Majors.FacultyId; matching major alone is not required.
-- Proposed registration status: 1 = current; 0 = cancelled. Legacy other/null
-  statuses conservatively count as current until their meaning is established.
-- Cancellation preserves the record, timestamps and server-derived actor; after
-  cancellation a student can register again. Listing includes current and cancelled
-  records, with a documented optional status filter.
-- Only the token owner's registrations may be listed/cancelled; reject submitted
-  identity/audit/status overrides. Request creation accepts topic_id and optional
-  semester (the existing column is nullable; no semester requirement was requested).
-- Repeated creation of an already-current topic returns the existing registration;
-  a different current topic returns 409. Repeated owner cancellation is idempotent.
+## Constraints
+- Before approval, write only root .agents/task.md and .agents/plan.md.
+- Preserve existing uncommitted fe/.agents/task.md and fe/.agents/plan.md; these
+  contain a cancelled infrastructure plan and are not part of this frontend task.
+- Use existing React/TypeScript/Axios, role guards, layout, modal and CSS patterns.
+- Call Gateway /registrations/api/v1/* with existing bearer-token handling.
+  No direct service URLs, new dependencies, backend/schema/environment changes.
+- Backend remains authoritative for faculty/status and registration uniqueness.
+  Never send student_id or client-controlled registration/audit status.
+- Preserve admin/lecturer screens and role authorization.
+- Continue the user's requested milestone commits, scoped to this task's files.
 
 ## Acceptance criteria
-- Four documented versioned APIs work through /registrations/* with student JWTs.
-- Closed topics, different/missing faculties, missing student/topic, duplicate
-  current registration and non-owner/non-student requests are rejected safely.
-- Concurrent writes cannot create two current registrations through this service.
-- Dependency timeouts/invalid responses/unhealthy discovery fail safely with 503;
-  no auth/academic/topic tables are queried by regist-service.
-- Relevant automated success, validation, authorization, dependency and concurrency
-  tests pass along with manage.py check/test for every affected service.
-- Existing health endpoints, APIs and CI commands remain compatible.
+- /student presents current registration, eligible topic list and own history;
+  /student/registrations provides the same capabilities via existing navigation.
+- Topics support explicit search within loaded pages, load-more cursor pagination,
+  empty pages with a non-null cursor, refresh, loading/error/empty states.
+- Register accepts topic_id and optional semester, with confirmation; current
+  registrations (including legacy nonzero/null statuses) disable another register.
+- Cancellation requires confirmation, preserves visible history and enables
+  registration again after confirmed refreshed state.
+- Mutation buttons prevent double submit; failed/unknown writes are never retried
+  automatically. Reconcile through own registration list before allowing another
+  write after timeout/network/5xx/invalid mutation response.
+- Handle backend stable error codes in Vietnamese, including faculty mismatch,
+  closed topic, conflict, permission and dependency/storage errors. 401 follows
+  existing logout flow. Stale requests cannot overwrite newer/user-changed state.
+- Accessible dialogs/buttons/status messages and usable mobile layout.
+- Meaningful API/UI/route tests, npm test, lint, typecheck and build pass.
+- Update fe/README.md and root README; report mocked vs live verification precisely.
 
-## Inspection evidence, assumptions and risks
-- Registrations currently has RegistrationId primary key and nullable StudentId,
-  TopicId, Semester, Status, Notes, Reason, CreatedAt, UpdatedAt, UpdatedBy.
-- Its only unique index is RegistrationId: no student uniqueness constraint exists.
-  Use an SQLite write transaction acquired before checking/inserting (not merely
-  a process mutex or select_for_update) and keep network calls outside the lock.
-  SQLite contention returns a safe retryable response; no blind write retries.
-- Registration status meanings are not defined in the current empty service.
-  The proposed semantics above require approval as part of this plan.
-- Existing public topic DTOs omit major IDs for role 3; student CRUD detail routes
-  use integer path IDs despite text database IDs. Supporting APIs must handle text
-  IDs without breaking existing routes or exposing identity/profile data.
-- Existing frontend planning files fe/.agents/task.md and plan.md are modified;
-  leave those unrelated changes untouched.
-- Cross-service validation is a point-in-time check, not a distributed transaction;
-  faculty/topic status may change after validation. No topic capacity limit requested.
-- No production data/schema writes occur during verification. Legacy duplicate
-  registrations must be reported/handled conservatively, never silently repaired.
-
-## Completion
-
-Implemented the four approved capabilities with student JWT ownership, faculty/status
-validation over REST, single-current-registration transactions, preserved cancellation
-history, versioned reference contracts and automated tests. All 225 affected-service
-tests and Django checks passed. Live Gateway/Consul testing and frontend work remain
-outside this task; no database schema/data or infrastructure changes were made.
+## Assumptions and risks
+- /student is the requested entry screen, replacing its generic overview for role 3.
+- Reuse the existing /student/registrations menu path; no new admin registration UI.
+- API pagination filters a source page, so empty results can still have next_after.
+  Do not interpret one empty page as the end, and do not auto-fetch all pages.
+- Registration history DTO includes topic_id, optional semester, status and times,
+  not guaranteed display names. Show the topic code always; use a name only when
+  actually available from loaded eligible topics, without inventing metadata.
+- Status 0 is cancelled; all other statuses conservatively count as current.
+- No live student account or browser/backend integration is assumed available.
+- Earlier backend task/verification history remains recorded in existing commits.
