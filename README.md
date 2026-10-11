@@ -328,3 +328,11 @@ confirmation and never retry automatically. Unknown write results require an exp
 history check before another write is allowed; successful writes remain successful
 even when a subsequent refresh fails. Backend authorization and business rules remain
 authoritative. See [student frontend workflow](fe/README.md#đăng-ký-đề-tài-dành-cho-sinh-viên).
+
+If the student page receives Gateway `{"detail":"Service unavailable."}`, check
+whether `regist-service` has a passing Consul instance. Running Django on 8003
+alone does not register it: configure its ignored local `.env` with
+`CONSUL_AUTO_REGISTER=true` and the common JWT signing key, then restart that service.
+For Windows callers unable to reach Consul's advertised `host.docker.internal`
+academic/topic addresses, use explicit local-development loopback client settings;
+Gateway discovery remains enabled. See [registration troubleshooting](services/regist-service/README.md#troubleshooting-gateway-service-unavailable).

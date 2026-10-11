@@ -1,61 +1,67 @@
-﻿# Task: Student registration frontend
+﻿# Task: Fix student registration service-unavailable error
 
-Status: Completed after user approval ("ok"), with milestone commits.
+Status: Completed. Local runtime configuration repaired and routing verified.
 
-## Objective and scope
-Implement the four approved registration capabilities in fe for student role 3:
-open topics in the student's faculty, register, view own registration history,
-and cancel. Show the feature directly at /student and keep the existing
-/student/registrations menu URL working with the same screen.
+## Objective
+Restore the failing API flow reported as topic detail with detail "Service
+unavailable." at http://localhost:5173/student/registrations.
 
-## Constraints
-- Before approval, write only root .agents/task.md and .agents/plan.md.
-- Preserve existing uncommitted fe/.agents/task.md and fe/.agents/plan.md; these
-  contain a cancelled infrastructure plan and are not part of this frontend task.
-- Use existing React/TypeScript/Axios, role guards, layout, modal and CSS patterns.
-- Call Gateway /registrations/api/v1/* with existing bearer-token handling.
-  No direct service URLs, new dependencies, backend/schema/environment changes.
-- Backend remains authoritative for faculty/status and registration uniqueness.
-  Never send student_id or client-controlled registration/audit status.
-- Preserve admin/lecturer screens and role authorization.
-- Continue the user's requested milestone commits, scoped to this task's files.
+## Read-only findings
+- StudentRegistrationPage requests /registrations/api/v1/registrations/ and
+  /registrations/api/v1/available-topics/. It does not call topic detail directly.
+- The exact string "Service unavailable." exists in Gateway Nginx config/rendering
+  for no healthy upstream and for translated upstream 502/504 failures.
+- topic-service storage/dependency errors and regist-service dependency errors have
+  different messages. The reported string points toward Gateway; the exact failed
+  Network request still needs verification.
+- Local listeners exist on 8000, 8500 and 8001-8004. Django ports 8001-8004 are
+  listening on 127.0.0.1, which alone does not establish container reachability.
+- No live HTTP/Consul/Docker inspection or state change has been performed yet.
+
+## Scope and constraints
+- Diagnose local Gateway, Consul and registration/topic/academic transport with
+  read-only bounded requests, safe logs/config inspection and process identity.
+- Fix only the confirmed route/discovery/reachability or reference-client cause.
+  Preserve ports, names, prefixes, service boundaries, JWT policy and database.
+- If needed, adjust only relevant non-secret local transport settings and restart
+  only the verified affected Django process/instance. Do not print .env secrets,
+  process command-line secrets, tokens or user profile data.
+- Do not restart/recreate containers, change Windows hosts/firewall, implement
+  the cancelled Compose migration, install dependencies, change schemas/migrations,
+  touch unrelated fe/.agents edits, or create live registration/topic records.
+- Any Gateway infrastructure change, broader deployment/network migration or other
+  material scope expansion requires a revised plan and renewed approval.
+- Add regression tests for code changes; commit meaningful repair milestones per
+  the user's existing preference. Local .env values are never committed.
 
 ## Acceptance criteria
-- /student presents current registration, eligible topic list and own history;
-  /student/registrations provides the same capabilities via existing navigation.
-- Topics support explicit search within loaded pages, load-more cursor pagination,
-  empty pages with a non-null cursor, refresh, loading/error/empty states.
-- Register accepts topic_id and optional semester, with confirmation; current
-  registrations (including legacy nonzero/null statuses) disable another register.
-- Cancellation requires confirmation, preserves visible history and enables
-  registration again after confirmed refreshed state.
-- Mutation buttons prevent double submit; failed/unknown writes are never retried
-  automatically. Reconcile through own registration list before allowing another
-  write after timeout/network/5xx/invalid mutation response.
-- Handle backend stable error codes in Vietnamese, including faculty mismatch,
-  closed topic, conflict, permission and dependency/storage errors. 401 follows
-  existing logout flow. Stale requests cannot overwrite newer/user-changed state.
-- Accessible dialogs/buttons/status messages and usable mobile layout.
-- Meaningful API/UI/route tests, npm test, lint, typecheck and build pass.
-- Update fe/README.md and root README; report mocked vs live verification precisely.
+- Identify the exact failing request and distinguish no upstream, unreachable
+  service, service exception and downstream validation failure with evidence.
+- Gateway reaches a healthy regist-service; topic/academic references are reachable
+  through configured discovery/development transport without bypassing auth.
+- Existing student registration list/open-topic flow returns correct results with
+  an available legitimate student session, or report the precise authenticated
+  verification gap. Do not forge real-user tokens.
+- No live mutation or schema change. Relevant tests/checks pass for changed code.
+- Document the cause, repair, safe verification and rollback; preserve unrelated work.
 
 ## Assumptions and risks
-- /student is the requested entry screen, replacing its generic overview for role 3.
-- Reuse the existing /student/registrations menu path; no new admin registration UI.
-- API pagination filters a source page, so empty results can still have next_after.
-  Do not interpret one empty page as the end, and do not auto-fetch all pages.
-- Registration history DTO includes topic_id, optional semester, status and times,
-  not guaranteed display names. Show the topic code always; use a name only when
-  actually available from loaded eligible topics, without inventing metadata.
-- Status 0 is cancelled; all other statuses conservatively count as current.
-- No live student account or browser/backend integration is assumed available.
-- Earlier backend task/verification history remains recorded in existing commits.
+- Source-only search cannot distinguish missing registry instances from live
+  connection/timeouts. A generic frontend error is not evidence of a bad DTO.
+- Loopback-only listeners may be unreachable from Docker; Consul address/health
+  and current container routing must be checked rather than assumed.
+- Restarting an affected Django development service can briefly interrupt requests;
+  verify its executable, directory and port ownership before any targeted restart.
+- Live JWT/session may be unavailable. A protected endpoint returning 401 proves
+  basic routing, not student eligibility or an end-to-end successful detail read.
 
-## Completion evidence
+## Outcome
 
-Both student URLs provide open topics, registration, own current/history records
-and confirmed cancellation. Ambiguous writes require explicit history reconciliation;
-legacy current statuses and history outages disable conflicting writes. All 341
-frontend tests plus lint/typecheck/build passed. API contracts and service ownership
-are unchanged. No production data was accessed or mutated. Live account/browser
-integration and physical-device visual checks remain unverified.
+Cause confirmed: absent regist .env left Consul auto-registration disabled and
+Gateway with no registration upstream. Created local ignored configuration with
+shared JWT and explicit Windows development client transport, restarted only
+regist-service, and verified its healthy discovery/routing. Direct/Proxy health
+and protected-route responses now behave correctly; all 29 tests and Django check
+passed. Authenticated browser verification remains unavailable; no production
+record or database schema was changed. Only documentation/planning files are
+committed; the real .env stays ignored.

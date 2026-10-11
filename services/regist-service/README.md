@@ -201,6 +201,35 @@ commands `python manage.py register_consul` and
 `python manage.py register_consul --deregister` update this instance. Admin/test
 commands do not register automatically. Keep real secrets out of source control.
 
+### Troubleshooting Gateway "Service unavailable."
+
+If `/student/registrations` receives `{"detail":"Service unavailable."}`, compare
+`http://localhost:8000/registrations/health/` with direct
+`http://127.0.0.1:8003/health/` and check Consul's passing `regist-service` instances.
+A direct 200 with no registered instance makes Gateway return 503 for the entire
+`/registrations/` prefix, even though the Django server is running.
+
+This service does not enable registration by default. Ensure the untracked `.env`
+beside `manage.py` exists, uses `CONSUL_AUTO_REGISTER=true` with the service/health
+settings above, and loads the same `JWT_SIGNING_KEY` as auth/academic/topic. Copy
+`.env.example` only when `.env` is absent; never overwrite existing secrets or
+generate a different signing key for this consumer. Restart only the affected
+service, then wait for its HTTP health check and Gateway discovery refresh.
+
+When Django runs on Windows and Consul/Gateway run in Docker, a healthy advertised
+`host.docker.internal` address may still be unreachable from the Windows
+registration client. Check it from that caller's network context. For this local
+development layout, explicitly set both academic/topic discovery flags to false
+and their loopback base URLs as documented above. Gateway continues discovering
+regist-service through Consul. Do not use static local development URLs as a
+hidden production fallback or disable JWT validation to fix transport errors.
+
+Verification without a token: Gateway registration health should return 200;
+protected registration/available-topic requests should return 401 rather than
+Gateway 503. This verifies routing and authentication enforcement, not authenticated
+student eligibility. Use a legitimate student session for the final read-only
+application check; avoid creating/cancelling real registrations for diagnosis.
+
 Registration runs in a daemon thread without blocking requests. Failed registry
 PUTs use 1/2/4/.../30-second backoff, with a 3-second default request timeout.
 Successful registrations are refreshed every 30 seconds, recovering from a
