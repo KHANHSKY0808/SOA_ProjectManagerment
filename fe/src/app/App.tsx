@@ -9,6 +9,7 @@ import { DashboardPlaceholderPage } from './DashboardPlaceholderPage'
 import { AcademicRoutePage } from './AcademicRoutePage'
 import { NotFoundPage } from './NotFoundPage'
 import { TopicPage } from '../features/topics/TopicPage'
+import { StudentRegistrationPage } from '../features/registrations/StudentRegistrationPage'
 
 export function App() {
   return (
@@ -18,11 +19,12 @@ export function App() {
       </Route>
       {([1, 2, 3] as const).map((role) => <Route key={role} element={<RoleRoute role={role} />}>
         <Route path={ROLE_HOME[role]} element={<RoleHomePage />}>
-          <Route index element={<DashboardHomePage />} />
+          <Route index element={role === 3 ? <StudentRegistrationPage /> : <DashboardHomePage />} />
           {dashboardItems(role).filter((item) => item !== HOME_ITEM).map((item) => {
             const academicId = role === 1 ? ACADEMIC_PAGE_IDS.find((id) => id === item.id) : undefined
             return <Route key={item.id} path={item.path} element={academicId
-              ? <AcademicRoutePage id={academicId} /> : item.id === 'topics' ? <TopicPage /> : <DashboardPlaceholderPage />} />
+              ? <AcademicRoutePage id={academicId} /> : item.id === 'topics' ? <TopicPage /> : role === 3 && item.id === 'registrations'
+                ? <StudentRegistrationPage /> : <DashboardPlaceholderPage />} />
           })}
           <Route path="*" element={<NotFoundPage withinLayout />} />
         </Route>

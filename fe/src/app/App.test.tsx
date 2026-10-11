@@ -61,6 +61,8 @@ describe('Login and role routes', () => {
   beforeEach(() => {
     setAccessToken(null)
     mock = new MockAdapter(apiClient, { onNoMatch: 'throwException' })
+    mock.onGet('/registrations/api/v1/registrations/').reply(200, [])
+    mock.onGet('/registrations/api/v1/available-topics/').reply(200, { results: [], next_after: null })
   })
   afterEach(() => {
     mock.restore()
@@ -163,7 +165,7 @@ describe('Login and role routes', () => {
     expect(screen.getByRole('button', { name: 'Đăng nhập' })).toBeEnabled()
     expect(screen.getByTestId('path')).toHaveTextContent('/login')
     await apiClient.get('/probe/')
-    expect(mock.history.get[0].headers?.Authorization).toBeUndefined()
+    expect(mock.history.get.find(request => request.url === '/probe/')?.headers?.Authorization).toBeUndefined()
   })
 
   it.each(['network', 'timeout'])('shows a retryable error on %s failure', async (kind) => {
@@ -222,7 +224,7 @@ describe('Login and role routes', () => {
     expect(await screen.findByRole('heading', { name: 'Đăng nhập' })).toBeVisible()
     expect(sessionStorage.getItem(SESSION_TOKEN_KEY)).toBeNull()
     await apiClient.get('/probe/')
-    expect(mock.history.get[0].headers?.Authorization).toBeUndefined()
+    expect(mock.history.get.find(request => request.url === '/probe/')?.headers?.Authorization).toBeUndefined()
     fireEvent.click(screen.getByRole('link', { name: 'Go /student' }))
     await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent('/login'))
   })
@@ -312,7 +314,6 @@ describe('Login and role routes', () => {
     { role: 2, path: '/lecture/profile', title: 'Thông tin cá nhân' },
     { role: 3, path: '/student/profile', title: 'Thông tin cá nhân' },
     { role: 1, path: '/admin/registrations', title: 'Quản lý đăng ký' },
-    { role: 3, path: '/student/registrations', title: 'Đăng ký đề tài' },
   ])('opens the existing placeholder at $path', async ({ role, path, title }) => {
     sessionStorage.setItem(SESSION_TOKEN_KEY, 'saved-token')
     mock.onGet('/auth/me/').reply(200, responseForRole(role).user)
@@ -327,7 +328,54 @@ describe('Login and role routes', () => {
     mock.onGet('/auth/me/').reply(200, responseForRole(role).user)
     renderApp('/admin/students')
     await waitFor(() => expect(screen.getByTestId('path').textContent).toBe(role === 2 ? '/lecture' : '/student'))
-    expect(mock.history.get.map(request => request.url)).toEqual(['/auth/me/'])
+    if (role === 3) await screen.findByRole('table', { name: 'Đề tài mở đăng ký' })
+    expect(mock.history.get.map(request => request.url)).toEqual(role === 3 ? [
+      '/auth/me/', '/registrations/api/v1/registrations/', '/registrations/api/v1/available-topics/',
+    ] : ['/auth/me/'])
+  })
+
+  it.each(['/student', '/student/registrations'])('opens student registration directly at %s with its saved JWT', async path => {
+    sessionStorage.setItem(SESSION_TOKEN_KEY, 'saved-token')
+    mock.onGet('/auth/me/').reply(200, responseForRole(3).user)
+    renderApp(path)
+    expect(await screen.findByRole('table', { name: 'Đề tài mở đăng ký' })).toBeVisible()
+    expect(screen.getByRole('table', { name: 'Lịch sử đăng ký' })).toBeVisible()
+    expect(screen.getByTestId('path').textContent).toBe(path)
+    expect(screen.queryByText('Đang phát triển')).not.toBeInTheDocument()
+    const requests = mock.history.get.filter(request => request.url?.startsWith('/registrations/'))
+    expect(requests).toHaveLength(2)
+    expect(requests.every(request => request.headers?.Authorization === 'Bearer saved-token')).toBe(true)
+  })
+
+  it('opens student registration from its menu and supports browser Back/Forward', async () => {
+    sessionStorage.setItem(SESSION_TOKEN_KEY, 'saved-token')
+    mock.onGet('/auth/me/').reply(200, responseForRole(3).user)
+    renderApp('/student/profile')
+    await screen.findByRole('heading', { name: 'Thông tin cá nhân', level: 1 })
+    fireEvent.click(screen.getByRole('link', { name: 'Đăng ký đề tài' }))
+    await screen.findByRole('table', { name: 'Đề tài mở đăng ký' })
+    expect(screen.getByRole('link', { name: 'Đăng ký đề tài' })).toHaveAttribute('aria-current', 'page')
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    await screen.findByRole('heading', { name: 'Thông tin cá nhân', level: 1 })
+    fireEvent.click(screen.getByRole('button', { name: 'Forward' }))
+    expect(await screen.findByRole('table', { name: 'Đề tài mở đăng ký' })).toBeVisible()
+  })
+
+  it.each([1, 2])('blocks role %s from student registration without requesting its APIs', async role => {
+    sessionStorage.setItem(SESSION_TOKEN_KEY, 'saved-token')
+    mock.onGet('/auth/me/').reply(200, responseForRole(role).user)
+    renderApp('/student/registrations')
+    await waitFor(() => expect(screen.getByTestId('path').textContent).toBe(role === 1 ? '/admin' : '/lecture'))
+    expect(mock.history.get.some(request => request.url?.startsWith('/registrations/'))).toBe(false)
+  })
+
+  it('clears the actual student session when registration history returns 401', async () => {
+    sessionStorage.setItem(SESSION_TOKEN_KEY, 'saved-token')
+    mock.onGet('/auth/me/').reply(200, responseForRole(3).user)
+    mock.onGet('/registrations/api/v1/registrations/').reply(401)
+    renderApp('/student')
+    expect(await screen.findByRole('heading', { name: 'Đăng nhập' })).toBeVisible()
+    expect(sessionStorage.getItem(SESSION_TOKEN_KEY)).toBeNull()
   })
 
   it.each(['/missing', '/admin/missing'])('shows 404 and preserves the unknown URL %s', async (path) => {
@@ -407,7 +455,11 @@ describe('Login and role routes', () => {
     mock.onGet('/auth/me/').reply(200, responseForRole(3).user)
     renderApp('/admin/topics')
     expect(await screen.findByRole('heading', { name: 'Sinh viên' })).toBeVisible()
-    expect(mock.history.get.map(request => request.url)).toEqual(['/auth/me/'])
+    await screen.findByRole('table', { name: 'Đề tài mở đăng ký' })
+    expect(mock.history.get.some(request => request.url?.startsWith('/topics/'))).toBe(false)
+    expect(mock.history.get.map(request => request.url)).toEqual([
+      '/auth/me/', '/registrations/api/v1/registrations/', '/registrations/api/v1/available-topics/',
+    ])
   })
 
   it('clears the real auth session if the topic API returns 401', async () => {
@@ -459,6 +511,7 @@ describe('Login and role routes', () => {
     fillForm(); submitForm()
     await screen.findByRole('heading', { name: title })
     first.unmount()
+    mock.resetHistory()
     expect(sessionStorage.getItem(SESSION_TOKEN_KEY)).toBe('access-test-token')
     let complete!: (response: [number, unknown]) => void
     mock.onGet('/auth/me/').reply(() => new Promise<[number, unknown]>((resolve) => { complete = resolve }))
