@@ -4,13 +4,18 @@ from django.db import OperationalError
 from django.test import SimpleTestCase
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
-from registration_context import Student, Major
+from registration_context import Student, Major, Department
 
 
 class RegistrationReferenceTests(SimpleTestCase):
     def setUp(self):
         self.client = APIClient()
         self.authenticate()
+        self.faculty_patch = patch.object(Department.objects, "filter")
+        self.faculties = self.faculty_patch.start()
+        self.faculties.return_value.exists.return_value = True
+        self.faculties.return_value.values_list.return_value = ["F1"]
+        self.addCleanup(self.faculty_patch.stop)
 
     def authenticate(self, role=3, identity="SV001"):
         token = AccessToken()
@@ -27,6 +32,8 @@ class RegistrationReferenceTests(SimpleTestCase):
         self.assertEqual(result.data, {"student_id": "SV001", "department_id": "F1"})
         students.assert_called_once_with(pk="SV001")
         majors.assert_called_once_with(pk="M1")
+        self.faculties.return_value.exists.return_value = False
+        self.assertEqual(self.client.get("/api/v1/registration-context/").status_code, 403)
 
     @patch.object(Student.objects, "filter")
     def test_missing_student_and_storage_failure(self, students):

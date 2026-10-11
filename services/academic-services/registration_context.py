@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 
 from StudentManager.models import Student
 from MajorManager.models import Major
+from DeparmentManager.models import Department
 
 
 class StudentPermission(BasePermission):
@@ -49,7 +50,7 @@ class RegistrationContextView(ReferenceView):
         student = Student.objects.filter(pk=request.auth["user_id"]).first()
         department = (Major.objects.filter(pk=student.major_id).values_list("department_id", flat=True).first()
                       if student else None)
-        if not department:
+        if not department or not Department.objects.filter(pk=department).exists():
             raise PermissionDenied("Student has no valid faculty.")
         return Response(ContextDTO({"student_id": student.pk, "department_id": department}).data)
 
@@ -61,4 +62,7 @@ class MajorDepartmentsView(ReferenceView):
         ids = dto.validated_data["major_ids"]
         result = dict.fromkeys(ids)
         result.update(Major.objects.filter(pk__in=ids).values_list("major_id", "department_id"))
+        existing = set(Department.objects.filter(pk__in=[v for v in result.values() if v])
+                       .values_list("department_id", flat=True))
+        result = {key: value if value in existing else None for key, value in result.items()}
         return Response(MajorDepartmentsDTO({"departments": result}).data)

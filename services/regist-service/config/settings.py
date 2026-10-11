@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 import os
+import math
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -36,6 +37,8 @@ ALLOWED_HOSTS = [host.strip() for host in os.getenv(
 # Application definition
 
 INSTALLED_APPS = [
+    'rest_framework',
+    'RegistTopic',
     "config.apps.RegistryConfig",
     'django.contrib.admin',
     'django.contrib.auth',
@@ -81,7 +84,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': os.getenv('DATABASE_PATH', str(BASE_DIR.parent.parent / 'database' / 'DB_ProjectManagerment.db')),
+        'OPTIONS': {'timeout': 3},
     }
 }
 
@@ -148,3 +152,20 @@ CONSUL = {
 
 # Shared credential for internal contracts; public JWT authentication is separate.
 INTERNAL_SERVICE_TOKEN = os.getenv("INTERNAL_SERVICE_TOKEN", "")
+
+JWT_SIGNING_KEY = os.getenv("JWT_SIGNING_KEY", SECRET_KEY)
+SIMPLE_JWT = {"SIGNING_KEY": JWT_SIGNING_KEY}
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": ["RegistTopic.authentication.RegistrationJWTAuthentication"],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+}
+
+for client_name, default_port in (("ACADEMIC", 8002), ("TOPIC", 8004)):
+    config = {
+        "DISCOVERY_ENABLED": os.getenv(client_name + "_DISCOVERY_ENABLED", "true").lower() in {"1", "true", "yes", "on"},
+        "BASE_URL": os.getenv(client_name + "_BASE_URL", f"http://localhost:{default_port}"),
+        "TIMEOUT_SECONDS": float(os.getenv(client_name + "_TIMEOUT_SECONDS", "3")),
+    }
+    if not math.isfinite(config["TIMEOUT_SECONDS"]) or not 0 < config["TIMEOUT_SECONDS"] <= 10:
+        raise ValueError(client_name + "_TIMEOUT_SECONDS must be finite and between 0 and 10 seconds.")
+    globals()[client_name + "_CLIENT"] = config
