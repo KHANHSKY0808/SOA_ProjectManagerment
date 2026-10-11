@@ -143,6 +143,14 @@ if not math.isfinite(ACADEMIC_CLIENT["TIMEOUT_SECONDS"]) or not 0 < ACADEMIC_CLI
     raise ValueError("ACADEMIC_TIMEOUT_SECONDS must be finite and between 0 and 10 seconds.")
 
 
+REGISTRATION_CLIENT = {
+    "DISCOVERY_ENABLED": os.getenv("REGISTRATION_DISCOVERY_ENABLED", "true").lower() in {"1", "true", "yes", "on"},
+    "BASE_URL": os.getenv("REGISTRATION_BASE_URL", "http://localhost:8003"),
+    "TIMEOUT_SECONDS": float(os.getenv("REGISTRATION_TIMEOUT_SECONDS", "2")),
+}
+if not math.isfinite(REGISTRATION_CLIENT["TIMEOUT_SECONDS"]) or not 0 < REGISTRATION_CLIENT["TIMEOUT_SECONDS"] <= 10:
+    raise ValueError("REGISTRATION_TIMEOUT_SECONDS must be finite and between 0 and 10 seconds.")
+
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 

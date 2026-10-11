@@ -275,7 +275,7 @@ Mã nằm trong `features/topics/`: `topic-api.ts`, `useTopics.ts`, `TopicPage.t
 
 - **Chi tiết** gọi `GET /topics/api/v1/topics/{id}/`, hiển thị tên, mô tả, ngành, giảng viên, tệp đính kèm (chuỗi, không tự tải), trạng thái và thông tin cập nhật. Trạng thái hiển thị nhãn Chờ duyệt (0), Đã duyệt (1), Mở đăng ký (2); giá trị cũ ngoài danh sách hiển thị Chưa xác định. Lỗi tải có nút thử lại; đóng popup hủy request đọc đang chờ.
 - **Sửa** lấy dữ liệu mới từ endpoint chi tiết. Chỉ role 1/2 nhận thêm `major_id` và `advisor_id` để điền select đúng theo mã, kể cả trùng/thiếu tên. Mã đề tài không đổi. `PATCH` chỉ gửi tên/mô tả/ngành/giảng viên và trạng thái (chỉ admin) đã thay đổi, giữ nguyên tệp, thời điểm tạo và trường không sửa. Tham chiếu cũ giữ nguyên được chấp nhận dù không còn trong lựa chọn; tham chiếu mới phải hợp lệ. Nếu không đổi gì thì không gửi PATCH.
-- **Xóa** yêu cầu **Xác nhận xóa** trước khi gửi `DELETE /topics/api/v1/topics/{id}/`; Hủy không gửi request. 204 đóng popup và tải lại danh sách; 404 thông báo đề tài không còn tồn tại. 409 giữ đề tài và báo dữ liệu còn liên kết. Không có xóa dây chuyền.
+- **Xóa** yêu cầu **Xác nhận xóa** trước khi gửi `DELETE /topics/api/v1/topics/{id}/`; Hủy không gửi request. 204 đóng popup và tải lại danh sách; 404 thông báo đề tài không còn tồn tại. Xóa đề tài cũng xóa vĩnh viễn toàn bộ đăng ký liên quan, kể cả lịch sử đã hủy. Lỗi 409 hoặc kết quả chưa rõ yêu cầu kiểm tra lại trước khi xác nhận xóa tiếp; đăng ký có thể đã bị xóa dù đề tài còn tồn tại.
 - PATCH/DELETE lỗi mạng, timeout hoặc 5xx khóa thao tác ghi và yêu cầu **Kiểm tra kết quả**, không tự gửi lại. Với sửa, GET phải trả đúng các giá trị vừa gửi mới xác nhận dữ liệu; nếu khác, giữ bản nháp và báo cần xem lại. Với xóa, GET 404 xác nhận đề tài đã vắng; GET 200 yêu cầu xác nhận xóa lại thủ công. Lỗi kiểm tra giữ trạng thái chưa xác định. Đây là đối chiếu trạng thái hiện tại, không bảo đảm không có ghi đồng thời hoặc kết quả backend đến muộn.
 - Bộ lọc tìm kiếm giữ nguyên sau tải lại thành công. Chặn gửi trùng/đóng popup khi ghi đang chờ; đổi trang hủy request frontend nhưng không bảo đảm hủy xử lý backend. Popup hỗ trợ Escape, vòng focus và khôi phục focus khi phần tử mở còn khả dụng.
 
@@ -379,3 +379,9 @@ thủ công. Lỗi kiểm tra giữ trạng thái chưa xác định, không t�
 Đóng popup sau khi request hoàn tất được phép; mở lại đọc danh sách mới. Đổi
 trang hủy việc chờ response, không bảo đảm hủy thao tác backend đã nhận.
 JWT401 đăng xuất;403 báo không có quyền;404 bỏ dòng đăng ký không còn tồn tại.
+
+### Xóa đề tài kèm đăng ký liên quan
+
+Popup **Xóa đề tài** cảnh báo rằng toàn bộ đăng ký liên quan, kể cả lịch sử đã hủy, sẽ bị xóa vĩnh viễn. Chỉ admin/giảng viên có quyền quản lý được xác nhận xóa; Hủy không gửi request. Frontend gửi một DELETE đề tài, backend điều phối việc xóa dữ liệu qua regist-service.
+
+Khi lỗi mạng/timeout/5xx hoặc409, popup yêu cầu **Kiểm tra kết quả**, không tự gửi DELETE lại. Thông báo nêu rõ đề tài có thể đã đóng và lịch sử đăng ký có thể đã mất. GET404 xác nhận đề tài hiện không còn; GET200 cho phép xác nhận xóa lại thủ công nhưng không tuyên bố lịch sử đăng ký còn nguyên. Các tests mock kiểm tra cảnh báo, khóa gửi trùng và đối chiếu kết quả; chưa xóa dữ liệu thật để kiểm thử.

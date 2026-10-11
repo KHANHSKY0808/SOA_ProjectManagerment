@@ -143,3 +143,43 @@ class TopicRosterTests(TransactionTestCase):
         self.assertEqual(result.status_code, 503)
         self.assertNotIn("private", str(result.data))
         self.assertEqual(Registration.objects.get().status, 1)
+
+
+    def test_permanent_topic_cleanup_all_statuses_isolated_and_idempotent(self):
+        for role in (1, 2):
+            self.authenticate(role)
+            for i, status in enumerate((None, 0, 1, 2)):
+                Registration.objects.create(registration_id=f"R{i}", topic_id="T1", student_id="S1", status=status)
+            Registration.objects.update_or_create(registration_id="OTHER", defaults={"topic_id": "T2"})
+            with CaptureQueriesContext(connection) as queries:
+                result = self.client.delete(self.url, HTTP_X_REQUEST_ID="purge-1")
+            self.assertEqual(result.status_code, 200)
+            self.assertEqual(result.data, {"topic_id": "T1", "deleted_count": 4})
+            self.assertEqual(result["X-Request-ID"], "purge-1")
+            self.assertEqual(list(Registration.objects.values_list("registration_id", flat=True)), ["OTHER"])
+            self.assertEqual(self.client.delete(self.url).data["deleted_count"], 0)
+            for query in queries:
+                for table in ("Topics", "Students", "Users"):
+                    self.assertNotIn('"' + table + '"', query["sql"])
+        self.names.assert_not_called()
+
+    def test_permanent_cleanup_permissions_and_transaction_rollback(self):
+        Registration.objects.create(registration_id="R1", topic_id="T1", status=1)
+        for role in (3, "1", True, None, 0):
+            self.authenticate(role)
+            self.assertEqual(self.client.delete(self.url).status_code, 403)
+        self.client.credentials()
+        self.assertEqual(self.client.delete(self.url).status_code, 401)
+        self.authenticate(1)
+        from django.db.models.query import QuerySet
+        original = QuerySet.delete
+        def fail_after_delete(query):
+            original(query)
+            raise OperationalError("private SQL")
+        with patch.object(QuerySet, "delete", fail_after_delete):
+            result = self.client.delete(self.url)
+        self.assertEqual(result.status_code, 503)
+        self.assertNotIn("private SQL", str(result.data))
+        self.assertTrue(Registration.objects.filter(pk="R1").exists())
+        self.assertEqual(self.client.delete("/api/v1/topics/unknown/registrations/").data["deleted_count"], 0)
+        self.assertTrue(Registration.objects.filter(pk="R1").exists())

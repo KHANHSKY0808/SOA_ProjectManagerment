@@ -84,3 +84,11 @@ def cancel_topic_registration(actor, topic_id, registration_id):
         if obj.status != 0:
             Registration.objects.filter(pk=obj.pk, topic_id=topic_id).update(
                 status=0, updated_at=timezone.now(), updated_by=actor)
+
+
+def purge_topic_registrations(topic_id):
+    """Permanent topic cleanup, including cancelled history; local ownership only."""
+    with transaction.atomic():
+        acquire_write_lock()
+        count, _ = Registration.objects.filter(topic_id=topic_id).delete()
+        return count

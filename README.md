@@ -206,7 +206,7 @@ This development setting does not change Gateway/Consul registration or disable
 authentication. Deployments should use discovery addresses reachable from each
 caller. See [topic reference client](services/topic-service/README.md#academic-reference-client).
 
-Frontend `/admin/topics` and `/lecture/topics` show topic code, name, advisor name and major name, with explicit Search and detail/create/edit/delete actions. Role 1 and 2 share management rights over all topics under the approved policy. Creation uses one GUID per draft (HTTPS/localhost), plus name, description, lecturer and major selects. Editing fetches current reference IDs from management detail and sends only changed fields with PATCH; topic IDs are immutable. Deletion requires confirmation and preserves referenced topics on 409. Ambiguous writes require explicit result reconciliation before resubmission: edits compare submitted field values, deletion checks absence. No automatic write retries. See [frontend topic workflow](fe/README.md#danh-sách-và-tạo-đề-tài). Frontend and backend use isolated/mocked tests; live account/browser integration has not been verified.
+Frontend `/admin/topics` and `/lecture/topics` show topic code, name, advisor name and major name, with explicit Search and detail/create/edit/delete actions. Role 1 and 2 share management rights over all topics under the approved policy. Creation uses one GUID per draft (HTTPS/localhost), plus name, description, lecturer and major selects. Editing fetches current reference IDs from management detail and sends only changed fields with PATCH; topic IDs are immutable. Deletion requires confirmation and permanently deletes linked registrations through regist-service before deleting the topic; partial failures require explicit reconciliation. Ambiguous writes require explicit result reconciliation before resubmission: edits compare submitted field values, deletion checks absence. No automatic write retries. See [frontend topic workflow](fe/README.md#danh-sách-và-tạo-đề-tài). Frontend and backend use isolated/mocked tests; live account/browser integration has not been verified.
 
 Topic CRUD supports GET/POST on `/topics/api/v1/topics/` and
 GET/PUT/PATCH/DELETE on `/topics/api/v1/topics/{id}/` through the gateway.
@@ -374,3 +374,9 @@ Admin và giảng viên có thể hủy đăng ký của từng sinh viên ngay 
 chỉ chuyển đăng ký sang status0, giữ lịch sử và ghi người thao tác từ JWT.
 Backend kiểm tra đúng cặp đề tài/đăng ký và role1/2. GET cùng URL trả trạng thái
 chính xác để đối chiếu sau lỗi mạng; frontend không tự gửi lại yêu cầu hủy.
+
+### Xóa đề tài và dữ liệu đăng ký liên quan
+
+Xóa đề tài qua topic-service sẽ đóng đăng ký (status0), yêu cầu regist-service xóa vĩnh viễn toàn bộ đăng ký của đề tài, rồi xóa đề tài. Quyền integer JWT role1/2 giữ nguyên; không xóa sinh viên, giảng viên hoặc người dùng. Regist-service bổ sung DELETE /registrations/api/v1/topics/{topic_id}/registrations/, trả200 với topic_id và deleted_count. Chi tiết timeout/discovery trong README topic-service: REGISTRATION_DISCOVERY_ENABLED (mặc định true), REGISTRATION_BASE_URL (chỉ local development), REGISTRATION_TIMEOUT_SECONDS (mặc định2).
+
+Luồng không có transaction phân tán: nếu bước cuối lỗi, đăng ký có thể đã bị xóa nhưng đề tài vẫn tồn tại và đang đóng. Backend trả503 code deletion_incomplete; UI yêu cầu kiểm tra kết quả rồi xác nhận lại thủ công. Không retry ghi tự động và không thay đổi schema/cổng/prefix. Xem [hợp đồng xóa đề tài](services/topic-service/README.md#cascading-topic-deletion).

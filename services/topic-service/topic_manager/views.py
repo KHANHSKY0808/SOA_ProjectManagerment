@@ -38,7 +38,7 @@ class TopicAPIView(GenericAPIView):
 
     def finalize_response(self, request, response, *args, **kwargs):
         response = super().finalize_response(request, response, *args, **kwargs)
-        request_id = request.headers.get("X-Request-ID", "")
+        request_id = getattr(request, "topic_request_id", request.headers.get("X-Request-ID", ""))
         if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", request_id):
             request_id = uuid.uuid4().hex
         response["X-Request-ID"] = request_id
@@ -83,5 +83,10 @@ class TopicDetailView(TopicAPIView):
         return self.save(request, pk, partial=True)
 
     def delete(self, request, pk):
-        services.delete_topic(pk)
+        request_id = getattr(request, "topic_request_id", request.headers.get("X-Request-ID", ""))
+        if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", request_id):
+            request_id = uuid.uuid4().hex
+        request.topic_request_id = request_id
+        services.delete_topic(pk, str(request.auth["user_id"]),
+                              request.headers.get("Authorization", ""), request_id)
         return Response(status=204)

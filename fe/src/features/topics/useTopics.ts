@@ -210,12 +210,12 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
       if (controller.signal.aborted) return
       const failure = normalizeApiError(cause)
       if (failure.status === 404) { await saved('Đề tài không còn tồn tại.'); return }
-      if (failure.status === 409) setFormError('Đề tài đang có dữ liệu liên kết nên không thể xóa.')
+      if (failure.status === 409) { setUncertain(true); setFormError('Dữ liệu liên kết đã thay đổi. Đăng ký có thể đã bị xóa vĩnh viễn. Hãy kiểm tra kết quả trước khi xác nhận xóa lại.') }
       else {
         const ambiguous = ambiguousWrite(cause)
         setUncertain(ambiguous)
         const message = failureMessage(cause)
-        setFormError(ambiguous ? `${message} Chưa xác định kết quả xóa. Hãy kiểm tra kết quả trước khi thử lại.` : message)
+        setFormError(ambiguous ? `${message} Chưa xác định kết quả xóa. Đề tài có thể đã đóng và đăng ký liên quan có thể đã bị xóa vĩnh viễn. Hãy kiểm tra kết quả trước khi thử lại.` : message)
       }
     } finally { locked.current = false; if (!controller.signal.aborted) setBusy(false) }
   }
@@ -229,7 +229,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
       const result = mode === 'edit' ? await getTopicDetail(id, controller.signal) : await getTopic(id, controller.signal)
       if (controller.signal.aborted) return
       if (mode === 'delete') {
-        setUncertain(false); setFormError('Đề tài vẫn tồn tại. Bạn có thể xác nhận xóa lại nếu cần.')
+        setUncertain(false); setFormError('Đề tài vẫn tồn tại; đăng ký liên quan có thể đã bị xóa vĩnh viễn. Đề tài có thể đang đóng đăng ký. Bạn có thể xác nhận xóa lại nếu cần.')
       } else if (mode === 'edit') {
         const current = result as TopicDetail
         const matches = Object.entries(pendingPatch.current).every(([key, value]) =>

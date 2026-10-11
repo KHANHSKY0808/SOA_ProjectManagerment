@@ -39,9 +39,18 @@ class RosterPage(serializers.Serializer):
     names_unavailable = serializers.BooleanField()
 
 
+class RegistrationPurgeDTO(serializers.Serializer):
+    topic_id = serializers.CharField()
+    deleted_count = serializers.IntegerField(min_value=0)
+
+
 class TopicRegistrationsView(RegistrationAPIView):
     permission_classes = [TopicManagerPermission]
-    http_method_names = ["get", "head", "options"]
+    http_method_names = ["get", "delete", "head", "options"]
+
+    def delete(self, request, topic_id):
+        count = services.purge_topic_registrations(topic_id)
+        return Response(RegistrationPurgeDTO({"topic_id": topic_id, "deleted_count": count}).data)
 
     def get(self, request, topic_id):
         query = RosterQuery(data=request.query_params)

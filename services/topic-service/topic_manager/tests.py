@@ -52,6 +52,9 @@ class TopicPersistenceTests(TransactionTestCase):
         self.addCleanup(self.names_patch.stop)
         self.validation = patch.object(services.academic_client, "validate")
         self.academic = self.validation.start()
+        cleanup = patch.object(services.registration_cleanup_client, "purge", return_value=0)
+        self.cleanup = cleanup.start()
+        self.addCleanup(cleanup.stop)
         self.network = patch.object(clients, "fetch_json", side_effect=AssertionError("Live network forbidden"))
         self.network.start()
 
@@ -311,7 +314,69 @@ class TopicPersistenceTests(TransactionTestCase):
         self.create()
         with connection.cursor() as cursor:
             cursor.execute("INSERT INTO Registrations VALUES ('R1', 'DT001')")
-        self.assertEqual(self.client.delete("/api/topics/DT001/").status_code, 409)
+        self.assertEqual(self.client.delete("/api/topics/DT001/").status_code, 503)
+        self.assertEqual(Topic.objects.get().status, 0)
+        self.assertTrue(Topic.objects.exists())
+
+    def test_cascade_orchestration_closes_before_http_and_deletes_topic(self):
+        for role in (1, 2):
+            self.authenticate(role)
+            self.create()
+            with connection.cursor() as cursor:
+                cursor.execute("INSERT INTO Topics (TopicId, TopicName, MajorId) VALUES ('OTHER', 'Other', '1')")
+                cursor.execute("INSERT INTO Registrations VALUES ('R1', 'DT001')")
+                cursor.execute("INSERT INTO Registrations VALUES ('R2', 'OTHER')")
+            def emulate_registration_owner(topic_id, authorization, request_id):
+                self.assertEqual(topic_id, "DT001")
+                self.assertEqual(authorization, "Bearer " + self.token)
+                self.assertEqual(request_id, "delete-cascade-1")
+                self.assertFalse(connection.in_atomic_block)
+                topic = Topic.objects.get(pk=topic_id)
+                self.assertEqual(topic.status, 0)
+                self.assertEqual(topic.updated_by, "admin")
+                # Disposable fixture only: emulates the separate registration service.
+                with connection.cursor() as cursor:
+                    cursor.execute("DELETE FROM Registrations WHERE TopicId = %s", [topic_id])
+                return 1
+            self.cleanup.side_effect = emulate_registration_owner
+            response = self.client.delete("/api/v1/topics/DT001/", HTTP_X_REQUEST_ID="delete-cascade-1")
+            self.assertEqual(response.status_code, 204)
+            self.assertFalse(Topic.objects.filter(pk="DT001").exists())
+            self.assertTrue(Topic.objects.filter(pk="OTHER").exists())
+            with connection.cursor() as cursor:
+                self.assertEqual(cursor.execute("SELECT RegistrationId FROM Registrations").fetchall(), [("R2",)])
+                cursor.execute("DELETE FROM Registrations")
+            Topic.objects.all().delete()
+
+    def test_cleanup_failure_leaves_closed_topic_and_reports_partial_outcome(self):
+        self.create()
+        self.cleanup.side_effect = clients.DependencyUnavailable("private host")
+        result = self.client.delete("/api/topics/DT001/")
+        self.assertEqual(result.status_code, 503)
+        self.assertEqual(result.data["code"], "deletion_incomplete")
+        self.assertNotIn("private host", str(result.data))
+        self.assertEqual(Topic.objects.get().status, 0)
+        self.assertEqual(self.cleanup.call_count, 1)
+        self.cleanup.side_effect = None
+        self.assertEqual(self.client.delete("/api/topics/DT001/").status_code, 204)
+
+    def test_missing_and_unauthorized_delete_never_calls_cleanup(self):
+        self.assertEqual(self.client.delete("/api/topics/missing/").status_code, 404)
+        self.create()
+        for role in (3, "1", True, None):
+            self.authenticate(role)
+            self.assertEqual(self.client.delete("/api/topics/DT001/").status_code, 403)
+        self.cleanup.assert_not_called()
+        self.assertEqual(Topic.objects.get().status, 1)
+
+    def test_storage_failure_after_cleanup_reports_partial_outcome(self):
+        self.create()
+        with patch("django.db.models.query.QuerySet.delete", side_effect=OperationalError("private SQL")):
+            result = self.client.delete("/api/topics/DT001/")
+        self.assertEqual(result.status_code, 503)
+        self.assertEqual(result.data["code"], "deletion_incomplete")
+        self.assertNotIn("private SQL", str(result.data))
+        self.cleanup.assert_called_once()
         self.assertTrue(Topic.objects.exists())
 
     def test_storage_errors_are_safe(self):

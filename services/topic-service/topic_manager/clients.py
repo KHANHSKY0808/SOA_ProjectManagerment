@@ -57,7 +57,7 @@ class AcademicClient:
         self.open_until = 0
         self.lock = threading.Lock()
 
-    def base_url(self, config):
+    def base_url(self, config, service_name="academic-service"):
         if not config["DISCOVERY_ENABLED"]:
             base = config["BASE_URL"].rstrip("/")
             parsed = urlsplit(base)
@@ -66,14 +66,14 @@ class AcademicClient:
             return base
         consul = settings.CONSUL
         headers = {"X-Consul-Token": consul["TOKEN"]} if consul.get("TOKEN") else {}
-        instances = fetch_json(consul["URL"].rstrip("/") + "/v1/health/service/academic-service?passing=true",
+        instances = fetch_json(consul["URL"].rstrip("/") + f"/v1/health/service/{service_name}?passing=true",
                                headers, config["TIMEOUT_SECONDS"])
         if not isinstance(instances, list) or not instances:
             raise ValueError("No healthy instances")
         for item in instances:
             service = item["Service"]
             checks = item["Checks"]
-            if service["Service"] != "academic-service" or not isinstance(checks, list) or not checks:
+            if service["Service"] != service_name or not isinstance(checks, list) or not checks:
                 raise ValueError("Invalid registry payload")
             if all(check["Status"] == "passing" for check in checks):
                 return instance_url(service.get("Address") or item["Node"]["Address"], service["Port"])
@@ -152,3 +152,28 @@ class AcademicClient:
 academic_client = AcademicClient()
 # Display-only failures must not open the mandatory write-validation circuit.
 academic_names_client = AcademicClient()
+
+
+class RegistrationCleanupClient(AcademicClient):
+    """One bounded DELETE; never retry or redirect forwarded credentials."""
+    def purge(self, topic_id, authorization, request_id):
+        config = settings.REGISTRATION_CLIENT
+        try:
+            base = self.base_url(config, "regist-service")
+            request = Request(base + "/api/v1/topics/" + quote(topic_id, safe="") + "/registrations/",
+                              method="DELETE", headers={"Authorization": authorization,
+                              "X-Request-ID": request_id, "Accept": "application/json"})
+            with build_opener(NoRedirect()).open(request, timeout=config["TIMEOUT_SECONDS"]) as response:
+                body = response.read(4097)
+                if response.status != 200 or len(body) > 4096:
+                    raise ValueError("Invalid cleanup response")
+                payload = json.loads(body)
+                if (not isinstance(payload, dict) or payload.get("topic_id") != topic_id
+                        or type(payload.get("deleted_count")) is not int or payload["deleted_count"] < 0):
+                    raise ValueError("Invalid cleanup DTO")
+                return payload["deleted_count"]
+        except (OSError, HTTPException, ValueError, KeyError, TypeError, AttributeError):
+            raise DependencyUnavailable("Registration cleanup could not be confirmed.") from None
+
+
+registration_cleanup_client = RegistrationCleanupClient()

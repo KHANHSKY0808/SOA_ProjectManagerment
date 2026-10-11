@@ -116,7 +116,7 @@ is described below.
 | 403 | Authenticated caller lacks integer role 1 or 2 for a write |
 | 404 | Topic does not exist; `{"detail":"Topic does not exist."}` |
 | 405 | Unsupported method, including POST on detail routes |
-| 409 | Duplicate ID or database constraint conflict; referenced topics cannot be deleted |
+| 409 | Duplicate ID or database constraint conflict before registration cleanup |
 | 503 | Academic validation or topic storage temporarily unavailable |
 
 Errors use DRF JSON field errors or a `detail` field, without SQL, credentials,
@@ -299,7 +299,7 @@ Both existing/v1 aliases allow authenticated integer roles 1 and 2 to POST/PUT/P
 
 advisor_id may be null. These IDs are topic-owned references, not cross-service ORM lookups. Display names may be null during enrichment outages; raw reference IDs still allow correct edit prefill. Role 3/other read-only callers receive the previous detail DTO. GET collection and POST/PUT/PATCH responses remain unchanged and omit the two reference IDs. Existing callers can continue reading major_name and avisor_name.
 
-The UI uses PATCH for changed name/description/reference fields, preserving untouched fields. Topic ID remains immutable. DELETE returns 204; missing topics return 404, referenced topics return 409 without cascades, storage/dependency failures return safe 503. Existing timeouts, REST reference validation and discovery behavior are unchanged; no schema, route, port or dependency changes are needed.
+The UI uses PATCH for changed name/description/reference fields, preserving untouched fields. Topic ID remains immutable. DELETE returns 204 after removing linked registrations through regist-service; missing topics return 404. Cleanup or subsequent topic deletion failures return safe 503 with code deletion_incomplete. The topic stays closed and registration history may already be permanently removed. No schema, port or package changes are needed; see the cascading deletion contract below.
 
 Callers must not automatically retry writes. After an ambiguous PATCH, GET detail and compare the submitted values, rather than treating existence as proof of update. After ambiguous DELETE, GET 404 means currently absent; GET 200 requires an explicit new confirmation. These are state checks, not a concurrency lock: late requests and other writers can still change the record. Closing or leaving the UI does not roll back a request already accepted by the server.
 
@@ -338,3 +338,15 @@ includes only status 2, and regist-service independently validates that status.
 The detail lookup still returns closed topics so callers can report ineligibility.
 Existing rows, including legacy null statuses, are not rewritten; an admin must
 explicitly open approved topics. Existing registration records are unaffected.
+
+## Cascading topic deletion
+
+Both existing topic DELETE aliases retain integer JWT role1/admin or role2/lecturer authorization. The service first validates topic existence, commits status0 (closed) with server audit metadata, forwards Authorization and a sanitized X-Request-ID to regist-service, then deletes only its own topic. No SQLite write transaction is held during HTTP. Students, lecturers and users are never removed.
+
+Regist-service contract: DELETE /api/v1/topics/{encoded_topic_id}/registrations/ returns200 JSON {"topic_id":"T1","deleted_count":3}, including active, cancelled and legacy-null registration rows. Cleanup is idempotent; it is a permanent purge, unlike individual registration cancellation.
+
+REGISTRATION_DISCOVERY_ENABLED defaults to true: resolve healthy regist-service instances using Consul, with no static fallback on discovery failure. Explicit local development may set REGISTRATION_DISCOVERY_ENABLED=false and REGISTRATION_BASE_URL=http://localhost:8003. REGISTRATION_TIMEOUT_SECONDS defaults to2, must be finite and greater than0 and at most10, and applies separately to discovery and cleanup. There are no automatic write retries or redirects. No new rate limiter is introduced; existing gateway policies apply. Empty or malformed cleanup DTOs, timeout, non200 and dependency failures fail safely.
+
+204 means the topic and linked registrations were removed;404 means topic was already absent before the operation. Before cleanup, storage failures return503 and constraint failures409. After closure, unconfirmed cleanup, concurrent FK references or final storage errors return503 {"code":"deletion_incomplete","detail":"..."}. The topic stays closed if it still exists, and registration history may already be gone. Independent services do not provide a distributed transaction: no automatic compensation or restoration is claimed. An in-flight registration or concurrent topic edit may race; FK enforcement prevents orphan references. Clients must GET the topic after uncertain failure:404 confirms current absence;200 requires a new explicit confirmation and must warn that registration history may already be deleted. Reverting code does not restore deleted data.
+
+Automated tests use disposable databases and mocked HTTP for orchestration, authorization, isolation, rollback, discovery and partial failures. No live registrations are deleted during verification.

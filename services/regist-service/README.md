@@ -331,3 +331,11 @@ DELETE automatically, and query this exact GET after timeout/network/5xx.
 Status0 confirms cancellation; a current status requires renewed explicit
 confirmation. A paginated roster alone is insufficient to establish success.
 No new environment variables, schema or migrations.
+
+## Permanent registration cleanup for topic deletion
+
+DELETE /registrations/api/v1/topics/{topic_id}/registrations/ through the gateway (direct /api/v1/topics/{topic_id}/registrations/) permanently removes all registrations for that exact topic, including status0 cancelled history and legacy-null statuses. This bulk operation differs from DELETE on an individual registration, which remains soft cancellation.
+
+Authentication: Bearer JWT validated locally; only integer roles1/admin and2/lecturer under the existing shared management policy. No student-supplied ownership or actor field is trusted. Success200: {"topic_id":"T1","deleted_count":3}. Missing/previously cleaned topic returns200 with count0; the service owns registrations and does not query the Topics table. The deletion occurs in one local transaction using the existing writer lock. Other topic registrations and student/user data remain intact. Request IDs are propagated and operation metadata logged without personal data or tokens.
+
+Errors:401 absent/invalid authentication,403 unauthorized role,409 changed storage references,503 unavailable storage. The topic-service caller uses bounded discovery/request timeouts and no automatic write retries. No new rate limiter is introduced. This endpoint is one step in topic deletion; it does not claim cross-service atomicity or restore history if the later topic deletion fails. Existing roster GET pagination and individual cancellation routes remain compatible.
