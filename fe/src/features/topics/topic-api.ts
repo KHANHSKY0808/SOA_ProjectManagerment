@@ -9,12 +9,12 @@ export interface Topic {
   // This spelling is part of the published topic-service response contract.
   avisor_name: string | null
 }
-export type TopicStatus = 0 | 1 | 2
+export type TopicStatus = 0 | 1 | 2 | 3
 export const topicStatusLabels: Record<TopicStatus, string> = {
-  0: 'Chờ duyệt', 1: 'Đã duyệt', 2: 'Mở đăng ký',
+  0: 'Chờ duyệt', 1: 'Đã duyệt', 2: 'Mở đăng ký', 3: 'Đóng đăng ký',
 }
 export function topicStatusLabel(status: number | null) {
-  return status === 0 || status === 1 || status === 2 ? topicStatusLabels[status] : 'Chưa xác định'
+  return status === 0 || status === 1 || status === 2 || status === 3 ? topicStatusLabels[status] : 'Chưa xác định'
 }
 export interface CreateTopic {
   status?: TopicStatus

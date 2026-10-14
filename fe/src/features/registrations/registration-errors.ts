@@ -6,6 +6,7 @@ export function registrationError(cause: unknown): string {
     ? String(error.details.code) : ''
   const messages: Record<string, string> = {
     topic_closed: 'Đề tài đã đóng đăng ký. Vui lòng tải lại danh sách.',
+    topic_registration_closed: 'Đề tài đã đóng đăng ký. Bạn không thể hủy đăng ký này.',
     faculty_mismatch: 'Đề tài không thuộc khoa của bạn. Vui lòng chọn đề tài khác.',
     registration_conflict: 'Bạn đã có đăng ký hiện tại hoặc dữ liệu đã thay đổi. Hãy kiểm tra kết quả.',
     dependency_unavailable: 'Dịch vụ tra cứu tạm thời không khả dụng. Vui lòng thử lại sau.',
@@ -22,6 +23,8 @@ export function registrationError(cause: unknown): string {
 
 export function requiresReconciliation(cause: unknown, cancellation: boolean): boolean {
   const error = normalizeApiError(cause)
+  if (error.details && typeof error.details === 'object' && 'code' in error.details &&
+      error.details.code === 'topic_registration_closed') return false
   return ['network', 'timeout', 'unknown'].includes(error.kind) || (error.status ?? 0) >= 500 ||
     error.status === 409 || (cancellation && error.status === 404)
 }

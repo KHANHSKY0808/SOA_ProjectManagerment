@@ -22,7 +22,7 @@ export function StudentRegistrationPage() {
   return <div className="academic student-registration">
     <section className="dash-surface registration-intro" aria-label="Đăng ký đề tài tốt nghiệp">
       <div><p className="registration-eyebrow">ĐỒ ÁN TỐT NGHIỆP</p><h2>Chọn đề tài cho hành trình của bạn</h2>
-        <p>Mỗi sinh viên đăng ký một đề tài đang mở thuộc khoa của mình. Bạn có thể hủy đăng ký để chọn lại.</p></div>
+        <p>Mỗi sinh viên đăng ký một đề tài đang mở thuộc khoa của mình. Bạn có thể hủy để chọn lại trước khi đề tài đóng đăng ký.</p></div>
       <button type="button" disabled={state.busy || !!state.dialog} onClick={() => void state.reload()}>Tải lại</button>
     </section>
     {state.notice && <p role="status" className="academic-success">{state.notice}</p>}
@@ -36,6 +36,7 @@ export function StudentRegistrationPage() {
       <div className="registration-heading"><h2 id="registration-current-title">Đăng ký hiện tại</h2><span className="registration-tag">Tối đa 1 đề tài</span></div>
       {state.historyLoading && <p role="status">Đang tải đăng ký…</p>}
       {state.historyError && <p role="alert" className="academic-error">{state.historyError} Tải lại để xác nhận đăng ký hiện tại.</p>}
+      {state.topicStatusError && <p role="alert" className="academic-error">{state.topicStatusError} Tải lại để kiểm tra quyền hủy đăng ký.</p>}
       {state.historyReady && state.current.length === 0 && <p>Bạn chưa đăng ký đề tài. Chọn một đề tài trong danh sách bên dưới để bắt đầu.</p>}
       {state.current.length > 1 && <p role="alert" className="academic-error">Có nhiều đăng ký hiện tại. Vui lòng liên hệ bộ phận quản lý để kiểm tra dữ liệu.</p>}
       {state.current.map(row => <article className="registration-current-card" key={row.registration_id}>
@@ -43,7 +44,8 @@ export function StudentRegistrationPage() {
           {topicName(row.topic_id) && <h3>{topicName(row.topic_id)}</h3>}
           <p>Học kỳ: {row.semester || 'Không cung cấp'} · Đăng ký lúc: {time(row.created_at)} · Điểm: {row.point ?? 'Chưa chấm'}</p>
           <span className="registration-status">{row.status === 1 ? 'Đang đăng ký' : 'Cần kiểm tra trạng thái'}</span></div>
-        <button type="button" className="registration-cancel" disabled={disabled} onClick={() => state.openCancel(row)} aria-label={`Hủy đăng ký ${row.topic_id ?? row.registration_id}`}>Hủy đăng ký</button>
+        {row.topic_id && state.topicStatusReady && state.topicStatuses[row.topic_id] === 3 && <p>Đề tài đã đóng đăng ký; không thể hủy đăng ký.</p>}
+        <button type="button" className="registration-cancel" disabled={disabled || !state.canCancel(row)} onClick={() => state.openCancel(row)} aria-label={`Hủy đăng ký ${row.topic_id ?? row.registration_id}`}>Hủy đăng ký</button>
       </article>)}
     </section>
 
@@ -61,7 +63,7 @@ export function StudentRegistrationPage() {
         </td></tr>)}{!rows.length && <tr><td colSpan={3}>{search ? 'Không có đề tài phù hợp trong các trang đã tải.' : state.nextAfter !== null
           ? 'Trang này chưa có đề tài thuộc khoa của bạn. Hãy tải thêm để xem tiếp.' : 'Chưa có đề tài mở đăng ký thuộc khoa của bạn.'}</td></tr>}</tbody></table></div>}
       {state.nextAfter !== null && <div className="registration-pagination"><p className="academic-hint">Tải thêm để xem các đề tài ở trang tiếp theo.</p><button type="button" disabled={state.topicsLoading || state.busy || !!state.dialog} onClick={() => void state.loadMore()}>Tải thêm đề tài</button></div>}
-      {state.current.length > 0 && <p className="academic-hint">Bạn cần hủy đăng ký hiện tại trước khi đăng ký đề tài khác.</p>}
+      {state.current.length > 0 && <p className="academic-hint">Bạn chỉ có thể chọn đề tài khác sau khi hủy đăng ký hiện tại, nếu đề tài chưa đóng đăng ký.</p>}
     </section>
 
     <section className="dash-surface" aria-labelledby="registration-history-title">
@@ -85,7 +87,7 @@ export function StudentRegistrationPage() {
           {state.historyError && <p role="alert" className="academic-error">{state.historyError}</p>}</>}
         <div className="academic-actions registration-dialog-actions"><button type="button" disabled={state.busy} onClick={state.closeDialog}>Đóng</button>
           {state.uncertain ? <button type="button" className="academic-primary" disabled={state.busy} onClick={() => void state.reconcile()}>{state.busy ? 'Đang kiểm tra…' : 'Kiểm tra kết quả'}</button>
-            : <button type="submit" className={state.dialog.kind === 'register' ? 'academic-primary' : 'academic-danger'} disabled={!state.canAct}>{state.busy ? 'Đang xử lý…' : state.dialog.kind === 'register' ? 'Xác nhận đăng ký' : 'Xác nhận hủy'}</button>}
+            : <button type="submit" className={state.dialog.kind === 'register' ? 'academic-primary' : 'academic-danger'} disabled={!state.canAct || (state.dialog.kind === 'cancel' && !state.canCancel(state.dialog.registration))}>{state.busy ? 'Đang xử lý…' : state.dialog.kind === 'register' ? 'Xác nhận đăng ký' : 'Xác nhận hủy'}</button>}
         </div>
       </form>
     </Modal>}

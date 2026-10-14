@@ -3,7 +3,7 @@ import { normalizeApiError } from '../../services/api-error'
 import { getTopicRoster, cancelTopicRegistration, getTopicRegistrationState, getTopicRegistrationDetail, gradeTopicRegistration } from './roster-api'
 import type { RegisteredStudent } from './roster-api'
 
-export function useTopicRoster(topicId: string | undefined, logout: () => void) {
+export function useTopicRoster(topicId: string | undefined, logout: () => void, onGradeStatusChanged?: () => void) {
   const [rows, setRows] = useState<RegisteredStudent[]>([])
   const [next, setNext] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -97,6 +97,13 @@ export function useTopicRoster(topicId: string | undefined, logout: () => void) 
       if (controller.signal.aborted) return
       const failure = normalizeApiError(cause)
       if (failure.status === 401) { logout(); return }
+      if (!checking && failure.status === 409 && failure.details && typeof failure.details === 'object' &&
+          'code' in failure.details && failure.details.code === 'topic_not_closed') {
+        setGrading(null); setGradeUncertain(false)
+        setGradeError('Đề tài chưa đóng đăng ký nên không thể chấm điểm. Đang cập nhật trạng thái đề tài.')
+        onGradeStatusChanged?.()
+        return
+      }
       const ambiguous = !checking && (['network', 'timeout', 'unknown'].includes(failure.kind) || (failure.status ?? 0) >= 500)
       setGradeUncertain(ambiguous || gradeUncertain)
       setGradeError(ambiguous ? 'Chưa xác định kết quả chấm điểm. Hãy kiểm tra trước khi thử lại.' :

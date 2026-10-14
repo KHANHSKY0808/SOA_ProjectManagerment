@@ -7,10 +7,11 @@ import type { TopicState } from '../useTopics'
 export function TopicDetailModal({ state }: { state: TopicState }) {
   const { user, logout } = useAuth()
   const canViewRoster = user?.role === 1 || user?.role === 2
-  const roster = useTopicRoster(state.mode === 'detail' && canViewRoster ? state.selected?.topic_id : undefined, logout)
+  const roster = useTopicRoster(state.mode === 'detail' && canViewRoster ? state.selected?.topic_id : undefined, logout, state.retryDetail)
   if (state.mode !== 'detail') return null
   const row = state.detail
-  const canGrade = user?.role === 1 || (user?.role === 2 && !!row?.advisor_id && row.advisor_id === user.user_id)
+  const canGrade = !state.detailLoading && !state.detailError && row?.status === 3 &&
+    (user?.role === 1 || (user?.role === 2 && !!row.advisor_id && row.advisor_id === user.user_id))
   return <Modal title="Chi tiết đề tài" busy={roster.busy} onClose={state.close}>
     {state.detailLoading && <p role="status">Đang tải chi tiết đề tài…</p>}
     {state.detailError && <><p role="alert" className="academic-error">{state.detailError}</p><button type="button" onClick={state.retryDetail}>Tải lại chi tiết</button></>}
@@ -45,6 +46,7 @@ export function TopicDetailModal({ state }: { state: TopicState }) {
       </table></div>}
       {roster.next && !roster.error && <button type="button" disabled={roster.loading || roster.busy || !!roster.selected || !!roster.grading} onClick={roster.more}>Xem thêm sinh viên</button>}
       {roster.notice && <p role="status" className="academic-success">{roster.notice}</p>}
+      {roster.gradeError && !roster.grading && <p role="alert" className="academic-error">{roster.gradeError}</p>}
       {roster.grading && <form aria-label="Chấm điểm đăng ký" onSubmit={event => { event.preventDefault(); roster.saveGrade() }}>
         <p>Điểm cho sinh viên {roster.grading.student_name || roster.grading.student_id || roster.grading.registration_id}</p>
         <label>Điểm (0–10)<input type="number" min="0" max="10" step="0.01" value={roster.gradeDraft} disabled={roster.busy || roster.gradeUncertain} onChange={event => roster.setGradeDraft(event.target.value)} /></label>

@@ -41,7 +41,7 @@ export function TopicCreateModal({ state }: { state: TopicState }) {
           </select>{error('major_id')}</div>
           {state.canSetStatus && <div><label htmlFor="topic-status">Trạng thái</label><select id="topic-status" name="status" value={state.draft.status ?? ''} onChange={event => state.change('status', event.target.value)} {...accessibility('status')}>
             <option value="" disabled>Chọn trạng thái</option>
-            {([0, 1, 2] as const).map(status => <option key={status} value={status}>{topicStatusLabels[status]}</option>)}
+            {([0, 1, 2, 3] as const).map(status => <option key={status} value={status}>{topicStatusLabels[status]}</option>)}
           </select>{error('status')}</div>}
           <div className="topic-description"><label htmlFor="topic-description">Mô tả đề tài</label><textarea id="topic-description" name="description" rows={5} value={state.draft.description} onChange={event => state.change('description', event.target.value)} {...accessibility('description')} />{error('description')}</div>
         </div>

@@ -292,7 +292,7 @@ describe('Topic list and creation', () => {
   })
 })
 
-const detail = { ...rows[0], major_id: '2', advisor_id: 'GV001' as string | null, file_url: '/files/topic.pdf', status: 1,
+const detail = { ...rows[0], major_id: '2', advisor_id: 'GV001' as string | null, file_url: '/files/topic.pdf', status: 1 as number | null,
   created_at: '2026-10-10T08:00:00Z', updated_at: null, updated_by: 'admin' }
 async function openEdit(role: Role = 2, searchQuery = '') {
   mock.onGet(base + 'DT001/').reply(200, detail)
@@ -627,7 +627,7 @@ describe('Topic detail, edit and delete', () => {
 
 
 describe('Topic status permissions', () => {
-  it.each([0, 1, 2])('admin selects status %s when creating', async status => {
+  it.each([0, 1, 2, 3])('admin selects status %s when creating', async status => {
     renderPage(1); const form = await openForm(); fillForm()
     expect(screen.getByLabelText('Trạng thái')).toHaveValue('1')
     fireEvent.change(screen.getByLabelText('Trạng thái'), { target: { value: String(status) } })
@@ -636,7 +636,7 @@ describe('Topic status permissions', () => {
     await screen.findByText('Đã tạo đề tài.')
     expect(JSON.parse(mock.history.post[0].data).status).toBe(status)
   })
-  it.each([0, 1, 2])('admin patches only changed status %s', async status => {
+  it.each([0, 1, 2, 3])('admin patches only changed status %s', async status => {
     mock.onGet(base + 'DT001/').reply(200, { ...detail, status: (status + 1) % 3 })
     renderPage(1); await screen.findByRole('table')
     fireEvent.click(screen.getByRole('button', { name: 'Sửa DT001' }))
@@ -672,7 +672,7 @@ describe('Topic status permissions', () => {
     await screen.findByText('Đã xác nhận dữ liệu cập nhật.')
     expect(mock.history.patch).toHaveLength(1)
   })
-  it.each([[0, 'Chờ duyệt'], [1, 'Đã duyệt'], [2, 'Mở đăng ký'], [null, 'Chưa xác định'], [9, 'Chưa xác định']])('displays status %s safely', async (status, label) => {
+  it.each([[0, 'Chờ duyệt'], [1, 'Đã duyệt'], [2, 'Mở đăng ký'], [3, 'Đóng đăng ký'], [null, 'Chưa xác định'], [9, 'Chưa xác định']])('displays status %s safely', async (status, label) => {
     mock.onGet(base + 'DT001/').reply(200, { ...detail, status })
     renderPage(); await screen.findByRole('table')
     fireEvent.click(screen.getByRole('button', { name: 'Xem chi tiết DT001' }))
@@ -700,9 +700,15 @@ describe('Topic roster detail', () => {
     expect(within(table).getByText('2026-1')).toBeVisible()
     expect(mock.history.get.find(request => request.url === rosterUrl)?.headers?.Authorization).toBe('Bearer test-token')
   })
+  it.each([0, 1, 2, null])('hides grading until topic status 3 (status %s)', async status => {
+    mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
+    await openRoster(1, 'admin', { ...detail, status })
+    await screen.findByText('Nguyễn An')
+    expect(screen.queryByRole('button', { name: 'Chấm điểm S1' })).not.toBeInTheDocument()
+  })
   it.each(['GV001', null])('lets admin revise any current score when advisor is %s', async advisorId => {
     mock.onGet(rosterUrl).reply(200, { results: [{ ...student, point: '8.50' }], next_after: null, names_unavailable: false })
-    await openRoster(1, 'admin', { ...detail, advisor_id: advisorId })
+    await openRoster(1, 'admin', { ...detail, advisor_id: advisorId, status: 3 })
     const table = await screen.findByRole('table', { name: 'Danh sách sinh viên đăng ký' })
     expect(within(table).getByText('8.50')).toBeVisible()
     expect(within(table).getByRole('columnheader', { name: 'Điểm' })).toBeVisible()
@@ -717,7 +723,7 @@ describe('Topic roster detail', () => {
   })
   it('keeps the admin draft after a forbidden grading response', async () => {
     mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
-    await openRoster(1, 'admin')
+    await openRoster(1, 'admin', { ...detail, status: 3 })
     fireEvent.click(await screen.findByRole('button', { name: 'Chấm điểm S1' }))
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' }), { target: { value: '7.5' } })
     mock.onPut(rosterUrl + 'R001/point/').reply(403, { detail: 'private' })
@@ -727,9 +733,23 @@ describe('Topic roster detail', () => {
     expect(screen.queryByText('private')).not.toBeInTheDocument()
     expect(mock.history.put).toHaveLength(1)
   })
+  it('refreshes topic detail and hides grading after topic_not_closed', async () => {
+    mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
+    await openRoster(1, 'admin', { ...detail, status: 3 })
+    fireEvent.click(await screen.findByRole('button', { name: 'Chấm điểm S1' }))
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' }), { target: { value: '7.5' } })
+    mock.onPut(rosterUrl + 'R001/point/').reply(() => {
+      mock.onGet(base + 'DT001/').reply(200, { ...detail, status: 2 })
+      return [409, { code: 'topic_not_closed' }]
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu điểm' }))
+    expect(await screen.findByText('Đề tài chưa đóng đăng ký nên không thể chấm điểm. Đang cập nhật trạng thái đề tài.')).toBeVisible()
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Chấm điểm S1' })).not.toBeInTheDocument())
+    expect(mock.history.put).toHaveLength(1)
+  })
   it('lets only the assigned lecturer grade and refreshes the shown score', async () => {
     mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
-    await openRoster(2, 'GV001')
+    await openRoster(2, 'GV001', { ...detail, status: 3 })
     fireEvent.click(await screen.findByRole('button', { name: 'Chấm điểm S1' }))
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' }), { target: { value: '8.5' } })
     const pointPath = rosterUrl + 'R001/point/'
@@ -750,7 +770,7 @@ describe('Topic roster detail', () => {
   })
   it('checks the exact point after an uncertain save without retrying PUT', async () => {
     mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
-    await openRoster(2, 'GV001')
+    await openRoster(2, 'GV001', { ...detail, status: 3 })
     fireEvent.click(await screen.findByRole('button', { name: 'Chấm điểm S1' }))
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' }), { target: { value: '8.5' } })
     mock.onPut(rosterUrl + 'R001/point/').timeout()

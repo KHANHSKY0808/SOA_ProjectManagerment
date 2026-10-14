@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { normalizeApiError } from '../../services/api-error'
-import { cancelRegistration, isCurrent, listAvailableTopics, listRegistrations, registerTopic } from './registration-api'
+import { cancelRegistration, getRegistrationTopicStatus, isCurrent, listAvailableTopics, listRegistrations, registerTopic } from './registration-api'
 import type { AvailableTopic, RegisterInput, Registration } from './registration-api'
 import { registrationError, requiresReconciliation } from './registration-errors'
 
@@ -12,6 +12,9 @@ export function useStudentRegistrations(logout: () => void) {
   const [historyReady, setHistoryReady] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(true)
   const [historyError, setHistoryError] = useState('')
+  const [topicStatuses, setTopicStatuses] = useState<Record<string, number | null>>({})
+  const [topicStatusReady, setTopicStatusReady] = useState(false)
+  const [topicStatusError, setTopicStatusError] = useState('')
   const [topics, setTopics] = useState<AvailableTopic[]>([])
   const [topicsLoading, setTopicsLoading] = useState(true)
   const [topicsReady, setTopicsReady] = useState(false)
@@ -41,10 +44,22 @@ export function useStudentRegistrations(logout: () => void) {
     const controller = new AbortController()
     historyRequest.current = controller
     setHistoryLoading(true); setHistoryReady(false); setHistoryError('')
+    setTopicStatusReady(false); setTopicStatuses({}); setTopicStatusError('')
     try {
       const rows = await listRegistrations(controller.signal)
       if (controller.signal.aborted) return null
       setHistory(rows); setHistoryReady(true)
+      const currentRows = rows.filter(isCurrent)
+      const topicIds = [...new Set(currentRows.map(row => row.topic_id).filter((id): id is string => id !== null))]
+      const results = await Promise.allSettled(topicIds.map(async id => [id, await getRegistrationTopicStatus(id, controller.signal)] as const))
+      if (controller.signal.aborted) return null
+      const statuses: Record<string, number | null> = {}
+      results.forEach(result => { if (result.status === 'fulfilled') statuses[result.value[0]] = result.value[1] })
+      setTopicStatuses(statuses)
+      const failed = results.find(result => result.status === 'rejected')
+      if (failed || currentRows.some(row => row.topic_id === null)) {
+        setTopicStatusError(failed ? message(failed.reason) : 'Không thể xác minh trạng thái đề tài. Vui lòng tải lại.')
+      } else setTopicStatusReady(true)
       return rows
     } catch (cause) {
       if (!controller.signal.aborted) setHistoryError(message(cause))
@@ -89,12 +104,14 @@ export function useStudentRegistrations(logout: () => void) {
 
   const current = history.filter(isCurrent)
   const canAct = historyReady && !historyLoading && !busy && !uncertain
+  const canCancel = (registration: Registration) => canAct && isCurrent(registration) && topicStatusReady &&
+    registration.topic_id !== null && Object.hasOwn(topicStatuses, registration.topic_id) && topicStatuses[registration.topic_id] !== 3
   function openRegister(topic: AvailableTopic) {
     if (!canAct || current.length || locked.current) return
     setSemester(''); setActionError(''); setNotice(''); setDialog({ kind: 'register', topic })
   }
   function openCancel(registration: Registration) {
-    if (!canAct || !isCurrent(registration) || locked.current) return
+    if (!canCancel(registration) || locked.current) return
     setActionError(''); setNotice(''); setDialog({ kind: 'cancel', registration })
   }
   function closeDialog() { if (!locked.current) setDialog(null) }
@@ -102,6 +119,7 @@ export function useStudentRegistrations(logout: () => void) {
   async function submit() {
     if (!dialog || !canAct || locked.current) return
     if (dialog.kind === 'register' && current.length) return
+    if (dialog.kind === 'cancel' && !canCancel(dialog.registration)) return
     const action: Pending = dialog.kind === 'register'
       ? { kind: 'register', input: { topic_id: dialog.topic.topic_id, ...(semester.trim() ? { semester: semester.trim() } : {}) } }
       : { kind: 'cancel', id: dialog.registration.registration_id }
@@ -131,7 +149,11 @@ export function useStudentRegistrations(logout: () => void) {
       if (controller.signal.aborted) return
       const failure = normalizeApiError(cause)
       setActionError(message(failure))
-      if (failure.status !== 401 && requiresReconciliation(failure, action.kind === 'cancel')) {
+      if (action.kind === 'cancel' && failure.status === 409 && failure.details && typeof failure.details === 'object' &&
+          'code' in failure.details && failure.details.code === 'topic_registration_closed') {
+        setDialog(null)
+        void refreshHistory()
+      } else if (failure.status !== 401 && requiresReconciliation(failure, action.kind === 'cancel')) {
         pending.current = action; setUncertain(true); setHistoryReady(false)
       }
     } finally {
@@ -167,7 +189,8 @@ export function useStudentRegistrations(logout: () => void) {
     await Promise.all([refreshHistory(), loadTopics()])
   }
 
-  return { history, current, historyReady, historyLoading, historyError, topics, topicsLoading, topicsReady,
+  return { history, current, historyReady, historyLoading, historyError, topicStatuses, topicStatusReady, topicStatusError,
+    canCancel, topics, topicsLoading, topicsReady,
     topicsError, nextAfter, dialog, semester, setSemester, actionError, notice, busy, uncertain, canAct,
     openRegister, openCancel, closeDialog, submit, reconcile, reload,
     loadMore: () => nextAfter !== null ? loadTopics(nextAfter, true) : Promise.resolve() }

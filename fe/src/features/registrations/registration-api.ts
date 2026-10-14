@@ -45,6 +45,15 @@ export async function listRegistrations(signal: AbortSignal): Promise<Registrati
   return rows
 }
 
+/** Read the published student-facing topic reference before offering cancellation. */
+export async function getRegistrationTopicStatus(topicId: string, signal: AbortSignal): Promise<number | null> {
+  const { data } = await apiClient.get<unknown>(`/topics/api/v1/registration-topics/${encodeURIComponent(topicId)}/`, { signal })
+  const topic = object(data)
+  if (topic.topic_id !== topicId || !(topic.status === null ||
+      (typeof topic.status === 'number' && Number.isInteger(topic.status)))) throw new Error('Invalid topic status')
+  return topic.status as number | null
+}
+
 export async function listAvailableTopics(after: string, signal: AbortSignal): Promise<TopicPage> {
   const { data } = await apiClient.get<unknown>(base + 'available-topics/' + (after ? `?after=${encodeURIComponent(after)}` : ''), { signal })
   const page = object(data)

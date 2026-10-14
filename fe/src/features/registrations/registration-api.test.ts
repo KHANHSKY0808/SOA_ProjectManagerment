@@ -1,7 +1,7 @@
 import MockAdapter from 'axios-mock-adapter'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { apiClient, setAccessToken } from '../../services/api-client'
-import { cancelRegistration, isCurrent, listAvailableTopics, listRegistrations, registerTopic } from './registration-api'
+import { cancelRegistration, getRegistrationTopicStatus, isCurrent, listAvailableTopics, listRegistrations, registerTopic } from './registration-api'
 
 const base = '/registrations/api/v1/'
 const row = { registration_id: 'R1', topic_id: 'T1', semester: null, status: 1,
@@ -13,6 +13,16 @@ beforeEach(() => { mock = new MockAdapter(apiClient, { onNoMatch: 'throwExceptio
 afterEach(() => { mock.restore(); setAccessToken(null) })
 
 describe('Student registration Gateway contract', () => {
+  it('reads topic status through the student reference endpoint with JWT and signal', async () => {
+    mock.onGet('/topics/api/v1/registration-topics/T%20%23%3F/').reply(200, { topic_id: 'T #?', status: 3 })
+    expect(await getRegistrationTopicStatus('T #?', signal)).toBe(3)
+    expect(mock.history.get[0].headers?.Authorization).toBe('Bearer student-token')
+    expect(mock.history.get[0].signal).toBe(signal)
+  })
+  it.each([{ topic_id: 'T2', status: 3 }, { topic_id: 'T1' }, { topic_id: 'T1', status: '3' }])('rejects invalid topic status %#', async data => {
+    mock.onGet('/topics/api/v1/registration-topics/T1/').reply(200, data)
+    await expect(getRegistrationTopicStatus('T1', signal)).rejects.toThrow()
+  })
   it('loads own history and strips unrequested fields, forwarding JWT and signal', async () => {
     mock.onGet(base + 'registrations/').reply(200, [{ ...row, student_id: 'private', notes: 'private' }])
     expect(await listRegistrations(signal)).toEqual([row])
