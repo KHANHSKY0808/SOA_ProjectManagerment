@@ -1,0 +1,232 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "SOA Graduation Project Management System Architecture",
+    "output": ".archify/architecture-soa-system-overview-20261014-210400/soa-architecture.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "Web Client (React)",
+      "sublabel": "Vite SPA :5173",
+      "tag": "Student / Lecturer / Admin",
+      "pos": [40, 40],
+      "size": [140, 60]
+    },
+    {
+      "id": "gateway",
+      "type": "cloud",
+      "label": "API Gateway",
+      "sublabel": "Nginx :8000",
+      "tag": "Reverse Proxy & Policy",
+      "pos": [330, 40],
+      "size": [150, 60]
+    },
+    {
+      "id": "consul",
+      "type": "cloud",
+      "label": "Consul Registry",
+      "sublabel": "Service Discovery :8500",
+      "tag": "Health Checks",
+      "pos": [650, 40],
+      "size": [150, 60]
+    },
+    {
+      "id": "auth",
+      "type": "security",
+      "label": "auth-service",
+      "sublabel": "Django REST :8001",
+      "tag": "/auth/* · Users & JWT",
+      "pos": [40, 220],
+      "size": [145, 60]
+    },
+    {
+      "id": "academic",
+      "type": "backend",
+      "label": "academic-service",
+      "sublabel": "Django REST :8002",
+      "tag": "/academic/* · SINHVIEN",
+      "pos": [285, 220],
+      "size": [145, 60]
+    },
+    {
+      "id": "topic",
+      "type": "backend",
+      "label": "topic-service",
+      "sublabel": "Django REST :8004",
+      "tag": "/topics/* · DETAI",
+      "pos": [530, 220],
+      "size": [145, 60]
+    },
+    {
+      "id": "regist",
+      "type": "backend",
+      "label": "regist-service",
+      "sublabel": "Django REST :8003",
+      "tag": "/registrations/* · DANGKY",
+      "pos": [775, 220],
+      "size": [145, 60]
+    },
+    {
+      "id": "log",
+      "type": "backend",
+      "label": "log-service",
+      "sublabel": "Django Async Logger",
+      "tag": "Audit Trail",
+      "pos": [1020, 220],
+      "size": [135, 60]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "SQLite Shared Database",
+      "sublabel": "database/DB_ProjectManagerment.db",
+      "tag": "Logical Table Ownership",
+      "pos": [400, 390],
+      "size": [280, 68]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "security-group",
+      "label": "Ingress & Service Discovery Layer",
+      "wraps": ["gateway", "consul"],
+      "pad": 14
+    },
+    {
+      "kind": "region",
+      "label": "SOA Microservices Domain (Django REST Framework)",
+      "wraps": ["auth", "academic", "topic", "regist", "log"],
+      "pad": 16
+    },
+    {
+      "kind": "security-group",
+      "label": "Persistence & Storage Layer",
+      "wraps": ["db"],
+      "pad": 14
+    }
+  ],
+  "connections": [
+    {
+      "id": "client-to-gateway",
+      "from": "client",
+      "to": "gateway",
+      "label": "HTTPS / REST",
+      "variant": "emphasis"
+    },
+    {
+      "id": "gateway-to-consul",
+      "from": "gateway",
+      "to": "consul",
+      "label": "discovery :8500",
+      "variant": "emphasis"
+    },
+    {
+      "id": "route-auth",
+      "from": "gateway",
+      "to": "auth",
+      "label": "/auth/*",
+      "variant": "security"
+    },
+    {
+      "id": "route-academic",
+      "from": "gateway",
+      "to": "academic",
+      "label": "/academic/*"
+    },
+    {
+      "id": "route-topic",
+      "from": "gateway",
+      "to": "topic",
+      "label": "/topics/*"
+    },
+    {
+      "id": "route-regist",
+      "from": "gateway",
+      "to": "regist",
+      "label": "/registrations/*"
+    },
+    {
+      "id": "academic-to-auth",
+      "from": "academic",
+      "to": "auth",
+      "label": "user check",
+      "variant": "security"
+    },
+    {
+      "id": "topic-to-academic",
+      "from": "topic",
+      "to": "academic",
+      "label": "lecturer ref"
+    },
+    {
+      "id": "regist-to-topic",
+      "from": "regist",
+      "to": "topic",
+      "label": "check topic"
+    },
+    {
+      "id": "regist-to-log",
+      "from": "regist",
+      "to": "log",
+      "label": "async audit",
+      "variant": "dashed"
+    },
+    {
+      "id": "auth-to-db",
+      "from": "auth",
+      "to": "db",
+      "label": "Users table"
+    },
+    {
+      "id": "academic-to-db",
+      "from": "academic",
+      "to": "db",
+      "label": "SINHVIEN, KHOA"
+    },
+    {
+      "id": "topic-to-db",
+      "from": "topic",
+      "to": "db",
+      "label": "DETAI table"
+    },
+    {
+      "id": "regist-to-db",
+      "from": "regist",
+      "to": "db",
+      "label": "DANGKY table"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "SOA Principles & Discovery",
+      "items": [
+        "Independent Django REST services with clear domain boundaries",
+        "HashiCorp Consul handles dynamic instance registration and health checking (:8500)",
+        "Nginx API Gateway dynamically discovers healthy upstreams and forwards correlation IDs"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Security & Policy Management",
+      "items": [
+        "auth-service issues stateless JWT tokens with role-based claims",
+        "Microservices independently verify JWT signature and expiration",
+        "Inter-service internal calls use protected INTERNAL_SERVICE_TOKEN"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Database-First & Storage Isolation",
+      "items": [
+        "Services share the physical SQLite file database/DB_ProjectManagerment.db",
+        "Strict logical table ownership: services read and write only their assigned tables",
+        "Cross-service data references rely strictly on IDs exchanged via HTTP/REST contracts"
+      ]
+    }
+  ]
+}
