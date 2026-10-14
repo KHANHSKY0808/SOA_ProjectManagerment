@@ -1,8 +1,9 @@
 from django.urls import path
-from .management_roster import TopicRegistrationsView, TopicRegistrationDetailView
+from .management_roster import TopicRegistrationsView, TopicRegistrationDetailView, TopicRegistrationPointView
 from .views import AvailableTopicsView, RegistrationCancelView, RegistrationListCreateView
 
 urlpatterns = [
+    path("topics/<str:topic_id>/registrations/<str:registration_id>/point/", TopicRegistrationPointView.as_view()),
     path("topics/<str:topic_id>/registrations/<str:registration_id>/", TopicRegistrationDetailView.as_view()),
     path("topics/<str:topic_id>/registrations/", TopicRegistrationsView.as_view()),
     path("registrations/", RegistrationListCreateView.as_view()),

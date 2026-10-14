@@ -1,4 +1,5 @@
 from unittest.mock import patch
+from decimal import Decimal
 from django.db import connection, OperationalError
 from django.test import TransactionTestCase
 from django.test.utils import CaptureQueriesContext
@@ -52,7 +53,7 @@ class TopicRosterTests(TransactionTestCase):
             self.assertEqual(response.status_code, 200)
             self.assertEqual([row["registration_id"] for row in response.data["results"]], ["R1", "R2", "R3"])
             self.assertEqual(set(response.data["results"][0]), {
-                "registration_id", "student_id", "student_name", "semester", "status", "created_at"})
+                "registration_id", "student_id", "student_name", "semester", "status", "created_at", "point"})
             self.assertEqual(response.data["results"][0]["student_name"], "Nguyen An")
             self.assertEqual(response["X-Request-ID"], "roster-1")
             for query in queries:
@@ -100,7 +101,7 @@ class TopicRosterTests(TransactionTestCase):
                     status=initial, semester="2026-1", notes="keep", updated_by="student")
                 Registration.objects.create(registration_id="R2", student_id="S2", topic_id="T1", status=1)
                 url = self.url + "R1/"
-                self.assertEqual(self.client.get(url).data, {"registration_id": "R1", "topic_id": "T1", "status": initial})
+                self.assertEqual(self.client.get(url).data, {"registration_id": "R1", "topic_id": "T1", "status": initial, "point": None})
                 response = self.client.delete(url, HTTP_X_REQUEST_ID="cancel-1")
                 self.assertEqual(response.status_code, 204)
                 self.assertEqual(response["X-Request-ID"], "cancel-1")
@@ -143,6 +144,69 @@ class TopicRosterTests(TransactionTestCase):
         self.assertEqual(result.status_code, 503)
         self.assertNotIn("private", str(result.data))
         self.assertEqual(Registration.objects.get().status, 1)
+
+    def test_grade_only_owned_current_registration_and_read_point_by_role(self):
+        Registration.objects.create(registration_id="R1", topic_id="T1", student_id="S1", status=1)
+        Registration.objects.create(registration_id="R2", topic_id="T2", student_id="S2", status=1)
+        url = self.url + "R1/point/"
+        with patch.object(clients.topic_client, "management_topic", return_value={"topic_id": "T1", "advisor_id": "GV1"}) as lookup:
+            self.authenticate_as("GV1", 2)
+            result = self.client.put(url, {"point": "8.50"}, format="json", HTTP_X_REQUEST_ID="grade-1")
+            self.assertEqual(result.status_code, 200, result.data)
+            self.assertEqual(result.data["point"], "8.50")
+            self.assertEqual(result["X-Request-ID"], "grade-1")
+            self.assertEqual(Registration.objects.get(pk="R1").point, Decimal("8.50"))
+            self.assertEqual(Registration.objects.get(pk="R1").updated_by, "GV1")
+            updated = Registration.objects.get(pk="R1").updated_at
+            self.assertEqual(self.client.put(url, {"point": "8.50"}, format="json").status_code, 200)
+            self.assertEqual(Registration.objects.get(pk="R1").updated_at, updated)
+            self.assertEqual(self.client.get(self.url + "R1/").data["point"], "8.50")
+            self.assertEqual(self.client.get(self.url).data["results"][0]["point"], "8.50")
+            self.authenticate(1)
+            self.assertEqual(self.client.get(self.url).data["results"][0]["point"], "8.50")
+            self.assertEqual(self.client.put(url, {"point": "7.00"}, format="json").status_code, 403)
+            self.assertEqual(Registration.objects.get(pk="R2").point, None)
+            self.assertEqual(lookup.call_args.args[0], "T1")
+
+    def authenticate_as(self, identity, role):
+        token = AccessToken()
+        token["user_id"], token["role"] = identity, role
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    def test_grade_rejects_invalid_point_actor_topic_and_cancelled_record(self):
+        Registration.objects.create(registration_id="R1", topic_id="T1", student_id="S1", status=1)
+        url = self.url + "R1/point/"
+        self.authenticate_as("GV1", 2)
+        with patch.object(clients.topic_client, "management_topic", return_value={"topic_id": "T1", "advisor_id": "GV1"}) as lookup:
+            for body in ({}, {"point": None}, {"point": "-0.01"}, {"point": "10.01"},
+                         {"point": "8.123"}, {"point": "NaN"}, {"point": "8", "updated_by": "GV1"}):
+                self.assertEqual(self.client.put(url, body, format="json").status_code, 400)
+            lookup.assert_not_called()
+            self.assertEqual(self.client.put(self.url + "missing/point/", {"point": "8"}, format="json").status_code, 404)
+            self.assertEqual(self.client.put("/api/v1/topics/T2/registrations/R1/point/", {"point": "8"}, format="json").status_code, 404)
+            Registration.objects.filter(pk="R1").update(status=0)
+            self.assertEqual(self.client.put(url, {"point": "8"}, format="json").status_code, 409)
+        self.assertIsNone(Registration.objects.get(pk="R1").point)
+
+    def test_grade_fails_closed_for_wrong_advisor_dependency_and_storage(self):
+        Registration.objects.create(registration_id="R1", topic_id="T1", student_id="S1", status=1)
+        url = self.url + "R1/point/"
+        self.authenticate_as("GV1", 2)
+        with patch.object(clients.topic_client, "management_topic", return_value={"topic_id": "T1", "advisor_id": "GV2"}):
+            self.assertEqual(self.client.put(url, {"point": "8"}, format="json").status_code, 403)
+        with patch.object(clients.topic_client, "management_topic", side_effect=clients.DependencyUnavailable()):
+            self.assertEqual(self.client.put(url, {"point": "8"}, format="json").status_code, 503)
+        with patch.object(clients.topic_client, "management_topic", return_value={"topic_id": "T1", "advisor_id": "GV1"}):
+            with patch("RegistTopic.services.acquire_write_lock", side_effect=OperationalError("private lock")):
+                result = self.client.put(url, {"point": "8"}, format="json")
+            self.assertEqual(result.status_code, 503)
+            self.assertNotIn("private", str(result.data))
+        self.assertIsNone(Registration.objects.get(pk="R1").point)
+        for role in (1, 3, "2", True):
+            self.authenticate_as("GV1", role)
+            self.assertEqual(self.client.put(url, {"point": "8"}, format="json").status_code, 403)
+        self.client.credentials()
+        self.assertEqual(self.client.put(url, {"point": "8"}, format="json").status_code, 401)
 
 
     def test_permanent_topic_cleanup_all_statuses_isolated_and_idempotent(self):

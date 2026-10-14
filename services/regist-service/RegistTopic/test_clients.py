@@ -71,6 +71,18 @@ class ReferenceClientTests(SimpleTestCase):
         fetch.return_value = {"results": [TOPIC], "next_after": None}
         self.assertEqual(self.topic.page("", "Bearer t", "id")["results"], [TOPIC])
 
+    @patch.object(clients, "fetch_json")
+    def test_management_topic_ownership_contract(self, fetch):
+        fetch.return_value = {"topic_id": "T #", "advisor_id": "GV1"}
+        self.assertEqual(self.topic.management_topic("T #", "Bearer t", "rid"), fetch.return_value)
+        fetch.assert_called_once_with("http://topic.test:8004/api/v1/topics/T%20%23/",
+                                      {"Authorization": "Bearer t", "X-Request-ID": "rid"}, 3, None)
+        for payload in ({}, {"topic_id": "T #"}, {"topic_id": "other", "advisor_id": "GV1"},
+                        {"topic_id": "T #", "advisor_id": 1}):
+            fetch.return_value = payload
+            with self.assertRaises(clients.DependencyUnavailable):
+                clients.TopicClient("topic-service", "TOPIC_CLIENT").management_topic("T #", "Bearer t", "rid")
+
     @override_settings(ACADEMIC_CLIENT={**CONFIG, "DISCOVERY_ENABLED": True},
                        CONSUL={"URL": "http://registry:8500", "TOKEN": "acl"})
     @patch.object(clients, "fetch_json")
