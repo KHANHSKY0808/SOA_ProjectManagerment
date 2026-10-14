@@ -385,3 +385,7 @@ JWT401 đăng xuất;403 báo không có quyền;404 bỏ dòng đăng ký khôn
 Popup **Xóa đề tài** cảnh báo rằng toàn bộ đăng ký liên quan, kể cả lịch sử đã hủy, sẽ bị xóa vĩnh viễn. Chỉ admin/giảng viên có quyền quản lý được xác nhận xóa; Hủy không gửi request. Frontend gửi một DELETE đề tài, backend điều phối việc xóa dữ liệu qua regist-service.
 
 Khi lỗi mạng/timeout/5xx hoặc409, popup yêu cầu **Kiểm tra kết quả**, không tự gửi DELETE lại. Thông báo nêu rõ đề tài có thể đã đóng và lịch sử đăng ký có thể đã mất. GET404 xác nhận đề tài hiện không còn; GET200 cho phép xác nhận xóa lại thủ công nhưng không tuyên bố lịch sử đăng ký còn nguyên. Các tests mock kiểm tra cảnh báo, khóa gửi trùng và đối chiếu kết quả; chưa xóa dữ liệu thật để kiểm thử.
+
+### Điểm đăng ký
+
+Sinh viên xem điểm của mình (hoặc “Chưa chấm”) trong đăng ký hiện tại và lịch sử. Admin có thể chấm/sửa điểm của mọi đăng ký còn hiệu lực trong danh sách sinh viên của từng đề tài, kể cả đề tài chưa có giảng viên hướng dẫn. Giảng viên chỉ chấm/sửa điểm thuộc đề tài mình hướng dẫn. Điểm từ 0–10, tối đa hai chữ số thập phân. UI gửi một PUT cho mỗi lần xác nhận; nếu kết quả chưa rõ, dùng **Kiểm tra điểm** để đọc đúng giá trị đã lưu trước khi thử lại. Sinh viên tải lại trang để xem điểm vừa được chấm.

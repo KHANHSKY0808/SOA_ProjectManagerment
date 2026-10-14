@@ -94,6 +94,12 @@ Regist-service gọi academic/topic để kiểm tra sinh viên và đề tài. 
 
 Bốn backend dùng chung file SQLite `database/DB_ProjectManagerment.db`, nhưng mỗi service chỉ truy cập bảng mình sở hữu; tham chiếu liên service dùng ID và REST. Các model database-first dùng `managed = False`. SQLite dùng chung phù hợp cho đồ án, có giới hạn tranh chấp khi ghi đồng thời.
 
+### Chấm điểm đăng ký
+
+Schema `Registrations` có cột `Point` nullable (`NUMERIC`); `NULL` nghĩa là chưa chấm. Khi nâng cấp một database cũ, dừng các service ghi rồi chạy `py database/add_registration_point.py --db database/DB_ProjectManagerment.db --backup D:/backups/registration-before-point.db` từ thư mục gốc. Chọn đường dẫn backup chưa tồn tại và nằm ngoài repository. Script tạo backup nhất quán trước khi thêm cột; không chạy Django migration cho bảng này. Triển khai schema trước khi chạy backend mới. Nếu cần rollback, dừng mọi writer, sao lưu trạng thái hiện tại rồi khôi phục backup; điểm ghi sau thời điểm backup cần được xuất và đối soát riêng.
+
+Admin chấm/sửa điểm cho mọi đăng ký còn hiệu lực; giảng viên chỉ chấm/sửa đăng ký thuộc đề tài mình hướng dẫn. Điểm theo thang 0–10 (tối đa hai chữ số thập phân) và được thao tác trong chi tiết đề tài. Sinh viên xem điểm đăng ký của chính mình ở mục hiện tại và lịch sử. API thuộc `regist-service`, tra đề tài qua REST từ `topic-service` và kiểm tra giảng viên hướng dẫn đối với role 2; xem [hợp đồng API](services/regist-service/README.md).
+
 ## Các service
 
 | Thành phần | Port / Gateway route | Trách nhiệm và tài liệu |

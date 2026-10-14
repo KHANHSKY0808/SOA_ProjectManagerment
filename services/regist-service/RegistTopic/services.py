@@ -2,7 +2,7 @@ import uuid
 from django.db import connection, transaction
 from django.db.models import Q
 from django.utils import timezone
-from rest_framework.exceptions import APIException, NotFound, ValidationError
+from rest_framework.exceptions import APIException, NotFound, PermissionDenied, ValidationError
 from .clients import academic_client, topic_client
 from .models import Registration
 
@@ -17,6 +17,12 @@ class StorageUnavailable(APIException):
     status_code = 503
     default_detail = "Registration storage is temporarily unavailable."
     default_code = "storage_unavailable"
+
+
+class RegistrationCancelled(APIException):
+    status_code = 409
+    default_detail = "Cancelled registrations cannot be graded."
+    default_code = "registration_cancelled"
 
 
 def current_registrations(identity):
@@ -75,6 +81,24 @@ def get_topic_registration(topic_id, registration_id):
     if obj is None:
         raise NotFound("Registration not found for this topic.")
     return obj
+
+
+def grade_topic_registration(actor, role, topic_id, registration_id, point, authorization, request_id):
+    topic = topic_client.management_topic(topic_id, authorization, request_id)
+    if role != 1 and topic["advisor_id"] != actor:
+        raise PermissionDenied("Only the topic advisor may grade this registration.")
+    with transaction.atomic():
+        acquire_write_lock()
+        obj = get_topic_registration(topic_id, registration_id)
+        if obj.status == 0:
+            raise RegistrationCancelled()
+        if obj.point == point:
+            return obj
+        now = timezone.now()
+        Registration.objects.filter(pk=obj.pk, topic_id=topic_id).update(
+            point=point, updated_at=now, updated_by=actor)
+        obj.point, obj.updated_at, obj.updated_by = point, now, actor
+        return obj
 
 
 def cancel_topic_registration(actor, topic_id, registration_id):

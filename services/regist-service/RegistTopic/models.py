@@ -8,6 +8,7 @@ class Registration(models.Model):
     status = models.IntegerField(db_column="Status", null=True)
     notes = models.TextField(db_column="Notes", null=True, blank=True)
     reason = models.TextField(db_column="Reason", null=True, blank=True)
+    point = models.DecimalField(db_column="Point", max_digits=4, decimal_places=2, null=True, blank=True)
     created_at = models.DateTimeField(db_column="CreatedAt", null=True)
     updated_at = models.DateTimeField(db_column="UpdatedAt", null=True)
     updated_by = models.CharField(db_column="UpdatedBy", max_length=255, null=True)

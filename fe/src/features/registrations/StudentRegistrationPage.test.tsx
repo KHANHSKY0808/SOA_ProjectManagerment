@@ -13,7 +13,7 @@ const topics = [
   { topic_id: 'T2', name: 'Thư viện số', major_id: 'M2', status: 2 },
 ]
 const record = { registration_id: 'R1', topic_id: 'T1', semester: null, status: 1,
-  created_at: '2026-10-11T03:00:00Z', updated_at: '2026-10-11T03:00:00Z' }
+  created_at: '2026-10-11T03:00:00Z', updated_at: '2026-10-11T03:00:00Z', point: null }
 const logout = vi.fn()
 let mock: MockAdapter
 beforeEach(() => {
@@ -27,6 +27,16 @@ function renderPage() {
   return render(<AuthContext.Provider value={{ user: { user_id: 'SV1', first_name: 'An', last_name: null, role: 3 },
     logout, login: vi.fn(), status: 'ready', restoreError: '', retryRestore: vi.fn() }}><StudentRegistrationPage /></AuthContext.Provider>)
 }
+
+it('shows the student score in current registration and history', async () => {
+  mock.onGet(records).reply(200, [{ ...record, point: '9.25' }])
+  renderPage()
+  const current = await screen.findByRole('region', { name: 'Đăng ký hiện tại' })
+  expect(within(current).getByText(/Điểm: 9\.25/)).toBeVisible()
+  const history = screen.getByRole('table', { name: 'Lịch sử đăng ký' })
+  expect(within(history).getByRole('columnheader', { name: 'Điểm' })).toBeVisible()
+  expect(within(history).getByText('9.25')).toBeVisible()
+})
 async function ready() {
   await screen.findByRole('table', { name: 'Đề tài mở đăng ký' })
   await waitFor(() => expect(screen.queryByText('Đang tải đăng ký…')).not.toBeInTheDocument())

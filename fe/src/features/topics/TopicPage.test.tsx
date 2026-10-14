@@ -28,8 +28,8 @@ beforeEach(() => {
   mock.onGet('/academic/api/v1/lecturers/').reply(200, [lecturer, { lecturer_id: 'GV002', department_id: null, user: null }])
 })
 afterEach(() => { mock.restore(); setAccessToken(null); vi.restoreAllMocks(); vi.unstubAllGlobals() })
-function renderPage(role: Role = 1) {
-  return render(<AuthContext.Provider value={{ user: { user_id: 'test-user', first_name: null, last_name: null, role }, logout, login: vi.fn(), status: 'ready', restoreError: '', retryRestore: vi.fn() }}><TopicPage /></AuthContext.Provider>)
+function renderPage(role: Role = 1, userId = 'test-user') {
+  return render(<AuthContext.Provider value={{ user: { user_id: userId, first_name: null, last_name: null, role }, logout, login: vi.fn(), status: 'ready', restoreError: '', retryRestore: vi.fn() }}><TopicPage /></AuthContext.Provider>)
 }
 async function openForm() {
   const opener = screen.getByRole('button', { name: 'Tạo đề tài' })
@@ -292,7 +292,7 @@ describe('Topic list and creation', () => {
   })
 })
 
-const detail = { ...rows[0], major_id: '2', advisor_id: 'GV001', file_url: '/files/topic.pdf', status: 1,
+const detail = { ...rows[0], major_id: '2', advisor_id: 'GV001' as string | null, file_url: '/files/topic.pdf', status: 1,
   created_at: '2026-10-10T08:00:00Z', updated_at: null, updated_by: 'admin' }
 async function openEdit(role: Role = 2, searchQuery = '') {
   mock.onGet(base + 'DT001/').reply(200, detail)
@@ -683,10 +683,10 @@ describe('Topic status permissions', () => {
 
 describe('Topic roster detail', () => {
   const rosterUrl = '/registrations/api/v1/topics/DT001/registrations/'
-  const student = { registration_id: 'R001', student_id: 'S1', student_name: 'Nguyễn An', semester: '2026-1', status: 1, created_at: '2026-10-11T01:00:00Z' }
-  async function openRoster(role: Role = 1) {
-    mock.onGet(base + 'DT001/').reply(200, detail)
-    const view = renderPage(role); await screen.findByRole('table')
+  const student = { registration_id: 'R001', student_id: 'S1', student_name: 'Nguyễn An', semester: '2026-1', status: 1, created_at: '2026-10-11T01:00:00Z', point: null }
+  async function openRoster(role: Role = 1, userId = 'test-user', topicDetail = detail) {
+    mock.onGet(base + 'DT001/').reply(200, topicDetail)
+    const view = renderPage(role, userId); await screen.findByRole('table')
     fireEvent.click(screen.getByRole('button', { name: 'Xem chi tiết DT001' }))
     await within(screen.getByRole('dialog')).findByText(detail.name)
     return view
@@ -699,6 +699,69 @@ describe('Topic roster detail', () => {
     expect(within(table).getByText('Nguyễn An')).toBeVisible()
     expect(within(table).getByText('2026-1')).toBeVisible()
     expect(mock.history.get.find(request => request.url === rosterUrl)?.headers?.Authorization).toBe('Bearer test-token')
+  })
+  it.each(['GV001', null])('lets admin revise any current score when advisor is %s', async advisorId => {
+    mock.onGet(rosterUrl).reply(200, { results: [{ ...student, point: '8.50' }], next_after: null, names_unavailable: false })
+    await openRoster(1, 'admin', { ...detail, advisor_id: advisorId })
+    const table = await screen.findByRole('table', { name: 'Danh sách sinh viên đăng ký' })
+    expect(within(table).getByText('8.50')).toBeVisible()
+    expect(within(table).getByRole('columnheader', { name: 'Điểm' })).toBeVisible()
+    fireEvent.click(within(table).getByRole('button', { name: 'Chấm điểm S1' }))
+    expect(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' })).toHaveValue(8.5)
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' }), { target: { value: '9.25' } })
+    mock.onPut(rosterUrl + 'R001/point/').reply(200, { registration_id: 'R001', topic_id: 'DT001', point: '9.25', updated_at: '2026-10-14T01:00:00Z' })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu điểm' }))
+    expect(await within(table).findByText('9.25')).toBeVisible()
+    expect(JSON.parse(mock.history.put[0].data)).toEqual({ point: '9.25' })
+    expect(mock.history.put).toHaveLength(1)
+  })
+  it('keeps the admin draft after a forbidden grading response', async () => {
+    mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
+    await openRoster(1, 'admin')
+    fireEvent.click(await screen.findByRole('button', { name: 'Chấm điểm S1' }))
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' }), { target: { value: '7.5' } })
+    mock.onPut(rosterUrl + 'R001/point/').reply(403, { detail: 'private' })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu điểm' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Bạn không có quyền chấm điểm')
+    expect(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' })).toHaveValue(7.5)
+    expect(screen.queryByText('private')).not.toBeInTheDocument()
+    expect(mock.history.put).toHaveLength(1)
+  })
+  it('lets only the assigned lecturer grade and refreshes the shown score', async () => {
+    mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
+    await openRoster(2, 'GV001')
+    fireEvent.click(await screen.findByRole('button', { name: 'Chấm điểm S1' }))
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' }), { target: { value: '8.5' } })
+    const pointPath = rosterUrl + 'R001/point/'
+    mock.onPut(pointPath).reply(200, { registration_id: 'R001', topic_id: 'DT001', point: '8.50', updated_at: '2026-10-14T01:00:00Z' })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu điểm' }))
+    expect(await screen.findByText('Đã lưu điểm đăng ký.')).toBeVisible()
+    expect(screen.getByText('8.50')).toBeVisible()
+    expect(JSON.parse(mock.history.put[0].data)).toEqual({ point: '8.5' })
+    expect(mock.history.put[0].headers?.Authorization).toBe('Bearer test-token')
+    fireEvent.click(screen.getByRole('button', { name: 'Chấm điểm S1' }))
+    expect(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' })).toHaveValue(8.5)
+  })
+  it('hides grading from another lecturer', async () => {
+    mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
+    await openRoster(2, 'GV002')
+    await screen.findByText('Nguyễn An')
+    expect(screen.queryByRole('button', { name: 'Chấm điểm S1' })).not.toBeInTheDocument()
+  })
+  it('checks the exact point after an uncertain save without retrying PUT', async () => {
+    mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
+    await openRoster(2, 'GV001')
+    fireEvent.click(await screen.findByRole('button', { name: 'Chấm điểm S1' }))
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' }), { target: { value: '8.5' } })
+    mock.onPut(rosterUrl + 'R001/point/').timeout()
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu điểm' }))
+    expect(await screen.findByRole('button', { name: 'Kiểm tra điểm' })).toBeVisible()
+    expect(mock.history.put).toHaveLength(1)
+    mock.onGet(rosterUrl + 'R001/').reply(200, { registration_id: 'R001', topic_id: 'DT001', status: 1, point: '8.50' })
+    fireEvent.click(screen.getByRole('button', { name: 'Kiểm tra điểm' }))
+    expect(await screen.findByText('Đã lưu điểm đăng ký.')).toBeVisible()
+    expect(screen.getByText('8.50')).toBeVisible()
+    expect(mock.history.put).toHaveLength(1)
   })
   it('does not request or show roster for student role', async () => {
     await openRoster(3)
@@ -801,7 +864,7 @@ describe('Topic roster detail', () => {
     const check = await screen.findByRole('button', { name: 'Kiểm tra kết quả hủy' })
     expect(screen.queryByRole('button', { name: 'Xác nhận hủy đăng ký' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Quay lại' })).toBeDisabled()
-    mock.onGet(rosterUrl + 'R001/').reply(200, { registration_id: 'R001', topic_id: 'DT001', status: 0 })
+    mock.onGet(rosterUrl + 'R001/').reply(200, { registration_id: 'R001', topic_id: 'DT001', status: 0, point: null })
     fireEvent.click(check)
     expect(await screen.findByText('Đã xác nhận hủy đăng ký.')).toBeVisible()
     expect(mock.history.delete).toHaveLength(1)
@@ -811,7 +874,7 @@ describe('Topic roster detail', () => {
     await chooseCancellation()
     mock.onDelete(rosterUrl + 'R001/').timeout()
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận hủy đăng ký' }))
-    mock.onGet(rosterUrl + 'R001/').reply(200, { registration_id: 'R001', topic_id: 'DT001', status: 1 })
+    mock.onGet(rosterUrl + 'R001/').reply(200, { registration_id: 'R001', topic_id: 'DT001', status: 1, point: null })
     fireEvent.click(await screen.findByRole('button', { name: 'Kiểm tra kết quả hủy' }))
     expect(await screen.findByText(/Đăng ký vẫn còn hiệu lực/)).toBeVisible()
     expect(screen.getByRole('button', { name: 'Xác nhận hủy đăng ký' })).toBeEnabled()

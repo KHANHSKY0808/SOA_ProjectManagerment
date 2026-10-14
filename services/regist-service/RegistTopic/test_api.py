@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+from decimal import Decimal
 from datetime import timedelta
 import threading
 from unittest.mock import patch
@@ -17,6 +18,12 @@ URL = "/api/v1/registrations/"
 
 
 class RegistrationAPITests(TransactionTestCase):
+    def test_database_first_point_mapping(self):
+        field = Registration._meta.get_field("point")
+        self.assertEqual(field.db_column, "Point")
+        self.assertEqual((field.max_digits, field.decimal_places), (4, 2))
+        self.assertFalse(Registration._meta.managed)
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -92,11 +99,13 @@ class RegistrationAPITests(TransactionTestCase):
         self.assertEqual(obj.updated_at, updated)
 
     def test_owner_filter_and_cancel(self):
-        Registration.objects.create(registration_id="other", student_id="SV2", topic_id="T1", status=1)
-        self.assertEqual(self.client.get(URL + "?student_id=SV2").data, [])
+        Registration.objects.create(registration_id="other", student_id="SV2", topic_id="T1", status=1, point=Decimal("9.00"))
+        Registration.objects.create(registration_id="mine", student_id="SV1", topic_id="T1", status=1, point=Decimal("8.25"))
+        self.assertEqual([row["registration_id"] for row in self.client.get(URL + "?student_id=SV2").data], ["mine"])
+        self.assertEqual([(row["registration_id"], row["point"]) for row in self.client.get(URL).data], [("mine", "8.25")])
         self.assertEqual(self.client.delete(URL + "other/").status_code, 404)
         self.assertEqual(self.client.delete(URL + "missing/").status_code, 404)
-        self.assertEqual(Registration.objects.get().status, 1)
+        self.assertEqual(Registration.objects.get(pk="other").status, 1)
 
     def test_same_faculty_different_major_and_open_topic_only(self):
         # Context supplies faculty F1; topic major M2 is independently resolved.

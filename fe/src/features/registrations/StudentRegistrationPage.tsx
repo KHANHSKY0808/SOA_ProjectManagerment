@@ -41,7 +41,7 @@ export function StudentRegistrationPage() {
       {state.current.map(row => <article className="registration-current-card" key={row.registration_id}>
         <div><span className="registration-code">{row.topic_id ?? 'Chưa có mã đề tài'}</span>
           {topicName(row.topic_id) && <h3>{topicName(row.topic_id)}</h3>}
-          <p>Học kỳ: {row.semester || 'Không cung cấp'} · Đăng ký lúc: {time(row.created_at)}</p>
+          <p>Học kỳ: {row.semester || 'Không cung cấp'} · Đăng ký lúc: {time(row.created_at)} · Điểm: {row.point ?? 'Chưa chấm'}</p>
           <span className="registration-status">{row.status === 1 ? 'Đang đăng ký' : 'Cần kiểm tra trạng thái'}</span></div>
         <button type="button" className="registration-cancel" disabled={disabled} onClick={() => state.openCancel(row)} aria-label={`Hủy đăng ký ${row.topic_id ?? row.registration_id}`}>Hủy đăng ký</button>
       </article>)}
@@ -68,10 +68,10 @@ export function StudentRegistrationPage() {
       <div className="registration-heading"><h2 id="registration-history-title">Lịch sử đăng ký</h2><label>Hiển thị<select aria-label="Lọc lịch sử" value={historyFilter} onChange={event => setHistoryFilter(event.target.value)}>
         <option value="all">Tất cả đăng ký</option><option value="active">Hiện tại</option><option value="cancelled">Đã hủy</option>
       </select></label></div>
-      {state.historyReady || state.history.length > 0 ? <div className="academic-table"><table aria-label="Lịch sử đăng ký"><thead><tr><th>Mã đề tài</th><th>Học kỳ</th><th>Trạng thái</th><th>Ngày đăng ký</th><th>Cập nhật</th></tr></thead>
+      {state.historyReady || state.history.length > 0 ? <div className="academic-table"><table aria-label="Lịch sử đăng ký"><thead><tr><th>Mã đề tài</th><th>Học kỳ</th><th>Trạng thái</th><th>Điểm</th><th>Ngày đăng ký</th><th>Cập nhật</th></tr></thead>
         <tbody>{history.map(row => <tr key={row.registration_id}><td className="registration-code">{row.topic_id ?? '—'}</td><td>{row.semester || '—'}</td>
           <td><span className={`registration-status ${isCurrent(row) ? '' : 'is-cancelled'}`}>{row.status === 0 ? 'Đã hủy' : row.status === 1 ? 'Đang đăng ký' : 'Cần kiểm tra trạng thái'}</span></td>
-          <td>{time(row.created_at)}</td><td>{time(row.updated_at)}</td></tr>)}{!history.length && <tr><td colSpan={5}>Chưa có đăng ký trong danh sách này.</td></tr>}</tbody></table></div> : <p className="academic-hint">Lịch sử hiển thị sau khi tải đăng ký thành công.</p>}
+          <td>{row.point ?? 'Chưa chấm'}</td><td>{time(row.created_at)}</td><td>{time(row.updated_at)}</td></tr>)}{!history.length && <tr><td colSpan={6}>Chưa có đăng ký trong danh sách này.</td></tr>}</tbody></table></div> : <p className="academic-hint">Lịch sử hiển thị sau khi tải đăng ký thành công.</p>}
     </section>
 
     {state.dialog && <Modal title={state.dialog.kind === 'register' ? 'Xác nhận đăng ký đề tài' : 'Xác nhận hủy đăng ký'} busy={state.busy} onClose={state.closeDialog}>
