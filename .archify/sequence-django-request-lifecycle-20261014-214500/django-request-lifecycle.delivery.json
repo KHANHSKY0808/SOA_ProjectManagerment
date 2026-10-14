@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "a5a77f5f-aa76-4787-b498-47a2b2c570df",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\sequence-django-request-lifecycle-20261014-214500\\candidate.json",
+  "output": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\sequence-django-request-lifecycle-20261014-214500\\django-request-lifecycle.html",
+  "specification": {
+    "sha256": "bd6761b1639ba1e3dcdca5f4987a1f035d6211ab07ea9b19b35499b2e876f9fe",
+    "bytes": 7782
+  },
+  "artifact": {
+    "sha256": "c2529f973fe12ccf1bb4cdcfb5742a25fcca6833990fcb3e9fbabff7f167723e",
+    "bytes": 823990
+  }
+}

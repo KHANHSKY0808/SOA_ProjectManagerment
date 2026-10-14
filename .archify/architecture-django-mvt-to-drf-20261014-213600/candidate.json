@@ -1,0 +1,262 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Kiến trúc Django MVT sang Django REST Framework (DRF)",
+    "subtitle": "So sánh mô hình Monolithic MVT và mô hình Decoupled API-First (Model – Serializer – View)",
+    "output": ".archify/architecture-django-mvt-to-drf-20261014-213600/django-mvt-to-drf.html",
+    "visual_preset": "classic",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "overview",
+        "label": "Tổng quan so sánh",
+        "focus": ["browser_client", "mvt_template", "drf_client", "drf_serializer"],
+        "note": "So sánh sự thay thế của Django Template bằng Serializer giữa 2 kiến trúc"
+      },
+      {
+        "id": "drf_pipeline",
+        "label": "Mô hình DRF",
+        "focus": ["drf_view", "drf_serializer", "drf_model"],
+        "note": "Mô hình 3 trụ cột DRF: View điều phối, Serializer xử lý dữ liệu 2 chiều, Model ORM"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "browser_client",
+      "type": "external",
+      "icon": "person",
+      "label": "Web Browser",
+      "sublabel": "Desktop / Mobile Web",
+      "pos": [60, 90],
+      "size": [130, 60]
+    },
+    {
+      "id": "mvt_urls",
+      "type": "backend",
+      "label": "urls.py",
+      "sublabel": "URL Routing",
+      "pos": [250, 90],
+      "size": [120, 60]
+    },
+    {
+      "id": "mvt_view",
+      "type": "backend",
+      "label": "Django View",
+      "sublabel": "FBV / CBV Handler",
+      "pos": [430, 90],
+      "size": [130, 60]
+    },
+    {
+      "id": "mvt_model",
+      "type": "backend",
+      "label": "Django Model",
+      "sublabel": "ORM & Data Layer",
+      "pos": [720, 90],
+      "size": [130, 60]
+    },
+    {
+      "id": "mvt_db",
+      "type": "database",
+      "label": "Database",
+      "sublabel": "SQLite / PostgreSQL",
+      "pos": [980, 90],
+      "size": [120, 60]
+    },
+    {
+      "id": "mvt_template",
+      "type": "frontend",
+      "label": "Django Template",
+      "sublabel": "DTL Engine (.html)",
+      "tag": "Server-Side Render",
+      "pos": [430, 210],
+      "size": [140, 60]
+    },
+
+    {
+      "id": "drf_client",
+      "type": "external",
+      "icon": "frontend",
+      "label": "Frontend Clients",
+      "sublabel": "React / Vue / Mobile / SOA",
+      "pos": [60, 390],
+      "size": [130, 60]
+    },
+    {
+      "id": "drf_urls",
+      "type": "backend",
+      "label": "urls.py / Router",
+      "sublabel": "RESTful Dispatcher",
+      "pos": [250, 390],
+      "size": [120, 60]
+    },
+    {
+      "id": "drf_view",
+      "type": "backend",
+      "label": "DRF APIView",
+      "sublabel": "ViewSet / GenericAPIView",
+      "pos": [430, 390],
+      "size": [130, 60]
+    },
+    {
+      "id": "drf_serializer",
+      "type": "security",
+      "label": "DRF Serializer",
+      "sublabel": "Validation & DTO Mapping",
+      "tag": "Thay thế Template",
+      "pos": [430, 510],
+      "size": [140, 64]
+    },
+    {
+      "id": "drf_model",
+      "type": "backend",
+      "label": "Django Model",
+      "sublabel": "ORM & Business Logic",
+      "pos": [720, 390],
+      "size": [130, 60]
+    },
+    {
+      "id": "drf_db",
+      "type": "database",
+      "label": "Database",
+      "sublabel": "Shared / Service DB",
+      "pos": [980, 390],
+      "size": [120, 60]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Django MVT (Monolithic Server-Side Rendering)",
+      "wraps": ["mvt_urls", "mvt_view", "mvt_model", "mvt_template", "mvt_db"]
+    },
+    {
+      "kind": "region",
+      "label": "Django REST Framework (Decoupled API-First: Model – Serializer – View)",
+      "wraps": ["drf_urls", "drf_view", "drf_serializer", "drf_model", "drf_db"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "mvt_http_req",
+      "from": "browser_client",
+      "to": "mvt_urls",
+      "label": "1. GET /projects/",
+      "variant": "emphasis"
+    },
+    {
+      "id": "mvt_dispatch",
+      "from": "mvt_urls",
+      "to": "mvt_view",
+      "label": "2. Dispatch"
+    },
+    {
+      "id": "mvt_orm_query",
+      "from": "mvt_view",
+      "to": "mvt_model",
+      "label": "3. QuerySets"
+    },
+    {
+      "id": "mvt_sql",
+      "from": "mvt_model",
+      "to": "mvt_db",
+      "label": "4. SQL"
+    },
+    {
+      "id": "mvt_render_ctx",
+      "from": "mvt_view",
+      "to": "mvt_template",
+      "label": "5. Context Data",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "mvt_html_res",
+      "from": "mvt_template",
+      "to": "browser_client",
+      "label": "6. HTML Response",
+      "fromSide": "left",
+      "toSide": "bottom",
+      "via": [[350, 240], [125, 240]],
+      "variant": "emphasis"
+    },
+
+    {
+      "id": "drf_rest_req",
+      "from": "drf_client",
+      "to": "drf_urls",
+      "label": "1. REST Request (JSON)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "drf_dispatch",
+      "from": "drf_urls",
+      "to": "drf_view",
+      "label": "2. Route to ViewSet"
+    },
+    {
+      "id": "drf_val_data",
+      "from": "drf_view",
+      "to": "drf_serializer",
+      "label": "3. Validation / DTO",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "drf_save_model",
+      "from": "drf_serializer",
+      "to": "drf_model",
+      "label": "4. save() / ORM",
+      "fromSide": "right",
+      "toSide": "bottom"
+    },
+    {
+      "id": "drf_sql",
+      "from": "drf_model",
+      "to": "drf_db",
+      "label": "5. SQL Query"
+    },
+    {
+      "id": "drf_json_res",
+      "from": "drf_view",
+      "to": "drf_client",
+      "label": "6. JSON Response (200/201)",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [[495, 330], [125, 330]],
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Mô hình Django MVT (Monolith)",
+      "items": [
+        "Model: Định nghĩa cấu trúc dữ liệu và logic truy vấn thông qua Django ORM.",
+        "View: Tiếp nhận request, xử lý nghiệp vụ và nạp dữ liệu context vào template.",
+        "Template: Động cơ DTL thực hiện Server-Side Rendering (SSR) sinh HTML/CSS trả về trình duyệt.",
+        "Hạn chế: Ghép chặt tầng giao diện với backend, khó tái sử dụng cho mobile app hoặc microservices."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Mô hình DRF (Model – Serializer – View)",
+      "items": [
+        "View / ViewSet: Điều phối endpoint RESTful, kiểm soát xác thực JWT, phân quyền và filter.",
+        "Serializer: Đảm nhận chuyển đổi 2 chiều: Deserialization (validate request data) và Serialization (Model -> JSON DTO).",
+        "Model: Giữ nguyên vai trò ORM, hoàn toàn độc lập với hình thức trình diễn dữ liệu.",
+        "Ưu điểm: Tách rời hoàn toàn frontend & backend, hỗ trợ kiến trúc hướng dịch vụ (SOA) và API-first."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Điểm chuyển dịch cốt lõi",
+      "items": [
+        "Serializer thay thế hoàn toàn vai trò của Template trong việc làm trung gian định dạng dữ liệu.",
+        "Định dạng trao đổi tiêu chuẩn chuyển từ tài liệu HTML tĩnh sang dữ liệu cấu trúc JSON chuẩn REST.",
+        "Phù hợp nguyên lý SOA: Các dịch vụ độc lập giao tiếp qua chuẩn HTTP/REST DTOs."
+      ]
+    }
+  ]
+}

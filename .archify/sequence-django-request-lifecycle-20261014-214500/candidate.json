@@ -1,0 +1,306 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Vòng đời HTTP Request trong Django (Request-Response Lifecycle)",
+    "subtitle": "Luồng tuần tự từ WSGI/ASGI qua Middleware Chain, URLconf, View, ORM và trả về Response",
+    "output": ".archify/sequence-django-request-lifecycle-20261014-214500/django-request-lifecycle.html",
+    "column_fit": "spread",
+    "visual_preset": "classic",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "inbound",
+        "label": "Giai đoạn Inbound",
+        "focus": ["client", "wsgi", "middleware", "urlconf"],
+        "note": "Xử lý HTTP Request, chạy qua Middleware Request phase và phân giải URL"
+      },
+      {
+        "id": "execution",
+        "label": "Giai đoạn Thực thi & DB",
+        "focus": ["view", "orm", "db", "renderer"],
+        "note": "View thực thi nghiệp vụ, gọi Django ORM truy vấn DB và render kết quả"
+      },
+      {
+        "id": "outbound",
+        "label": "Giai đoạn Outbound Response",
+        "focus": ["view", "middleware", "wsgi", "client"],
+        "note": "HttpResponse duyệt ngược qua Middleware Response phase trả về Client"
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "client",
+      "type": "external",
+      "label": "Client",
+      "sublabel": "Browser / API App",
+      "icon": "person"
+    },
+    {
+      "id": "wsgi",
+      "type": "backend",
+      "label": "WSGI / ASGI",
+      "sublabel": "Gunicorn / Uvicorn",
+      "icon": "backend"
+    },
+    {
+      "id": "middleware",
+      "type": "security",
+      "label": "Middleware",
+      "sublabel": "Security & Auth",
+      "icon": "security"
+    },
+    {
+      "id": "urlconf",
+      "type": "backend",
+      "label": "URLconf",
+      "sublabel": "urls.py / resolve()",
+      "icon": "backend"
+    },
+    {
+      "id": "view",
+      "type": "backend",
+      "label": "Django View",
+      "sublabel": "FBV / CBV / ViewSet",
+      "icon": "backend"
+    },
+    {
+      "id": "orm",
+      "type": "database",
+      "label": "Django ORM",
+      "sublabel": "QuerySets & Models",
+      "icon": "database"
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "Database",
+      "sublabel": "SQLite / PostgreSQL",
+      "icon": "database"
+    },
+    {
+      "id": "renderer",
+      "type": "frontend",
+      "label": "Renderer",
+      "sublabel": "Template / DRF",
+      "icon": "frontend"
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 310,
+      "label": "1. Inbound Request & URL Routing"
+    },
+    {
+      "from": 320,
+      "to": 590,
+      "label": "2. View & Data Layer Execution"
+    },
+    {
+      "from": 600,
+      "to": 725,
+      "label": "3. Outbound Response Pipeline"
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg_http_req",
+      "from": "client",
+      "to": "wsgi",
+      "y": 170,
+      "label": "HTTP Request (GET / POST)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "msg_wsgi_get_resp",
+      "from": "wsgi",
+      "to": "middleware",
+      "y": 210,
+      "label": "1. get_response(request)",
+      "variant": "default"
+    },
+    {
+      "id": "msg_resolve_url",
+      "from": "middleware",
+      "to": "urlconf",
+      "y": 250,
+      "label": "2. resolve(request.path_info)",
+      "variant": "default"
+    },
+    {
+      "id": "msg_url_matched",
+      "from": "urlconf",
+      "to": "middleware",
+      "y": 290,
+      "label": "(view_func, args, kwargs)",
+      "variant": "return"
+    },
+    {
+      "id": "msg_invoke_view",
+      "from": "middleware",
+      "to": "view",
+      "y": 335,
+      "label": "3. process_view() & gọi view_func",
+      "variant": "emphasis"
+    },
+    {
+      "id": "msg_orm_query",
+      "from": "view",
+      "to": "orm",
+      "y": 375,
+      "label": "4. Model.objects.filter(...)",
+      "variant": "default"
+    },
+    {
+      "id": "msg_sql_exec",
+      "from": "orm",
+      "to": "db",
+      "y": 415,
+      "label": "5. SQL Query Execution",
+      "variant": "emphasis"
+    },
+    {
+      "id": "msg_db_rows",
+      "from": "db",
+      "to": "orm",
+      "y": 455,
+      "label": "Raw Table Rows / Rowset",
+      "variant": "return"
+    },
+    {
+      "id": "msg_orm_instances",
+      "from": "orm",
+      "to": "view",
+      "y": 495,
+      "label": "Model Instances / QuerySet",
+      "variant": "return"
+    },
+    {
+      "id": "msg_render_call",
+      "from": "view",
+      "to": "renderer",
+      "y": 535,
+      "label": "6. render(template, ctx) / serialize()",
+      "variant": "default"
+    },
+    {
+      "id": "msg_render_res",
+      "from": "renderer",
+      "to": "view",
+      "y": 570,
+      "label": "HTML Document / JSON Payload",
+      "variant": "return"
+    },
+    {
+      "id": "msg_view_ret_resp",
+      "from": "view",
+      "to": "middleware",
+      "y": 615,
+      "label": "7. HttpResponse Object",
+      "variant": "return"
+    },
+    {
+      "id": "msg_mid_to_wsgi",
+      "from": "middleware",
+      "to": "wsgi",
+      "y": 655,
+      "label": "8. process_response() Chain Done",
+      "variant": "return"
+    },
+    {
+      "id": "msg_wsgi_to_client",
+      "from": "wsgi",
+      "to": "client",
+      "y": 695,
+      "label": "9. HTTP 200 OK Response",
+      "variant": "emphasis"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "client",
+      "from": 165,
+      "to": 700,
+      "type": "external"
+    },
+    {
+      "participant": "wsgi",
+      "from": 168,
+      "to": 698,
+      "type": "backend"
+    },
+    {
+      "participant": "middleware",
+      "from": 205,
+      "to": 340,
+      "type": "security"
+    },
+    {
+      "participant": "urlconf",
+      "from": 245,
+      "to": 295,
+      "type": "backend"
+    },
+    {
+      "participant": "view",
+      "from": 330,
+      "to": 620,
+      "type": "backend"
+    },
+    {
+      "participant": "orm",
+      "from": 370,
+      "to": 500,
+      "type": "database"
+    },
+    {
+      "participant": "db",
+      "from": 410,
+      "to": 460,
+      "type": "database"
+    },
+    {
+      "participant": "renderer",
+      "from": 530,
+      "to": 575,
+      "type": "frontend"
+    },
+    {
+      "participant": "middleware",
+      "from": 610,
+      "to": 660,
+      "type": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "1. Inbound & Chuỗi Middleware",
+      "items": [
+        "WSGI/ASGI đóng gói môi trường HTTP thành đối tượng WSGIRequest duy nhất.",
+        "Middleware Request Phase chạy tuần tự từ trên xuống dưới theo cài đặt MIDDLEWARE trong settings.py.",
+        "Early Return: Bất kỳ middleware nào cũng có thể trả về HttpResponse sớm (CSRF lỗi, chặn quyền, cache hit) mà không cần gọi tiếp vào View."
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "2. URLconf & Thực thi View",
+      "items": [
+        "URLResolver duyệt danh sách urlpatterns để khớp đường dẫn (Path matching).",
+        "Hook process_view() được gọi ngay trước khi View chính thức thực thi.",
+        "View tương tác với Django ORM để truy vấn DB (QuerySets lazy evaluation) và chuyển dữ liệu cho Template/Serializer."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "3. Exception & Pipeline Response",
+      "items": [
+        "Nếu View phát sinh ngoại lệ chưa xử lý, hook process_exception() sẽ bắt lại để sinh HttpResponse lỗi (500/404) thích hợp.",
+        "Middleware Response Phase chạy ngược từ dưới lên trên (Bottom-Up) để áp dụng header, session cookie và nén dữ liệu.",
+        "WSGI handler chuyển đổi HttpResponse thành byte stream hoàn chỉnh trả về client qua Web Server."
+      ]
+    }
+  ]
+}

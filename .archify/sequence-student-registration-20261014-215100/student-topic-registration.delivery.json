@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "6c44cda7-6d15-43e5-b356-08940d8b5b06",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\sequence-student-registration-20261014-215100\\candidate.json",
+  "output": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\sequence-student-registration-20261014-215100\\student-topic-registration.html",
+  "specification": {
+    "sha256": "228bdf2139ce2e34916c31281ecbb89498c74810f346710c526a2d9c69258322",
+    "bytes": 8106
+  },
+  "artifact": {
+    "sha256": "ce74206d0c78ff73a56442e1b566a52cc1563a6bf230a985578dff0739d4eb6d",
+    "bytes": 821567
+  }
+}

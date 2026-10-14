@@ -1,0 +1,297 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Luồng Sinh viên Đăng ký Đề tài Tốt nghiệp (SOA Registration Flow)",
+    "subtitle": "Quy trình xác thực liên dịch vụ qua REST contracts: API Gateway, Regist-Service, Academic-Service, Topic-Service",
+    "output": ".archify/sequence-student-registration-20261014-215100/student-topic-registration.html",
+    "column_fit": "spread",
+    "visual_preset": "classic",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "inbound_flow",
+        "label": "Inbound & Gateway",
+        "focus": ["student", "gateway", "regist_svc"],
+        "note": "Sinh viên gửi yêu cầu đăng ký qua API Gateway tới Regist-Service"
+      },
+      {
+        "id": "cross_service_validation",
+        "label": "Xác thực Liên Dịch Vụ",
+        "focus": ["regist_svc", "academic_svc", "topic_svc"],
+        "note": "Regist-Service gọi Academic-Service và Topic-Service để xác thực sinh viên và đề tài"
+      },
+      {
+        "id": "persistence_flow",
+        "label": "Lưu trữ & Phản hồi",
+        "focus": ["regist_svc", "regist_db", "gateway", "student"],
+        "note": "Kiểm tra xung đột trùng lặp, lưu bản ghi đăng ký và trả về kết quả 201 Created"
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "student",
+      "type": "external",
+      "label": "Sinh viên",
+      "sublabel": "Browser / App",
+      "icon": "person"
+    },
+    {
+      "id": "gateway",
+      "type": "cloud",
+      "label": "API Gateway",
+      "sublabel": "Port :8000",
+      "icon": "cloud"
+    },
+    {
+      "id": "regist_svc",
+      "type": "backend",
+      "label": "Regist Service",
+      "sublabel": "Port :8003",
+      "icon": "backend"
+    },
+    {
+      "id": "academic_svc",
+      "type": "backend",
+      "label": "Academic Svc",
+      "sublabel": "Port :8002",
+      "icon": "backend"
+    },
+    {
+      "id": "topic_svc",
+      "type": "backend",
+      "label": "Topic Service",
+      "sublabel": "Topic Domain",
+      "icon": "backend"
+    },
+    {
+      "id": "regist_db",
+      "type": "database",
+      "label": "Regist DB",
+      "sublabel": "Registrations",
+      "icon": "database"
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 235,
+      "label": "1. Inbound & Gateway Dispatch"
+    },
+    {
+      "from": 245,
+      "to": 475,
+      "label": "2. Cross-Service REST Validation"
+    },
+    {
+      "from": 485,
+      "to": 635,
+      "label": "3. Conflict Check & DB Persistence"
+    },
+    {
+      "from": 645,
+      "to": 725,
+      "label": "4. Response Delivery"
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg_post_regist",
+      "from": "student",
+      "to": "gateway",
+      "y": 170,
+      "label": "POST /registrations/ (topic_id, semester)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "msg_gw_forward",
+      "from": "gateway",
+      "to": "regist_svc",
+      "y": 210,
+      "label": "Forward with Bearer Token & X-Request-ID",
+      "variant": "security"
+    },
+    {
+      "id": "msg_get_student_ctx",
+      "from": "regist_svc",
+      "to": "academic_svc",
+      "y": 255,
+      "label": "1. GET /academic/students/context/ (identity)",
+      "variant": "default"
+    },
+    {
+      "id": "msg_ret_student_ctx",
+      "from": "academic_svc",
+      "to": "regist_svc",
+      "y": 295,
+      "label": "Student Context (department_id)",
+      "variant": "return"
+    },
+    {
+      "id": "msg_get_topic",
+      "from": "regist_svc",
+      "to": "topic_svc",
+      "y": 335,
+      "label": "2. GET /topics/{topic_id}/",
+      "variant": "default"
+    },
+    {
+      "id": "msg_ret_topic",
+      "from": "topic_svc",
+      "to": "regist_svc",
+      "y": 375,
+      "label": "Topic Data (status=2, major_id)",
+      "variant": "return"
+    },
+    {
+      "id": "msg_check_faculty",
+      "from": "regist_svc",
+      "to": "academic_svc",
+      "y": 415,
+      "label": "3. GET /academic/departments/?major_id=...",
+      "variant": "default"
+    },
+    {
+      "id": "msg_ret_faculty",
+      "from": "academic_svc",
+      "to": "regist_svc",
+      "y": 455,
+      "label": "Faculty Match Confirmed (status ok)",
+      "variant": "return"
+    },
+    {
+      "id": "msg_lock_and_query",
+      "from": "regist_svc",
+      "to": "regist_db",
+      "y": 495,
+      "label": "4. SELECT active registrations (Lock write)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "msg_ret_query",
+      "from": "regist_db",
+      "to": "regist_svc",
+      "y": 535,
+      "label": "No Active Conflict (List empty)",
+      "variant": "return"
+    },
+    {
+      "id": "msg_insert_regist",
+      "from": "regist_svc",
+      "to": "regist_db",
+      "y": 575,
+      "label": "5. INSERT INTO Registrations (UUID, status=1)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "msg_ret_insert",
+      "from": "regist_db",
+      "to": "regist_svc",
+      "y": 615,
+      "label": "Registration Record Committed",
+      "variant": "return"
+    },
+    {
+      "id": "msg_svc_response",
+      "from": "regist_svc",
+      "to": "gateway",
+      "y": 655,
+      "label": "201 Created (RegistrationResponseDTO)",
+      "variant": "return"
+    },
+    {
+      "id": "msg_gw_response",
+      "from": "gateway",
+      "to": "student",
+      "y": 695,
+      "label": "201 Created JSON: Đăng ký thành công",
+      "variant": "emphasis"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "student",
+      "from": 165,
+      "to": 700,
+      "type": "external"
+    },
+    {
+      "participant": "gateway",
+      "from": 168,
+      "to": 215,
+      "type": "cloud"
+    },
+    {
+      "participant": "regist_svc",
+      "from": 205,
+      "to": 660,
+      "type": "backend"
+    },
+    {
+      "participant": "academic_svc",
+      "from": 250,
+      "to": 300,
+      "type": "backend"
+    },
+    {
+      "participant": "topic_svc",
+      "from": 330,
+      "to": 380,
+      "type": "backend"
+    },
+    {
+      "participant": "academic_svc",
+      "from": 410,
+      "to": 460,
+      "type": "backend"
+    },
+    {
+      "participant": "regist_db",
+      "from": 490,
+      "to": 540,
+      "type": "database"
+    },
+    {
+      "participant": "regist_db",
+      "from": 570,
+      "to": 620,
+      "type": "database"
+    },
+    {
+      "participant": "gateway",
+      "from": 650,
+      "to": 698,
+      "type": "cloud"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "1. Kiến trúc SOA & Giao tiếp REST",
+      "items": [
+        "API Gateway (:8000) tiếp nhận request, xác thực token JWT và điều phối tới Regist Service (:8003).",
+        "Regist Service hoàn toàn không truy vấn chéo DB của Academic Service hay Topic Service.",
+        "Mọi việc xác thực thông tin sinh viên và đề tài đều thực hiện qua các hợp đồng chuẩn HTTP/REST."
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "2. Ràng buộc Nghiệp vụ (Business Rules)",
+      "items": [
+        "Trạng thái đề tài: Đề tài phải có status == 2 (đang mở đăng ký), nếu không trả về 400 Bad Request (topic_closed).",
+        "Khớp Khoa/Ngành: Chuyên ngành của đề tài (major_id) phải thuộc cùng khoa (department_id) với sinh viên (faculty_mismatch).",
+        "Kiểm tra trùng lặp: Sinh viên không được có 2 đề tài cùng kích hoạt trong một kỳ; trả về 409 Conflict nếu đã đăng ký đề tài khác."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "3. Toàn vẹn Dữ liệu & Độc quyền Bảng",
+      "items": [
+        "Regist Service sở hữu độc quyền bảng dữ liệu 'Registrations' trong cơ sở dữ liệu dùng chung.",
+        "Sử dụng giao dịch transaction.atomic() và cơ chế khóa ghi để ngăn ngừa Race Condition khi nhiều sinh viên đăng ký đồng thời.",
+        "Bản ghi đăng ký lưu mã định danh UUID duy nhất, thời gian tạo, người cập nhật và trạng thái kích hoạt (status=1)."
+      ]
+    }
+  ]
+}

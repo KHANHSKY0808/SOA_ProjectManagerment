@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "sequence",
+  "quality": "showcase",
+  "specification": {
+    "path": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\sequence-django-request-lifecycle-20261014-214500\\candidate.json",
+    "sha256": "bd6761b1639ba1e3dcdca5f4987a1f035d6211ab07ea9b19b35499b2e876f9fe",
+    "bytes": 7782
+  },
+  "artifact": {
+    "path": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\sequence-django-request-lifecycle-20261014-214500\\django-request-lifecycle.html",
+    "sha256": "c2529f973fe12ccf1bb4cdcfb5742a25fcca6833990fcb3e9fbabff7f167723e",
+    "bytes": 823990
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\sequence-django-request-lifecycle-20261014-214500\\django-request-lifecycle.finalize.json",
+    "summaryReceipt": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\sequence-django-request-lifecycle-20261014-214500\\django-request-lifecycle.finalize-summary.json",
+    "browserCheckReceipt": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\sequence-django-request-lifecycle-20261014-214500\\django-request-lifecycle.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-14T14:37:56.516Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2286
+}

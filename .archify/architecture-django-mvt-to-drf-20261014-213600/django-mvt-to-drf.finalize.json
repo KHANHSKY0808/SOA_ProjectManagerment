@@ -1,0 +1,1028 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "startedAt": "2026-10-14T14:37:56.351Z",
+  "specification": {
+    "path": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\candidate.json",
+    "sha256": "29a7c2090df6a1bbca5ba1c78fb3eb84289f9dfeeef2370357554e8b2fd96131",
+    "bytes": 8154
+  },
+  "artifact": {
+    "path": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\django-mvt-to-drf.html",
+    "sha256": "14b9741fc3929dbb0e2f0dca41f0323c12659ea04553154e611097da131bc096",
+    "bytes": 838304
+  },
+  "stages": {
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "deliver",
+        "architecture",
+        "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\candidate.json",
+        "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\django-mvt-to-drf.html",
+        "--quality",
+        "showcase",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "29a7c2090df6a1bbca5ba1c78fb3eb84289f9dfeeef2370357554e8b2fd96131",
+          "bytes": 8154
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 465,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "deliver",
+        "architecture",
+        "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\candidate.json",
+        "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\django-mvt-to-drf.html",
+        "--quality",
+        "showcase",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "9ba0a243-ae20-401a-8e76-7f6c2a24d45e",
+        "ok": true,
+        "command": "deliver",
+        "type": "architecture",
+        "input": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\candidate.json",
+        "output": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\django-mvt-to-drf.html",
+        "specification": {
+          "sha256": "29a7c2090df6a1bbca5ba1c78fb3eb84289f9dfeeef2370357554e8b2fd96131",
+          "bytes": 8154
+        },
+        "artifact": {
+          "sha256": "14b9741fc3929dbb0e2f0dca41f0323c12659ea04553154e611097da131bc096",
+          "bytes": 838304
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        },
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 156,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "check",
+        "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\django-mvt-to-drf.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\django-mvt-to-drf.html",
+        "artifact": {
+          "sha256": "14b9741fc3929dbb0e2f0dca41f0323c12659ea04553154e611097da131bc096",
+          "bytes": 838304
+        },
+        "checks": [
+          {
+            "name": "single_svg",
+            "ok": true,
+            "details": [
+              "found 1 <svg> block(s)"
+            ]
+          },
+          {
+            "name": "finite_svg",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "orthogonal_arrows",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "label_route_clearance",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_crossings",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_corridors",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "container_border_runs",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "route_rhythm",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "legend_clearance",
+            "ok": true,
+            "details": []
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "metrics": {
+            "properCrossings": 0,
+            "resolvedCrossovers": 1,
+            "ambiguousCorridors": 0,
+            "arrowheadCollisions": 0,
+            "containerBorderRuns": 0,
+            "labelRouteClearanceIssues": 0,
+            "labelCanvasOverflowIssues": 0,
+            "minLabelRouteClearance": 5,
+            "desktopReadabilityIssues": 0,
+            "viewportHeightIssues": 0,
+            "minProjectedNodeTextPx": 7.1117647058823525,
+            "maxBends": 5,
+            "routesOverSuggestedBends": 2,
+            "maxStretch": 2,
+            "routesOverSuggestedStretch": 1,
+            "minSegmentPx": 24,
+            "minInteriorSegmentPx": 35,
+            "shortSegmentCount": 0,
+            "shortEndpointSegmentCount": 0,
+            "shortInteriorSegmentCount": 0,
+            "microSegmentCount": 0
+          },
+          "suggestedLimits": {
+            "bendsPerRelationship": 2,
+            "stretch": 1.35,
+            "segmentPx": 16,
+            "microSegmentPx": 8
+          },
+          "routeReview": {
+            "crossings": [
+              {
+                "left": {
+                  "id": "drf_val_in",
+                  "from": "drf_view",
+                  "to": "drf_serializer_in",
+                  "label": "3. Deserialization &amp; Validate",
+                  "collectionIndex": 8,
+                  "artifactIndex": 9
+                },
+                "right": {
+                  "id": "drf_data_out",
+                  "from": "drf_serializer_out",
+                  "to": "drf_view",
+                  "label": "7. serializer.data (Dict)",
+                  "collectionIndex": 12,
+                  "artifactIndex": 13
+                },
+                "point": [
+                  488,
+                  492
+                ],
+                "sharedNode": "drf_view"
+              }
+            ],
+            "detours": [
+              {
+                "relationship": {
+                  "id": "drf_save_model",
+                  "from": "drf_serializer_in",
+                  "to": "drf_model",
+                  "label": "4. Validated Data / save()",
+                  "collectionIndex": 9,
+                  "artifactIndex": 10
+                },
+                "bends": 3,
+                "stretch": 1
+              },
+              {
+                "relationship": {
+                  "id": "drf_data_out",
+                  "from": "drf_serializer_out",
+                  "to": "drf_view",
+                  "label": "7. serializer.data (Dict)",
+                  "collectionIndex": 12,
+                  "artifactIndex": 13
+                },
+                "bends": 5,
+                "stretch": 2
+              }
+            ]
+          },
+          "leadingSpace": {
+            "measured": true,
+            "emptyTopPx": 60,
+            "emptyTopRatio": 0.091,
+            "occupiedTop": 60,
+            "viewBoxTop": 0,
+            "canvasHeight": 662,
+            "typicalNodeHeight": 60,
+            "reviewSuggested": false
+          },
+          "desktopReadability": {
+            "budgetBasis": "legacy-930",
+            "readerContract": "declared-wide-v1",
+            "availableDiagramWidth": 930,
+            "actualBudgetPx": 930,
+            "limit": "legacy",
+            "requestedTargetPx": 7.5,
+            "requestedTargetMet": false,
+            "hardFloorPx": 6,
+            "hardFloorMet": true,
+            "minimumOwner": {
+              "kind": "node",
+              "id": "drf_client"
+            },
+            "minimumSourceTextPx": 7.8,
+            "minimumProjectedTextPx": 7.1117647058823525,
+            "semanticTextCount": 42
+          },
+          "issues": []
+        },
+        "provenance": "current",
+        "deliveryReceiptId": "9ba0a243-ae20-401a-8e76-7f6c2a24d45e"
+      }
+    },
+    "browser-check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 1707,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "browser-check",
+        "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\django-mvt-to-drf.html",
+        "--json",
+        "--require-provenance"
+      ],
+      "execution": "in-process",
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "browser-check",
+        "evidenceKind": "automated-browser",
+        "status": "pass",
+        "visualReview": "not-requested",
+        "provenance": "current",
+        "deliveryReceiptId": "9ba0a243-ae20-401a-8e76-7f6c2a24d45e",
+        "artifact": {
+          "path": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\django-mvt-to-drf.html",
+          "sha256": "14b9741fc3929dbb0e2f0dca41f0323c12659ea04553154e611097da131bc096",
+          "bytes": 838304
+        },
+        "state": {
+          "detail": "read",
+          "motion": "still"
+        },
+        "chrome": {
+          "status": "available",
+          "executable": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+        },
+        "diagnostics": [],
+        "containment": {
+          "status": "pass",
+          "policy": "fit-or-reader-declared-readable-vertical-scroll",
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 900,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1140,
+              "diagramWidth": 1110,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 78,
+                "diagramChromePx": 78,
+                "svgPx": 720,
+                "cardsPx": 0,
+                "viewBoxHeight": 662
+              },
+              "viewBoxWidth": 1020,
+              "minimumProjectedNodeTextPx": 7.8,
+              "minimumProjectedNonEdgeTextPx": 7.8,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "React / Vue / Mobile / SOA",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "drf_client"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1000,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1192,
+              "diagramWidth": 1162,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 754,
+                "cardsPx": 0,
+                "viewBoxHeight": 662
+              },
+              "viewBoxWidth": 1020,
+              "minimumProjectedNodeTextPx": 7.8,
+              "minimumProjectedNonEdgeTextPx": 7.8,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "React / Vue / Mobile / SOA",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "drf_client"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1080,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1315,
+              "diagramWidth": 1285,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 834,
+                "cardsPx": 0,
+                "viewBoxHeight": 662
+              },
+              "viewBoxWidth": 1020,
+              "minimumProjectedNodeTextPx": 7.8,
+              "minimumProjectedNonEdgeTextPx": 7.8,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "React / Vue / Mobile / SOA",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "drf_client"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1320,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1745,
+              "diagramWidth": 1530,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 94,
+                "diagramChromePx": 157,
+                "svgPx": 993,
+                "cardsPx": 0,
+                "viewBoxHeight": 662
+              },
+              "viewBoxWidth": 1020,
+              "minimumProjectedNodeTextPx": 7.8,
+              "minimumProjectedNonEdgeTextPx": 7.8,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "React / Vue / Mobile / SOA",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "drf_client"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 19.65625,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 0,
+              "viewerChromeActive": false,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
+        },
+        "themeStates": {
+          "status": "pass",
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1440,
+              "height": 900,
+              "requestedTheme": "dark",
+              "resolvedTheme": "dark",
+              "ok": true
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "requestedTheme": "dark",
+              "resolvedTheme": "dark",
+              "ok": true
+            }
+          ]
+        },
+        "readability": {
+          "status": "pass",
+          "minimumProjectedNodeTextPx": 6,
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 900,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1140,
+              "diagramWidth": 1110,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 78,
+                "diagramChromePx": 78,
+                "svgPx": 720,
+                "cardsPx": 0,
+                "viewBoxHeight": 662
+              },
+              "viewBoxWidth": 1020,
+              "minimumProjectedNodeTextPx": 7.8,
+              "minimumProjectedNonEdgeTextPx": 7.8,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "React / Vue / Mobile / SOA",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "drf_client"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1000,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1192,
+              "diagramWidth": 1162,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 754,
+                "cardsPx": 0,
+                "viewBoxHeight": 662
+              },
+              "viewBoxWidth": 1020,
+              "minimumProjectedNodeTextPx": 7.8,
+              "minimumProjectedNonEdgeTextPx": 7.8,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "React / Vue / Mobile / SOA",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "drf_client"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1080,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1315,
+              "diagramWidth": 1285,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 834,
+                "cardsPx": 0,
+                "viewBoxHeight": 662
+              },
+              "viewBoxWidth": 1020,
+              "minimumProjectedNodeTextPx": 7.8,
+              "minimumProjectedNonEdgeTextPx": 7.8,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "React / Vue / Mobile / SOA",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "drf_client"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1320,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1745,
+              "diagramWidth": 1530,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 94,
+                "diagramChromePx": 157,
+                "svgPx": 993,
+                "cardsPx": 0,
+                "viewBoxHeight": 662
+              },
+              "viewBoxWidth": 1020,
+              "minimumProjectedNodeTextPx": 7.8,
+              "minimumProjectedNonEdgeTextPx": 7.8,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "React / Vue / Mobile / SOA",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "drf_client"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 19.65625,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 0,
+              "viewerChromeActive": false,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
+        },
+        "viewerChrome": {
+          "status": "pass",
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 900,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1140,
+              "diagramWidth": 1110,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 78,
+                "diagramChromePx": 78,
+                "svgPx": 720,
+                "cardsPx": 0,
+                "viewBoxHeight": 662
+              },
+              "viewBoxWidth": 1020,
+              "minimumProjectedNodeTextPx": 7.8,
+              "minimumProjectedNonEdgeTextPx": 7.8,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "React / Vue / Mobile / SOA",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "drf_client"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1000,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1192,
+              "diagramWidth": 1162,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 754,
+                "cardsPx": 0,
+                "viewBoxHeight": 662
+              },
+              "viewBoxWidth": 1020,
+              "minimumProjectedNodeTextPx": 7.8,
+              "minimumProjectedNonEdgeTextPx": 7.8,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "React / Vue / Mobile / SOA",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "drf_client"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1080,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1315,
+              "diagramWidth": 1285,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 834,
+                "cardsPx": 0,
+                "viewBoxHeight": 662
+              },
+              "viewBoxWidth": 1020,
+              "minimumProjectedNodeTextPx": 7.8,
+              "minimumProjectedNonEdgeTextPx": 7.8,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "React / Vue / Mobile / SOA",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "drf_client"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1320,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1745,
+              "diagramWidth": 1530,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 94,
+                "diagramChromePx": 157,
+                "svgPx": 993,
+                "cardsPx": 0,
+                "viewBoxHeight": 662
+              },
+              "viewBoxWidth": 1020,
+              "minimumProjectedNodeTextPx": 7.8,
+              "minimumProjectedNonEdgeTextPx": 7.8,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "React / Vue / Mobile / SOA",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "drf_client"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 19.65625,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 0,
+              "viewerChromeActive": false,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
+        },
+        "captures": {
+          "status": "not-requested",
+          "screenshots": [],
+          "contactSheet": null
+        },
+        "sidecars": {
+          "receipt": "django-mvt-to-drf.browser-check.json",
+          "files": []
+        }
+      }
+    }
+  },
+  "diagnostics": [],
+  "evidence": {
+    "receipt": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\django-mvt-to-drf.finalize.json",
+    "summaryReceipt": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\django-mvt-to-drf.finalize-summary.json",
+    "browserCheckReceipt": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\django-mvt-to-drf.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "finishedAt": "2026-10-14T14:37:59.010Z",
+  "durationMs": 2659,
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-14T14:37:56.516Z",
+    "source": "network",
+    "noticeRequired": false,
+    "noticeText": null
+  }
+}

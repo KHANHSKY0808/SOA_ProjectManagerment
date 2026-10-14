@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "sequence",
+  "quality": "showcase",
+  "specification": {
+    "path": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\sequence-student-registration-20261014-215100\\candidate.json",
+    "sha256": "228bdf2139ce2e34916c31281ecbb89498c74810f346710c526a2d9c69258322",
+    "bytes": 8106
+  },
+  "artifact": {
+    "path": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\sequence-student-registration-20261014-215100\\student-topic-registration.html",
+    "sha256": "ce74206d0c78ff73a56442e1b566a52cc1563a6bf230a985578dff0739d4eb6d",
+    "bytes": 821567
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\sequence-student-registration-20261014-215100\\student-topic-registration.finalize.json",
+    "summaryReceipt": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\sequence-student-registration-20261014-215100\\student-topic-registration.finalize-summary.json",
+    "browserCheckReceipt": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\sequence-student-registration-20261014-215100\\student-topic-registration.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-14T14:37:56.516Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2377
+}

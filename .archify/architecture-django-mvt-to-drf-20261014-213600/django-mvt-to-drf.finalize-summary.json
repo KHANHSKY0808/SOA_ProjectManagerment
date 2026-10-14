@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\candidate.json",
+    "sha256": "29a7c2090df6a1bbca5ba1c78fb3eb84289f9dfeeef2370357554e8b2fd96131",
+    "bytes": 8154
+  },
+  "artifact": {
+    "path": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\django-mvt-to-drf.html",
+    "sha256": "14b9741fc3929dbb0e2f0dca41f0323c12659ea04553154e611097da131bc096",
+    "bytes": 838304
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\django-mvt-to-drf.finalize.json",
+    "summaryReceipt": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\django-mvt-to-drf.finalize-summary.json",
+    "browserCheckReceipt": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\django-mvt-to-drf.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-14T14:37:56.516Z",
+    "source": "network",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2659,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "resolvedCrossovers": 1,
+      "routesOverSuggestedBends": 2,
+      "routesOverSuggestedStretch": 1
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [
+        {
+          "left": {
+            "id": "drf_val_in",
+            "from": "drf_view",
+            "to": "drf_serializer_in",
+            "label": "3. Deserialization &amp; Validate",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "right": {
+            "id": "drf_data_out",
+            "from": "drf_serializer_out",
+            "to": "drf_view",
+            "label": "7. serializer.data (Dict)",
+            "collectionIndex": 12,
+            "artifactIndex": 13
+          },
+          "point": [
+            488,
+            492
+          ],
+          "sharedNode": "drf_view"
+        }
+      ],
+      "detours": [
+        {
+          "relationship": {
+            "id": "drf_save_model",
+            "from": "drf_serializer_in",
+            "to": "drf_model",
+            "label": "4. Validated Data / save()",
+            "collectionIndex": 9,
+            "artifactIndex": 10
+          },
+          "bends": 3,
+          "stretch": 1
+        },
+        {
+          "relationship": {
+            "id": "drf_data_out",
+            "from": "drf_serializer_out",
+            "to": "drf_view",
+            "label": "7. serializer.data (Dict)",
+            "collectionIndex": 12,
+            "artifactIndex": 13
+          },
+          "bends": 5,
+          "stretch": 2
+        }
+      ],
+      "truncated": false
+    },
+    "hints": [
+      "drf_view → drf_serializer_in and drf_serializer_out → drf_view cross next to drf_view: move node drf_serializer_in or drf_serializer_out so the two reach drf_view from different sides (for example one level with it, one directly above or below it).",
+      "drf_serializer_in → drf_model needs 3 bends: move node drf_serializer_in or drf_model so they share a row or column with matching centers, or sit diagonally with a clear corner.",
+      "drf_serializer_out → drf_view needs 5 bends: move node drf_serializer_out or drf_view so they share a row or column with matching centers, or sit diagonally with a clear corner."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}

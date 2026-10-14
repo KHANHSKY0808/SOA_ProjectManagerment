@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "15ee3ad1-0dc3-4585-84eb-3e7c6447456b",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\candidate.json",
+  "output": "D:\\Code\\CloneRepos\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-213600\\django-mvt-to-drf.html",
+  "specification": {
+    "sha256": "83a3243937e9aef6a0d2f3d04f7513617763540430fd8b708b16237dd13bc6b4",
+    "bytes": 7463
+  },
+  "artifact": {
+    "sha256": "3edc7fca9187902b4955ee429066993d65dbfa5f587da302c0f7eb0122258869",
+    "bytes": 833971
+  }
+}
