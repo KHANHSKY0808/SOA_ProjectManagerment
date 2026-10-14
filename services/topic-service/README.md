@@ -94,7 +94,7 @@ POST and PUT request example:
 `topic_id`, `name`, `major_id` are required for POST/PUT. IDs have a maximum
 length of 255; required strings cannot be blank. `topic_id` is immutable; PUT
 must include the existing ID. Optional fields except status accept null, and text fields
-accept blank strings. Blank advisor_id is normalized to null. Status accepts only JSON integers 0 (pending approval), 1 (approved), or 2 (open for registration); null is rejected. file_url is a
+accept blank strings. Blank advisor_id is normalized to null. Status accepts only JSON integers 0 (pending approval), 1 (approved), 2 (open for registration), or 3 (registration closed); null is rejected. file_url is a
 stored string, not an upload or remote fetch. Unknown fields are rejected.
 PUT clears omitted optional fields except status; both PUT and PATCH preserve omitted status. For example,
 `PATCH /api/v1/topics/DT001/` with `{"name":"Revised title"}` changes only the name
@@ -327,7 +327,7 @@ is installed; deployment rate limits can be enforced at Gateway.
 ## Topic approval and opening registration
 
 JWT role 1 (admin) creates topics with status 1 by default and may explicitly
-submit status 0, 1 or 2 on POST/PUT/PATCH. Role 2 (lecturer) creates topics with
+submit status 0, 1, 2 or 3 on POST/PUT/PATCH. Role 2 (lecturer) creates topics with
 status 0 and cannot submit status on any write (403 for valid supplied status).
 Malformed or out-of-range status returns 400 for either role. Omission on PUT or
 PATCH preserves the stored status. Other topic management permissions remain unchanged.
@@ -335,7 +335,12 @@ PATCH preserves the stored status. Other topic management permissions remain unc
 For example, admin `PATCH /api/v1/topics/DT001/` with `{"status":2}` opens
 registration. Status 1 means approved only: the student registration collection
 includes only status 2, and regist-service independently validates that status.
-The detail lookup still returns closed topics so callers can report ineligibility.
+Admin may PATCH status 3 to close registration, then PATCH status 2 to reopen it.
+Status 3 remains visible in topic detail and student reference detail, but is
+excluded from available topics. Regist-service rejects student self-cancellation
+and grading is permitted only while topic status is 3. Existing registration
+records and points are not changed by the transition. The detail lookup still
+returns closed topics so callers can report ineligibility.
 Existing rows, including legacy null statuses, are not rewritten; an admin must
 explicitly open approved topics. Existing registration records are unaffected.
 

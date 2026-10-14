@@ -161,7 +161,7 @@ class TopicPersistenceTests(TransactionTestCase):
                     self.assertEqual(self.request(method, detail, payload).status_code, 200)
                     self.assertEqual(Topic.objects.get().status, initial)
                 Topic.objects.all().delete()
-            for status in (0, 1, 2):
+            for status in (0, 1, 2, 3):
                 self.authenticate(2)
                 self.assertEqual(self.request("post", collection, {**self.data, "status": status}).status_code, 403)
                 self.assertFalse(Topic.objects.exists())
@@ -172,18 +172,18 @@ class TopicPersistenceTests(TransactionTestCase):
                     self.assertEqual(self.request(method, detail, payload).status_code, 403)
                     self.assertEqual(Topic.objects.get().status, status)
                 self.authenticate(1)
-                for next_status in (0, 1, 2):
+                for next_status in (0, 1, 2, 3):
                     for method, payload in (("patch", {"status": next_status}), ("put", {**self.data, "status": next_status})):
                         self.assertEqual(self.request(method, detail, payload).status_code, 200)
                         self.assertEqual(Topic.objects.get().status, next_status)
                 Topic.objects.all().delete()
 
     def test_status_rejects_invalid_values_without_writes(self):
-        for status in (None, -1, 3, True, False, "1", 1.5):
+        for status in (None, -1, 4, True, False, "1", 1.5):
             self.assertEqual(self.request("post", "/api/topics/", {**self.data, "status": status}).status_code, 400)
             self.assertFalse(Topic.objects.exists())
         self.create()
-        for status in (None, -1, 3, True, "1", 1.5):
+        for status in (None, -1, 4, True, "1", 1.5):
             for method, payload in (("patch", {"status": status}), ("put", {**self.data, "status": status})):
                 self.assertEqual(self.request(method, "/api/topics/DT001/", payload).status_code, 400)
                 self.assertEqual(Topic.objects.get().status, 1)

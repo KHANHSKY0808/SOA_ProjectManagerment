@@ -32,6 +32,8 @@ class RegistrationLookupTests(SimpleTestCase):
         result = self.client.get("/api/v1/registration-topics/DT001/")
         self.assertEqual(result.data["status"], 0)
         topics.assert_called_once_with(pk="DT001")
+        topics.return_value.first.return_value.status = 3
+        self.assertEqual(self.client.get("/api/v1/registration-topics/DT001/").data["status"], 3)
         topics.return_value.first.return_value = None
         self.assertEqual(self.client.get("/api/v1/registration-topics/missing/").status_code, 404)
         topics.side_effect = OperationalError("private")
