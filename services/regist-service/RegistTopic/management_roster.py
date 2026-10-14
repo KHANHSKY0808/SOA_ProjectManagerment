@@ -19,7 +19,7 @@ class TopicManagerPermission(BasePermission):
 class TopicGraderPermission(BasePermission):
     def has_permission(self, request, view):
         role = request.auth.get("role") if request.auth else None
-        return bool(request.user and request.user.is_authenticated and type(role) is int and role == 2)
+        return bool(request.user and request.user.is_authenticated and type(role) is int and role in (1, 2))
 
 
 class RosterQuery(serializers.Serializer):
@@ -100,7 +100,7 @@ class TopicRegistrationPointView(RegistrationAPIView):
         dto = PointRequestDTO(data=request.data)
         dto.is_valid(raise_exception=True)
         obj = services.grade_topic_registration(
-            request.auth["user_id"], topic_id, registration_id, dto.validated_data["point"],
+            request.auth["user_id"], request.auth["role"], topic_id, registration_id, dto.validated_data["point"],
             request.headers.get("Authorization", ""), self.request_id)
         return Response(PointResponseDTO(obj).data)
 

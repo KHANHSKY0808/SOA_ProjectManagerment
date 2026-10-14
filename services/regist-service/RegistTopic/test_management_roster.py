@@ -164,9 +164,39 @@ class TopicRosterTests(TransactionTestCase):
             self.assertEqual(self.client.get(self.url).data["results"][0]["point"], "8.50")
             self.authenticate(1)
             self.assertEqual(self.client.get(self.url).data["results"][0]["point"], "8.50")
-            self.assertEqual(self.client.put(url, {"point": "7.00"}, format="json").status_code, 403)
             self.assertEqual(Registration.objects.get(pk="R2").point, None)
             self.assertEqual(lookup.call_args.args[0], "T1")
+
+    def test_admin_grades_any_current_topic_registration_including_unassigned_topic(self):
+        Registration.objects.create(registration_id="R1", topic_id="T1", student_id="S1", status=1)
+        Registration.objects.create(registration_id="R2", topic_id="T2", student_id="S2", status=1)
+        self.authenticate_as("admin", 1)
+        url = self.url + "R1/point/"
+        with patch.object(clients.topic_client, "management_topic") as lookup:
+            for advisor, point in (("GV-other", "8.25"), (None, "9.00")):
+                lookup.return_value = {"topic_id": "T1", "advisor_id": advisor}
+                result = self.client.put(url, {"point": point}, format="json")
+                self.assertEqual(result.status_code, 200, result.data)
+                self.assertEqual(result.data["point"], point)
+                obj = Registration.objects.get(pk="R1")
+                self.assertEqual(obj.point, Decimal(point))
+                self.assertEqual(obj.updated_by, "admin")
+            self.assertEqual(lookup.call_count, 2)
+            self.assertEqual(lookup.call_args.args[0], "T1")
+        self.assertIsNone(Registration.objects.get(pk="R2").point)
+
+    def test_admin_still_requires_topic_and_registration_validation(self):
+        Registration.objects.create(registration_id="R1", topic_id="T1", student_id="S1", status=1)
+        self.authenticate_as("admin", 1)
+        url = self.url + "R1/point/"
+        with patch.object(clients.topic_client, "management_topic", side_effect=clients.DependencyUnavailable()):
+            self.assertEqual(self.client.put(url, {"point": "7"}, format="json").status_code, 503)
+        with patch.object(clients.topic_client, "management_topic", return_value={"topic_id": "T1", "advisor_id": None}):
+            self.assertEqual(self.client.put(self.url + "missing/point/", {"point": "7"}, format="json").status_code, 404)
+            self.assertEqual(self.client.put("/api/v1/topics/T2/registrations/R1/point/", {"point": "7"}, format="json").status_code, 404)
+            Registration.objects.filter(pk="R1").update(status=0)
+            self.assertEqual(self.client.put(url, {"point": "7"}, format="json").status_code, 409)
+        self.assertIsNone(Registration.objects.get(pk="R1").point)
 
     def authenticate_as(self, identity, role):
         token = AccessToken()
@@ -202,7 +232,7 @@ class TopicRosterTests(TransactionTestCase):
             self.assertEqual(result.status_code, 503)
             self.assertNotIn("private", str(result.data))
         self.assertIsNone(Registration.objects.get(pk="R1").point)
-        for role in (1, 3, "2", True):
+        for role in (3, "2", True):
             self.authenticate_as("GV1", role)
             self.assertEqual(self.client.put(url, {"point": "8"}, format="json").status_code, 403)
         self.client.credentials()

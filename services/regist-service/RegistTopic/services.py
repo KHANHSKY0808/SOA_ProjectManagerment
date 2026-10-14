@@ -83,9 +83,9 @@ def get_topic_registration(topic_id, registration_id):
     return obj
 
 
-def grade_topic_registration(actor, topic_id, registration_id, point, authorization, request_id):
+def grade_topic_registration(actor, role, topic_id, registration_id, point, authorization, request_id):
     topic = topic_client.management_topic(topic_id, authorization, request_id)
-    if topic["advisor_id"] != actor:
+    if role != 1 and topic["advisor_id"] != actor:
         raise PermissionDenied("Only the topic advisor may grade this registration.")
     with transaction.atomic():
         acquire_write_lock()
