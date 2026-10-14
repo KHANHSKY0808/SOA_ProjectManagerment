@@ -10,7 +10,7 @@ export function TopicDetailModal({ state }: { state: TopicState }) {
   const roster = useTopicRoster(state.mode === 'detail' && canViewRoster ? state.selected?.topic_id : undefined, logout)
   if (state.mode !== 'detail') return null
   const row = state.detail
-  const canGrade = user?.role === 2 && !!row?.advisor_id && row.advisor_id === user.user_id
+  const canGrade = user?.role === 1 || (user?.role === 2 && !!row?.advisor_id && row.advisor_id === user.user_id)
   return <Modal title="Chi tiết đề tài" busy={roster.busy} onClose={state.close}>
     {state.detailLoading && <p role="status">Đang tải chi tiết đề tài…</p>}
     {state.detailError && <><p role="alert" className="academic-error">{state.detailError}</p><button type="button" onClick={state.retryDetail}>Tải lại chi tiết</button></>}

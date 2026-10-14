@@ -388,4 +388,4 @@ Khi lỗi mạng/timeout/5xx hoặc409, popup yêu cầu **Kiểm tra kết qu�
 
 ### Điểm đăng ký
 
-Sinh viên xem điểm của mình (hoặc “Chưa chấm”) trong đăng ký hiện tại và lịch sử. Admin xem điểm dạng chỉ đọc trong danh sách sinh viên của từng đề tài. Giảng viên hướng dẫn có thể chấm/sửa điểm 0–10, tối đa hai chữ số thập phân, trong chi tiết đề tài. UI gửi một PUT cho mỗi lần xác nhận; nếu kết quả chưa rõ, dùng **Kiểm tra điểm** để đọc đúng giá trị đã lưu trước khi thử lại. Sinh viên tải lại trang để xem điểm vừa được chấm.
+Sinh viên xem điểm của mình (hoặc “Chưa chấm”) trong đăng ký hiện tại và lịch sử. Admin có thể chấm/sửa điểm của mọi đăng ký còn hiệu lực trong danh sách sinh viên của từng đề tài, kể cả đề tài chưa có giảng viên hướng dẫn. Giảng viên chỉ chấm/sửa điểm thuộc đề tài mình hướng dẫn. Điểm từ 0–10, tối đa hai chữ số thập phân. UI gửi một PUT cho mỗi lần xác nhận; nếu kết quả chưa rõ, dùng **Kiểm tra điểm** để đọc đúng giá trị đã lưu trước khi thử lại. Sinh viên tải lại trang để xem điểm vừa được chấm.
