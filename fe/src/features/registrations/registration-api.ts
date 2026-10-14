@@ -7,6 +7,7 @@ export interface Registration {
   status: number | null
   created_at: string | null
   updated_at: string | null
+  point: string | null
 }
 export interface AvailableTopic { topic_id: string; name: string; major_id: string; status: 2 }
 export interface TopicPage { results: AvailableTopic[]; next_after: string | null }
@@ -18,6 +19,8 @@ const id = (value: unknown): value is string => typeof value === 'string' && !!v
 const nullableString = (value: unknown): value is string | null => value === null || typeof value === 'string'
 const timestamp = (value: unknown): value is string | null => value === null || (typeof value === 'string' &&
   /^\d{4}-\d{2}-\d{2}T/.test(value) && Number.isFinite(Date.parse(value)))
+const point = (value: unknown): value is string | null => value === null ||
+  (typeof value === 'string' && /^(?:\d|10)\.\d{2}$/.test(value) && Number(value) <= 10)
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid registration response')
   return value as Record<string, unknown>
@@ -26,9 +29,9 @@ function registration(value: unknown): Registration {
   const row = object(value)
   if (!id(row.registration_id) || !(row.topic_id === null || id(row.topic_id)) || !nullableString(row.semester) ||
       !(row.status === null || (typeof row.status === 'number' && Number.isInteger(row.status))) ||
-      !timestamp(row.created_at) || !timestamp(row.updated_at)) throw new Error('Invalid registration record')
+      !timestamp(row.created_at) || !timestamp(row.updated_at) || !point(row.point)) throw new Error('Invalid registration record')
   return { registration_id: row.registration_id, topic_id: row.topic_id, semester: row.semester,
-    status: row.status as number | null, created_at: row.created_at, updated_at: row.updated_at }
+    status: row.status as number | null, created_at: row.created_at, updated_at: row.updated_at, point: row.point }
 }
 
 /** Unknown legacy statuses, including null, conservatively count as current. */

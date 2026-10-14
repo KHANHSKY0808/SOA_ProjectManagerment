@@ -5,7 +5,7 @@ import { cancelRegistration, isCurrent, listAvailableTopics, listRegistrations, 
 
 const base = '/registrations/api/v1/'
 const row = { registration_id: 'R1', topic_id: 'T1', semester: null, status: 1,
-  created_at: '2026-10-11T03:00:00Z', updated_at: null }
+  created_at: '2026-10-11T03:00:00Z', updated_at: null, point: null }
 const topic = { topic_id: 'T1', major_id: 'M1', name: 'SOA', status: 2 }
 const signal = new AbortController().signal
 let mock: MockAdapter
@@ -18,6 +18,14 @@ describe('Student registration Gateway contract', () => {
     expect(await listRegistrations(signal)).toEqual([row])
     expect(mock.history.get[0].headers?.Authorization).toBe('Bearer student-token')
     expect(mock.history.get[0].signal).toBe(signal)
+  })
+  it('accepts a graded registration and rejects malformed points', async () => {
+    mock.onGet(base + 'registrations/').reply(200, [{ ...row, point: '8.50' }])
+    expect((await listRegistrations(signal))[0].point).toBe('8.50')
+    for (const point of ['11.00', '-1.00', '8.123', 8.5, 'NaN']) {
+      mock.onGet(base + 'registrations/').reply(200, [{ ...row, point }])
+      await expect(listRegistrations(signal)).rejects.toThrow()
+    }
   })
   it.each([null, {}, [null], [{ ...row, status: '1' }], [{ ...row, created_at: 'invalid' }], [row, row],
     [{ ...row, updated_at: undefined }], [{ ...row, registration_id: '' }]])('rejects invalid history %#', async data => {
