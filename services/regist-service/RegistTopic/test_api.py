@@ -17,6 +17,12 @@ URL = "/api/v1/registrations/"
 
 
 class RegistrationAPITests(TransactionTestCase):
+    def test_database_first_point_mapping(self):
+        field = Registration._meta.get_field("point")
+        self.assertEqual(field.db_column, "Point")
+        self.assertEqual((field.max_digits, field.decimal_places), (4, 2))
+        self.assertFalse(Registration._meta.managed)
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
