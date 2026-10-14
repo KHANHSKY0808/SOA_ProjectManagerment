@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "D:\\Work\\SOA_ProjectManagerment\\.archify\\architecture-soa-system-overview-20261014-210400\\candidate.json",
+    "sha256": "7d7675de025d59e6a0cb49efa36f5e72654d0d367d212368c7a5b394750a5810",
+    "bytes": 5671
+  },
+  "artifact": {
+    "path": "D:\\Work\\SOA_ProjectManagerment\\.archify\\architecture-soa-system-overview-20261014-210400\\soa-architecture.html",
+    "sha256": "86512edffeae04f2867bd5aa68a7b4129413858effcc065657c1cd7fac5d7f83",
+    "bytes": 848068
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "D:\\Work\\SOA_ProjectManagerment\\.archify\\architecture-soa-system-overview-20261014-210400\\soa-architecture.finalize.json",
+    "summaryReceipt": "D:\\Work\\SOA_ProjectManagerment\\.archify\\architecture-soa-system-overview-20261014-210400\\soa-architecture.finalize-summary.json",
+    "browserCheckReceipt": "D:\\Work\\SOA_ProjectManagerment\\.archify\\architecture-soa-system-overview-20261014-210400\\soa-architecture.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-14T14:04:48.132Z",
+    "source": "network",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 9613,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "routesOverSuggestedBends": 1
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [],
+      "detours": [
+        {
+          "relationship": {
+            "id": "route-auth",
+            "from": "gateway",
+            "to": "auth",
+            "label": "/auth/*",
+            "collectionIndex": 2,
+            "artifactIndex": 3
+          },
+          "bends": 3,
+          "stretch": 1
+        }
+      ],
+      "truncated": false
+    },
+    "hints": [
+      "gateway → auth needs 3 bends: move node gateway or auth so they share a row or column with matching centers, or sit diagonally with a clear corner."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}

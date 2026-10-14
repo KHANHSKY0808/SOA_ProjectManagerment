@@ -1,0 +1,351 @@
+{
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "title": "Graduation Project Management Database ERD",
+    "output": ".archify/erd-project-management-db-20261014-220854/database-erd.html",
+    "quality_profile": "standard",
+    "repository": {
+      "url": "https://github.com/YangKlee/SOA_ProjectManagerment",
+      "revision": "75e912c2f0899e34fb02c6b6238acb28affb1ef3",
+      "provider": "github"
+    }
+  },
+  "layout": {
+    "mode": "grid",
+    "gapY": 36,
+    "gapX": 64
+  },
+  "entities": [
+    {
+      "id": "Users",
+      "label": "Users",
+      "tag": "identity",
+      "row": 0,
+      "col": 0,
+      "sources": [
+        {
+          "path": "services/auth-service/authentication/models.py",
+          "line": 1,
+          "end_line": 20,
+          "label": "Users Model Definition"
+        }
+      ],
+      "attributes": [
+        { "name": "UserId", "type": "TEXT", "key": "pk" },
+        { "name": "LastName", "type": "TEXT" },
+        { "name": "FirstName", "type": "TEXT" },
+        { "name": "Gender", "type": "INTEGER" },
+        { "name": "DateOfBirth", "type": "TEXT" },
+        { "name": "Password", "type": "TEXT" },
+        { "name": "Email", "type": "TEXT", "key": "uk" },
+        { "name": "Phone", "type": "TEXT", "key": "uk" },
+        { "name": "Role", "type": "INTEGER" },
+        { "name": "Status", "type": "INTEGER" },
+        { "name": "CreatedAt", "type": "TEXT" },
+        { "name": "UpdatedAt", "type": "TEXT" }
+      ]
+    },
+    {
+      "id": "AuditLogs",
+      "label": "AuditLogs",
+      "tag": "identity",
+      "row": 1,
+      "col": 0,
+      "sources": [
+        {
+          "path": "services/log-services/README.md",
+          "line": 1,
+          "end_line": 11,
+          "label": "Audit Log Storage Spec"
+        }
+      ],
+      "attributes": [
+        { "name": "AuditId", "type": "TEXT", "key": "pk" },
+        { "name": "Action", "type": "TEXT" },
+        { "name": "ActionBy", "type": "TEXT", "key": "fk", "references": "Users.UserId" },
+        { "name": "IpAddress", "type": "TEXT" },
+        { "name": "CreatedAt", "type": "TEXT" }
+      ]
+    },
+    {
+      "id": "Faculties",
+      "label": "Faculties",
+      "tag": "academic",
+      "row": 0,
+      "col": 1,
+      "sources": [
+        {
+          "path": "services/academic-services/DeparmentManager/models.py",
+          "line": 1,
+          "end_line": 14,
+          "label": "Faculty Department Model"
+        }
+      ],
+      "attributes": [
+        { "name": "FacultyId", "type": "TEXT", "key": "pk" },
+        { "name": "FacultyName", "type": "TEXT" }
+      ]
+    },
+    {
+      "id": "Majors",
+      "label": "Majors",
+      "tag": "academic",
+      "row": 1,
+      "col": 1,
+      "sources": [
+        {
+          "path": "services/academic-services/MajorManager/models.py",
+          "line": 1,
+          "end_line": 14,
+          "label": "Major Model Definition"
+        }
+      ],
+      "attributes": [
+        { "name": "MajorId", "type": "TEXT", "key": "pk" },
+        { "name": "MajorName", "type": "TEXT" },
+        { "name": "FacultyId", "type": "TEXT", "key": "fk", "references": "Faculties.FacultyId" }
+      ]
+    },
+    {
+      "id": "Specializations",
+      "label": "Specializations",
+      "tag": "academic",
+      "row": 2,
+      "col": 1,
+      "sources": [
+        {
+          "path": "services/academic-services/SubMajorManager/models.py",
+          "line": 1,
+          "end_line": 14,
+          "label": "SubMajor Specialization Model"
+        }
+      ],
+      "attributes": [
+        { "name": "SpecializationId", "type": "TEXT", "key": "pk" },
+        { "name": "SpecializationName", "type": "TEXT" },
+        { "name": "MajorId", "type": "TEXT", "key": "fk", "references": "Majors.MajorId" }
+      ]
+    },
+    {
+      "id": "Lecturers",
+      "label": "Lecturers",
+      "tag": "academic",
+      "row": 3,
+      "col": 1,
+      "sources": [
+        {
+          "path": "services/academic-services/LectureManager/models.py",
+          "line": 1,
+          "end_line": 14,
+          "label": "Lecturer Model Definition"
+        }
+      ],
+      "attributes": [
+        { "name": "LecturerId", "type": "TEXT", "key": ["pk", "fk"], "references": "Users.UserId" },
+        { "name": "FacultyId", "type": "TEXT", "key": "fk", "references": "Faculties.FacultyId" }
+      ]
+    },
+    {
+      "id": "Students",
+      "label": "Students",
+      "tag": "academic",
+      "row": 4,
+      "col": 1,
+      "width": 260,
+      "sources": [
+        {
+          "path": "services/academic-services/StudentManager/models.py",
+          "line": 1,
+          "end_line": 14,
+          "label": "Student Model Definition"
+        }
+      ],
+      "attributes": [
+        { "name": "StudentId", "type": "TEXT", "key": ["pk", "fk"], "references": "Users.UserId" },
+        { "name": "MajorId", "type": "TEXT", "key": "fk", "references": "Majors.MajorId" },
+        { "name": "SpecializationId", "type": "TEXT", "key": "fk", "references": "Specializations.SpecializationId" },
+        { "name": "AccumulatedCredits", "type": "INTEGER" },
+        { "name": "GPA", "type": "REAL" }
+      ]
+    },
+    {
+      "id": "Topics",
+      "label": "Topics",
+      "tag": "registration",
+      "row": 0,
+      "col": 2,
+      "sources": [
+        {
+          "path": "services/topic-service/topic_manager/models.py",
+          "line": 1,
+          "end_line": 19,
+          "label": "Topic Model Definition"
+        }
+      ],
+      "attributes": [
+        { "name": "TopicId", "type": "TEXT", "key": "pk" },
+        { "name": "TopicName", "type": "TEXT" },
+        { "name": "Description", "type": "TEXT" },
+        { "name": "FileUrl", "type": "TEXT" },
+        { "name": "MajorId", "type": "TEXT", "key": "fk", "references": "Majors.MajorId" },
+        { "name": "Status", "type": "INTEGER" },
+        { "name": "AdvisorId", "type": "TEXT", "key": "fk", "references": "Lecturers.LecturerId" },
+        { "name": "CreatedAt", "type": "TEXT" },
+        { "name": "UpdatedAt", "type": "TEXT" },
+        { "name": "UpdatedBy", "type": "TEXT", "key": "fk", "references": "Users.UserId" }
+      ]
+    },
+    {
+      "id": "Registrations",
+      "label": "Registrations",
+      "tag": "registration",
+      "row": 1,
+      "col": 2,
+      "sources": [
+        {
+          "path": "services/regist-service/RegistTopic/models.py",
+          "line": 1,
+          "end_line": 19,
+          "label": "Registration Model Definition"
+        }
+      ],
+      "attributes": [
+        { "name": "RegistrationId", "type": "TEXT", "key": "pk" },
+        { "name": "StudentId", "type": "TEXT", "key": "fk", "references": "Students.StudentId" },
+        { "name": "TopicId", "type": "TEXT", "key": "fk", "references": "Topics.TopicId" },
+        { "name": "Semester", "type": "TEXT" },
+        { "name": "Status", "type": "INTEGER" },
+        { "name": "Notes", "type": "TEXT" },
+        { "name": "Reason", "type": "TEXT" },
+        { "name": "CreatedAt", "type": "TEXT" },
+        { "name": "UpdatedAt", "type": "TEXT" },
+        { "name": "UpdatedBy", "type": "TEXT" },
+        { "name": "Point", "type": "NUMERIC" }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel_audit_users",
+      "from": "AuditLogs",
+      "to": "Users",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "rel_majors_faculties",
+      "from": "Majors",
+      "to": "Faculties",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "rel_specs_majors",
+      "from": "Specializations",
+      "to": "Majors",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "rel_lecturers_users",
+      "from": "Lecturers",
+      "to": "Users",
+      "fromCardinality": "one",
+      "toCardinality": "one"
+    },
+    {
+      "id": "rel_lecturers_faculties",
+      "from": "Lecturers",
+      "to": "Faculties",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "rel_students_users",
+      "from": "Students",
+      "to": "Users",
+      "fromCardinality": "one",
+      "toCardinality": "one"
+    },
+    {
+      "id": "rel_students_majors",
+      "from": "Students",
+      "to": "Majors",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "rel_students_specs",
+      "from": "Students",
+      "to": "Specializations",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "rel_topics_lecturers",
+      "from": "Topics",
+      "to": "Lecturers",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "rel_topics_majors",
+      "from": "Topics",
+      "to": "Majors",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "rel_topics_users",
+      "from": "Topics",
+      "to": "Users",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "rel_regist_students",
+      "from": "Registrations",
+      "to": "Students",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "rel_regist_topics",
+      "from": "Registrations",
+      "to": "Topics",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Identity & Logical Access",
+      "items": [
+        "Users lưu trữ thông tin tài khoản đăng nhập tập trung, vai trò (Admin / Giảng viên / Sinh viên) và thông tin liên hệ duy nhất.",
+        "Students và Lecturers quan hệ 1-1 với Users: StudentId và LecturerId đóng vai trò vừa là khóa chính vừa là khóa ngoại trỏ về Users.UserId.",
+        "AuditLogs ghi vết bất đồng bộ lịch sử thao tác hệ thống."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Academic Structure",
+      "items": [
+        "Phân cấp học thuật: Khoa (Faculties) -> Ngành (Majors) -> Chuyên ngành (Specializations).",
+        "Mỗi sinh viên thuộc về một Ngành chính và có thể thuộc một Chuyên ngành tùy chọn; theo dõi tiến độ tốt nghiệp qua GPA và tín chỉ tích lũy."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Topic Registration & Scoring",
+      "items": [
+        "Topics đại diện cho đề tài đồ án tốt nghiệp, thuộc một Ngành và được hướng dẫn bởi một Giảng viên (AdvisorId).",
+        "Registrations quản lý việc sinh viên đăng ký đề tài theo từng kỳ học (Semester); cột Point lưu điểm số hoàn thành đồ án sau bảo vệ."
+      ]
+    }
+  ]
+}

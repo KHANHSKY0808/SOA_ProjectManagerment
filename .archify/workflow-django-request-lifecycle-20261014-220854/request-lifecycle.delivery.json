@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "47a5bdd5-907a-4b8b-be96-9ba9f9a8bfe0",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "D:\\Work\\SOA_ProjectManagerment\\.archify\\workflow-django-request-lifecycle-20261014-220854\\candidate.json",
+  "output": "D:\\Work\\SOA_ProjectManagerment\\.archify\\workflow-django-request-lifecycle-20261014-220854\\request-lifecycle.html",
+  "specification": {
+    "sha256": "d7f09589dbe529081d50c99e1f3d7252e406653b2ead6495a2655f47866da3fb",
+    "bytes": 7133
+  },
+  "artifact": {
+    "sha256": "9478d183d644437f115fbf3c40e43a0a86d45e7b96e48f3a6fb5cb5c5b6718e2",
+    "bytes": 842130
+  }
+}

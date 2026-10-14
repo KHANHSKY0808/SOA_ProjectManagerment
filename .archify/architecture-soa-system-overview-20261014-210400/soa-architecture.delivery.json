@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "ac6dbb4a-7b8a-482d-b1f5-bd7654916ffa",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "D:\\Work\\SOA_ProjectManagerment\\.archify\\architecture-soa-system-overview-20261014-210400\\candidate.json",
+  "output": "D:\\Work\\SOA_ProjectManagerment\\.archify\\architecture-soa-system-overview-20261014-210400\\soa-architecture.html",
+  "specification": {
+    "sha256": "7d7675de025d59e6a0cb49efa36f5e72654d0d367d212368c7a5b394750a5810",
+    "bytes": 5671
+  },
+  "artifact": {
+    "sha256": "86512edffeae04f2867bd5aa68a7b4129413858effcc065657c1cd7fac5d7f83",
+    "bytes": 848068
+  }
+}
