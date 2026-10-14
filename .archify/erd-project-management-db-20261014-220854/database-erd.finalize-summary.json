@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "erd",
+  "quality": "standard",
+  "specification": {
+    "path": "D:\\Work\\SOA_ProjectManagerment\\.archify\\erd-project-management-db-20261014-220854\\candidate.json",
+    "sha256": "81a90326234e20f309a60b26d2bb48e0b486b67c0c5f6b82162d85a8564116a2",
+    "bytes": 10718
+  },
+  "artifact": {
+    "path": "D:\\Work\\SOA_ProjectManagerment\\.archify\\erd-project-management-db-20261014-220854\\database-erd.html",
+    "sha256": "ad5cf4bd4d813ada3e93493973cdbfa5d70e9967cc8d85a324c4864b82c44600",
+    "bytes": 873206
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "D:\\Work\\SOA_ProjectManagerment\\.archify\\erd-project-management-db-20261014-220854\\database-erd.finalize.json",
+    "summaryReceipt": "D:\\Work\\SOA_ProjectManagerment\\.archify\\erd-project-management-db-20261014-220854\\database-erd.finalize-summary.json",
+    "browserCheckReceipt": "D:\\Work\\SOA_ProjectManagerment\\.archify\\erd-project-management-db-20261014-220854\\database-erd.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-14T14:04:48.132Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 10575,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "routesOverSuggestedBends": 1
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [],
+      "detours": [
+        {
+          "relationship": {
+            "id": "rel_lecturers_faculties",
+            "from": "Lecturers",
+            "to": "Faculties",
+            "label": "",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "bends": 3,
+          "stretch": 1.059,
+          "directCorridorBlockers": [
+            {
+              "id": "Majors",
+              "label": "Majors",
+              "box": [
+                346,
+                352,
+                240,
+                96
+              ]
+            },
+            {
+              "id": "Specializations",
+              "label": "Specializations",
+              "box": [
+                346,
+                644,
+                240,
+                96
+              ]
+            }
+          ]
+        }
+      ],
+      "truncated": false
+    },
+    "repair": "Advisory only: this mode places or routes these relationships itself. Report them; do not remove relationships or meaning to reduce crossings."
+  }
+}

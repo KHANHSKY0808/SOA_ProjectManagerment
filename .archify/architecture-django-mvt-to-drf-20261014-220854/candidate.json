@@ -1,0 +1,313 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Django MVT to Django REST Framework Architecture Evolution",
+    "output": ".archify/architecture-django-mvt-to-drf-20261014-220854/mvt-to-drf.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/YangKlee/SOA_ProjectManagerment",
+      "revision": "75e912c2f0899e34fb02c6b6238acb28affb1ef3",
+      "provider": "github"
+    }
+  },
+  "components": [
+    {
+      "id": "client-browser",
+      "type": "frontend",
+      "label": "Web Browser",
+      "sublabel": "Traditional Web Client",
+      "tag": "HTML Form / GET Request",
+      "pos": [60, 40],
+      "size": [160, 60],
+      "sources": [
+        {
+          "path": "README.md",
+          "line": 1,
+          "end_line": 10,
+          "label": "Web Project Context"
+        }
+      ]
+    },
+    {
+      "id": "client-spa",
+      "type": "frontend",
+      "label": "SPA / Mobile Client",
+      "sublabel": "React Vite Frontend :5173",
+      "tag": "Modern JSON API Consumer",
+      "pos": [570, 40],
+      "size": [170, 60],
+      "sources": [
+        {
+          "path": "fe/package.json",
+          "line": 1,
+          "end_line": 23,
+          "label": "React 19 Vite Client"
+        }
+      ]
+    },
+    {
+      "id": "urlconf",
+      "type": "cloud",
+      "label": "Django URLconf",
+      "sublabel": "urls.py Dispatcher",
+      "tag": "Path Routing & Resolution",
+      "pos": [320, 160],
+      "size": [160, 60],
+      "sources": [
+        {
+          "path": "services/auth-service/config/urls.py",
+          "line": 22,
+          "end_line": 31,
+          "label": "Auth Service URL Routing"
+        }
+      ]
+    },
+    {
+      "id": "django-view",
+      "type": "backend",
+      "label": "Django View",
+      "sublabel": "Function / TemplateView",
+      "tag": "Controller & Context Prep",
+      "pos": [60, 280],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "services/academic-services/config/urls.py",
+          "line": 35,
+          "end_line": 42,
+          "label": "Django URLconf & Views"
+        }
+      ]
+    },
+    {
+      "id": "drf-view",
+      "type": "backend",
+      "label": "DRF APIView / ViewSet",
+      "sublabel": "RESTful Controller",
+      "tag": "Auth, Permissions & Dispatch",
+      "pos": [570, 280],
+      "size": [170, 64],
+      "sources": [
+        {
+          "path": "services/auth-service/authentication/views.py",
+          "line": 1,
+          "end_line": 29,
+          "label": "DRF APIView & Permissions"
+        }
+      ]
+    },
+    {
+      "id": "template-engine",
+      "type": "backend",
+      "label": "Template Engine",
+      "sublabel": "Django Templates / Jinja",
+      "tag": "Context -> HTML DOM",
+      "pos": [60, 440],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "require.md",
+          "line": 25,
+          "end_line": 30,
+          "label": "Django MVT Architecture"
+        }
+      ]
+    },
+    {
+      "id": "serializer",
+      "type": "backend",
+      "label": "DRF Serializer",
+      "sublabel": "ModelSerializer / DTO",
+      "tag": "Validation & JSON Serialization",
+      "pos": [570, 440],
+      "size": [170, 64],
+      "sources": [
+        {
+          "path": "services/auth-service/authentication/serializers.py",
+          "line": 1,
+          "end_line": 30,
+          "label": "DRF Serializer DTOs"
+        }
+      ]
+    },
+    {
+      "id": "django-orm",
+      "type": "backend",
+      "label": "Django ORM Models",
+      "sublabel": "models.Model / QuerySet",
+      "tag": "Data Abstraction Layer",
+      "pos": [320, 580],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "services/auth-service/authentication/views.py",
+          "line": 10,
+          "end_line": 18,
+          "label": "ORM Model Querying"
+        }
+      ]
+    },
+    {
+      "id": "database",
+      "type": "database",
+      "label": "Relational Database",
+      "sublabel": "database/DB_ProjectManagerment.db",
+      "tag": "Physical Persistence Layer",
+      "pos": [320, 720],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "README.md",
+          "line": 94,
+          "end_line": 96,
+          "label": "Database Storage Layer"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Django Traditional MVT Flow (Server-Side Rendering)",
+      "wraps": ["django-view", "template-engine"],
+      "pad": 16
+    },
+    {
+      "kind": "region",
+      "label": "Django REST Framework Flow (API & Serialization)",
+      "wraps": ["drf-view", "serializer"],
+      "pad": 16
+    },
+    {
+      "kind": "security-group",
+      "label": "Shared Persistence Core (ORM & Database)",
+      "wraps": ["django-orm", "database"],
+      "pad": 16
+    }
+  ],
+  "connections": [
+    {
+      "id": "browser-to-url",
+      "from": "client-browser",
+      "to": "urlconf",
+      "label": "HTTP GET / POST",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "spa-to-url",
+      "from": "client-spa",
+      "to": "urlconf",
+      "label": "REST / JSON Call",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "right"
+    },
+    {
+      "id": "url-to-view",
+      "from": "urlconf",
+      "to": "django-view",
+      "label": "resolve view",
+      "fromSide": "left",
+      "toSide": "top"
+    },
+    {
+      "id": "url-to-drf",
+      "from": "urlconf",
+      "to": "drf-view",
+      "label": "resolve APIView",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "top"
+    },
+    {
+      "id": "view-to-template",
+      "from": "django-view",
+      "to": "template-engine",
+      "label": "render(ctx)",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "drf-to-serializer",
+      "from": "drf-view",
+      "to": "serializer",
+      "label": "validate / serialize",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "view-to-orm",
+      "from": "django-view",
+      "to": "django-orm",
+      "label": "QuerySet filter()",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "serializer-to-orm",
+      "from": "serializer",
+      "to": "django-orm",
+      "label": "save() / deserialize",
+      "variant": "emphasis",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "orm-to-db",
+      "from": "django-orm",
+      "to": "database",
+      "label": "SQL Queries",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "template-to-browser",
+      "from": "template-engine",
+      "to": "client-browser",
+      "label": "HTML Response",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "left"
+    },
+    {
+      "id": "drf-to-spa",
+      "from": "drf-view",
+      "to": "client-spa",
+      "label": "JSON Response",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "right"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Django Traditional MVT Pattern",
+      "items": [
+        "Web Browser gửi yêu cầu HTTP và nhận tài liệu HTML hoàn chỉnh từ server.",
+        "View hoạt động như Controller, thực hiện logic nghiệp vụ, truy vấn ORM và đẩy context sang Template.",
+        "Template Engine kết hợp HTML template và dữ liệu để render thành trang web hoàn chỉnh."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Django REST Framework (DRF)",
+      "items": [
+        "SPA (React) và Mobile Apps giao tiếp hoàn toàn thông qua payload JSON không trạng thái.",
+        "Serializer thay thế Template: thực hiện validation dữ liệu đầu vào, deserialization và chuyển đổi Model sang JSON.",
+        "APIView quản lý Content Negotiation, JWT Authentication, Role Permissions và HTTP Method Dispatch."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Shared Persistence Core & SOA",
+      "items": [
+        "Django ORM trừu tượng hóa cơ sở dữ liệu quan hệ thành các Python class có định kiểu.",
+        "Kiến trúc DRF cho phép các microservices giao tiếp độc lập qua REST contracts, sẵn sàng mở rộng SOA."
+      ]
+    }
+  ]
+}

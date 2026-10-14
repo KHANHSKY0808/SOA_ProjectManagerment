@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "D:\\Work\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-220854\\candidate.json",
+    "sha256": "42677ac29606e4252c537f3a89511f364899f347bb076e4753501f6d05ac54ed",
+    "bytes": 8299
+  },
+  "artifact": {
+    "path": "D:\\Work\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-220854\\mvt-to-drf.html",
+    "sha256": "7b4d801266f4377ef42ef70e2f88138bf902327b03f5ea353ab790d05f872633",
+    "bytes": 848367
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "D:\\Work\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-220854\\mvt-to-drf.finalize.json",
+    "summaryReceipt": "D:\\Work\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-220854\\mvt-to-drf.finalize-summary.json",
+    "browserCheckReceipt": "D:\\Work\\SOA_ProjectManagerment\\.archify\\architecture-django-mvt-to-drf-20261014-220854\\mvt-to-drf.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-14T14:04:48.132Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 13010
+}
