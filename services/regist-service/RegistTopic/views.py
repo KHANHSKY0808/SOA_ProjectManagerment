@@ -72,7 +72,8 @@ class RegistrationListCreateView(RegistrationAPIView):
 
 class RegistrationCancelView(RegistrationAPIView):
     def delete(self, request, pk):
-        services.cancel(request.auth["user_id"], pk)
+        services.cancel(request.auth["user_id"], pk,
+                        request.headers.get("Authorization", ""), self.request_id)
         return Response(status=204)
 
 

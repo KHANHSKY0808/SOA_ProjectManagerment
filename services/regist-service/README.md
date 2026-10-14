@@ -40,8 +40,9 @@ rejected. Successful registration response:
 
 GET registrations returns an array of those DTOs, newest first, restricted to the
 caller. Use `?status=active` or `?status=cancelled`; without a filter, both current
-and cancelled records are returned. No cross-service lookup is needed to list or
-cancel. Another student's registration ID returns the same 404 as an unknown ID.
+and cancelled records are returned. Listing needs no cross-service lookup.
+Student cancellation checks topic status through topic-service REST; another
+student's registration ID returns the same 404 as an unknown ID.
 
 ### Business rules and history
 
@@ -55,6 +56,9 @@ cancel. Another student's registration ID returns the same 404 as an unknown ID.
   records produce 409; this service does not silently repair legacy data.
 - DELETE changes only registration status, update time and server-derived actor;
   it preserves history. After cancellation, the student may register again.
+- Topic status 3 means registration is closed: student self-cancellation returns
+  409 `topic_registration_closed` without changing the record. An already cancelled
+  record still returns 204 without a topic lookup. Only status 2 accepts new registrations.
 - Repeating POST with the same current topic and semester returns the existing
   record, provided current academic/topic validation still passes. A different
   topic/semester or multiple current records returns 409. After an ambiguous
@@ -91,7 +95,7 @@ validation map. For example:
 | 401 | Missing, invalid or expired access JWT |
 | 403 | Non-student role, missing student or valid faculty (`permission_denied`) |
 | 404 | Missing topic, or missing/non-owned registration (`not_found`) |
-| 409 | Existing current registration or changed storage references (`registration_conflict`) |
+| 409 | Existing current registration, closed topic for student cancellation (`topic_registration_closed`), or changed storage references (`registration_conflict`) |
 | 503 | Dependency unavailable/malformed (`dependency_unavailable`) or storage lock/failure (`storage_unavailable`) |
 
 Response `X-Request-ID` is forwarded to dependencies. Mutation logs contain only
@@ -344,7 +348,7 @@ Errors:401 absent/invalid authentication,403 unauthorized role,409 changed stora
 
 The database-first `Registrations` table owns nullable `Point` (`NUMERIC`). `NULL` means ungraded. Apply `database/add_registration_point.py` to an older database before starting this backend, with `--db` and a new `--backup` path outside the repository. The script makes a SQLite backup, adds the nullable column in a transaction, and does not run Django migrations. Existing rows retain their data. Stop writers before schema deployment. To roll back the schema, stop writers and restore the backup after preserving any points entered since backup time. SQLite's shared writer lock and 3-second storage timeout still apply.
 
-`PUT /api/v1/topics/{topic_id}/registrations/{registration_id}/point/` (Gateway prefix `/registrations`) accepts `{"point":"8.50"}`. Decimal values must be 0–10 with at most two fractional digits. It requires a locally validated bearer JWT with integer role 1 (admin) or 2 (lecturer). Admin may grade any current registration, including topics without an advisor. A lecturer's JWT `user_id` must equal the topic's `advisor_id`. Both roles require the topic to exist: regist-service reads its management detail from topic-service's published `GET /api/v1/topics/{topic_id}/`; it never queries `Topics` directly. Discovery, bounded timeout (default 3 seconds, max 10), and circuit behavior use the existing `TOPIC_CLIENT` settings. Authorization is checked at request time; a concurrent advisor change after lookup is not atomic across services. No automatic write retries or extra endpoint rate limiter are installed.
+`PUT /api/v1/topics/{topic_id}/registrations/{registration_id}/point/` (Gateway prefix `/registrations`) accepts `{"point":"8.50"}`. Decimal values must be 0–10 with at most two fractional digits. It requires a locally validated bearer JWT with integer role 1 (admin) or 2 (lecturer). Admin may grade any current registration, including topics without an advisor. A lecturer's JWT `user_id` must equal the topic's `advisor_id`. Grading and score revision require topic status 3 (registration closed); other statuses return 409 `topic_not_closed` without changing Point or audit fields. Both roles require the topic to exist: regist-service reads its management detail from topic-service's published `GET /api/v1/topics/{topic_id}/`; it never queries `Topics` directly. Discovery, bounded timeout (default 3 seconds, max 10), and circuit behavior use the existing `TOPIC_CLIENT` settings. Authorization is checked at request time; a concurrent topic change after lookup is not atomic across services. No automatic write retries or extra endpoint rate limiter are installed.
 
 Success `200` returns `{"registration_id":"R1","topic_id":"T1","point":"8.50","updated_at":"2026-10-14T01:00:00Z"}`. Repeating the same value succeeds without changing audit metadata. A changed value updates `Point`, `UpdatedAt`, and `UpdatedBy` (from the JWT) in one local transaction. `400` means invalid or extra fields; `401` invalid/missing JWT; `403` wrong role/advisor; `404` unknown or mismatched topic/registration; `409` cancelled registration; `503` topic reference or registration storage unavailable. Errors use `{ "code": "...", "detail": "..." }` without private values. `X-Request-ID` is forwarded and logged with method/status only.
 

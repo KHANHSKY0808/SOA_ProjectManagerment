@@ -149,7 +149,7 @@ class TopicRosterTests(TransactionTestCase):
         Registration.objects.create(registration_id="R1", topic_id="T1", student_id="S1", status=1)
         Registration.objects.create(registration_id="R2", topic_id="T2", student_id="S2", status=1)
         url = self.url + "R1/point/"
-        with patch.object(clients.topic_client, "management_topic", return_value={"topic_id": "T1", "advisor_id": "GV1"}) as lookup:
+        with patch.object(clients.topic_client, "management_topic", return_value={"topic_id": "T1", "advisor_id": "GV1", "status": 3}) as lookup:
             self.authenticate_as("GV1", 2)
             result = self.client.put(url, {"point": "8.50"}, format="json", HTTP_X_REQUEST_ID="grade-1")
             self.assertEqual(result.status_code, 200, result.data)
@@ -174,7 +174,7 @@ class TopicRosterTests(TransactionTestCase):
         url = self.url + "R1/point/"
         with patch.object(clients.topic_client, "management_topic") as lookup:
             for advisor, point in (("GV-other", "8.25"), (None, "9.00")):
-                lookup.return_value = {"topic_id": "T1", "advisor_id": advisor}
+                lookup.return_value = {"topic_id": "T1", "advisor_id": advisor, "status": 3}
                 result = self.client.put(url, {"point": point}, format="json")
                 self.assertEqual(result.status_code, 200, result.data)
                 self.assertEqual(result.data["point"], point)
@@ -185,13 +185,29 @@ class TopicRosterTests(TransactionTestCase):
             self.assertEqual(lookup.call_args.args[0], "T1")
         self.assertIsNone(Registration.objects.get(pk="R2").point)
 
+    def test_grading_requires_closed_topic_and_preserves_point_and_audit_on_rejection(self):
+        Registration.objects.create(registration_id="R1", topic_id="T1", student_id="S1", status=1,
+                                    point=Decimal("7.00"), updated_by="previous")
+        url = self.url + "R1/point/"
+        for role, actor, advisor in ((1, "admin", "GV1"), (2, "GV1", "GV1")):
+            self.authenticate_as(actor, role)
+            for topic_status in (0, 1, 2, None):
+                with patch.object(clients.topic_client, "management_topic", return_value={
+                    "topic_id": "T1", "advisor_id": advisor, "status": topic_status}):
+                    result = self.client.put(url, {"point": "9.50"}, format="json")
+                self.assertEqual(result.status_code, 409, result.data)
+                self.assertEqual(result.data["code"], "topic_not_closed")
+                obj = Registration.objects.get(pk="R1")
+                self.assertEqual((obj.point, obj.updated_by, obj.updated_at),
+                                 (Decimal("7.00"), "previous", None))
+
     def test_admin_still_requires_topic_and_registration_validation(self):
         Registration.objects.create(registration_id="R1", topic_id="T1", student_id="S1", status=1)
         self.authenticate_as("admin", 1)
         url = self.url + "R1/point/"
         with patch.object(clients.topic_client, "management_topic", side_effect=clients.DependencyUnavailable()):
             self.assertEqual(self.client.put(url, {"point": "7"}, format="json").status_code, 503)
-        with patch.object(clients.topic_client, "management_topic", return_value={"topic_id": "T1", "advisor_id": None}):
+        with patch.object(clients.topic_client, "management_topic", return_value={"topic_id": "T1", "advisor_id": None, "status": 3}):
             self.assertEqual(self.client.put(self.url + "missing/point/", {"point": "7"}, format="json").status_code, 404)
             self.assertEqual(self.client.put("/api/v1/topics/T2/registrations/R1/point/", {"point": "7"}, format="json").status_code, 404)
             Registration.objects.filter(pk="R1").update(status=0)
@@ -207,7 +223,7 @@ class TopicRosterTests(TransactionTestCase):
         Registration.objects.create(registration_id="R1", topic_id="T1", student_id="S1", status=1)
         url = self.url + "R1/point/"
         self.authenticate_as("GV1", 2)
-        with patch.object(clients.topic_client, "management_topic", return_value={"topic_id": "T1", "advisor_id": "GV1"}) as lookup:
+        with patch.object(clients.topic_client, "management_topic", return_value={"topic_id": "T1", "advisor_id": "GV1", "status": 3}) as lookup:
             for body in ({}, {"point": None}, {"point": "-0.01"}, {"point": "10.01"},
                          {"point": "8.123"}, {"point": "NaN"}, {"point": "8", "updated_by": "GV1"}):
                 self.assertEqual(self.client.put(url, body, format="json").status_code, 400)
@@ -222,11 +238,11 @@ class TopicRosterTests(TransactionTestCase):
         Registration.objects.create(registration_id="R1", topic_id="T1", student_id="S1", status=1)
         url = self.url + "R1/point/"
         self.authenticate_as("GV1", 2)
-        with patch.object(clients.topic_client, "management_topic", return_value={"topic_id": "T1", "advisor_id": "GV2"}):
+        with patch.object(clients.topic_client, "management_topic", return_value={"topic_id": "T1", "advisor_id": "GV2", "status": 3}):
             self.assertEqual(self.client.put(url, {"point": "8"}, format="json").status_code, 403)
         with patch.object(clients.topic_client, "management_topic", side_effect=clients.DependencyUnavailable()):
             self.assertEqual(self.client.put(url, {"point": "8"}, format="json").status_code, 503)
-        with patch.object(clients.topic_client, "management_topic", return_value={"topic_id": "T1", "advisor_id": "GV1"}):
+        with patch.object(clients.topic_client, "management_topic", return_value={"topic_id": "T1", "advisor_id": "GV1", "status": 3}):
             with patch("RegistTopic.services.acquire_write_lock", side_effect=OperationalError("private lock")):
                 result = self.client.put(url, {"point": "8"}, format="json")
             self.assertEqual(result.status_code, 503)

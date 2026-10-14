@@ -107,11 +107,40 @@ class RegistrationAPITests(TransactionTestCase):
         self.assertEqual(self.client.delete(URL + "missing/").status_code, 404)
         self.assertEqual(Registration.objects.get(pk="other").status, 1)
 
+    def test_student_cannot_cancel_when_topic_registration_is_closed(self):
+        obj = Registration.objects.create(registration_id="R1", student_id="SV1", topic_id="T1",
+                                          status=1, point=Decimal("8.50"), updated_by="previous")
+        self.topic.return_value = {**self.topic.return_value, "status": 3}
+        result = self.client.delete(URL + "R1/", HTTP_X_REQUEST_ID="cancel-closed")
+        self.assertEqual(result.status_code, 409, result.data)
+        self.assertEqual(result.data["code"], "topic_registration_closed")
+        self.assertEqual(result["X-Request-ID"], "cancel-closed")
+        self.topic.assert_called_once_with("T1", f"Bearer {self.token}", "cancel-closed")
+        obj.refresh_from_db()
+        self.assertEqual((obj.status, obj.point, obj.updated_by, obj.updated_at),
+                         (1, Decimal("8.50"), "previous", None))
+        self.assertEqual(self.client.get(URL).data[0]["point"], "8.50")
+        obj.status = 0
+        obj.save(update_fields=["status"])
+        self.topic.reset_mock()
+        self.assertEqual(self.client.delete(URL + "R1/").status_code, 204)
+        self.topic.assert_not_called()
+
+    def test_student_cancel_fails_closed_when_topic_lookup_fails(self):
+        Registration.objects.create(registration_id="R1", student_id="SV1", topic_id="T1", status=1)
+        self.topic.side_effect = clients.DependencyUnavailable()
+        self.assertEqual(self.client.delete(URL + "R1/").status_code, 503)
+        self.assertEqual(Registration.objects.get(pk="R1").status, 1)
+        self.topic.side_effect = NotFound()
+        self.assertEqual(self.client.delete(URL + "R1/").status_code, 404)
+        self.assertEqual(Registration.objects.get(pk="R1").status, 1)
+        self.topic.assert_called()
+
     def test_same_faculty_different_major_and_open_topic_only(self):
         # Context supplies faculty F1; topic major M2 is independently resolved.
         self.assertEqual(self.create().status_code, 201)
         Registration.objects.all().delete()
-        for status in (0, 1, None):
+        for status in (0, 1, 3, None):
             self.topic.return_value["status"] = status
             response = self.create()
             self.assertEqual(response.status_code, 400)

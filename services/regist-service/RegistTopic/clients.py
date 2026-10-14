@@ -171,7 +171,8 @@ class TopicClient(ReferenceClient):
     def management_topic(self, topic_id, authorization, request_id):
         def validate(payload):
             if (not isinstance(payload, dict) or payload.get("topic_id") != topic_id or "advisor_id" not in payload
-                    or not (payload.get("advisor_id") is None or valid_id(payload.get("advisor_id")))):
+                    or not (payload.get("advisor_id") is None or valid_id(payload.get("advisor_id")))
+                    or "status" not in payload or not (payload["status"] is None or type(payload["status"]) is int)):
                 raise ValueError("Invalid topic ownership DTO")
         return self.call("/api/v1/topics/" + quote(topic_id, safe="") + "/",
                          authorization, request_id, validate, missing=(404, NotFound("Topic not found.")))

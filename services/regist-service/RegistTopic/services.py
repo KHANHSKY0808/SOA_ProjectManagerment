@@ -25,6 +25,18 @@ class RegistrationCancelled(APIException):
     default_code = "registration_cancelled"
 
 
+class TopicRegistrationClosed(APIException):
+    status_code = 409
+    default_detail = "Student cancellation is closed for this topic."
+    default_code = "topic_registration_closed"
+
+
+class TopicNotClosed(APIException):
+    status_code = 409
+    default_detail = "The topic must be closed before grading."
+    default_code = "topic_not_closed"
+
+
 def current_registrations(identity):
     return Registration.objects.filter(student_id=identity).filter(Q(status__isnull=True) | ~Q(status=0))
 
@@ -56,7 +68,15 @@ def register(identity, data, authorization, request_id):
                                            created_at=now, updated_at=now, updated_by=identity), True
 
 
-def cancel(identity, registration_id):
+def cancel(identity, registration_id, authorization, request_id):
+    obj = Registration.objects.filter(pk=registration_id, student_id=identity).first()
+    if obj is None:
+        raise NotFound("Registration not found.")
+    if obj.status == 0:
+        return
+    topic = topic_client.topic(obj.topic_id, authorization, request_id)
+    if topic["status"] == 3:
+        raise TopicRegistrationClosed()
     with transaction.atomic():
         acquire_write_lock()
         obj = Registration.objects.filter(pk=registration_id, student_id=identity).first()
@@ -87,6 +107,8 @@ def grade_topic_registration(actor, role, topic_id, registration_id, point, auth
     topic = topic_client.management_topic(topic_id, authorization, request_id)
     if role != 1 and topic["advisor_id"] != actor:
         raise PermissionDenied("Only the topic advisor may grade this registration.")
+    if topic["status"] != 3:
+        raise TopicNotClosed()
     with transaction.atomic():
         acquire_write_lock()
         obj = get_topic_registration(topic_id, registration_id)
