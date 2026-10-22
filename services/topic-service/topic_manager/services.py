@@ -34,10 +34,8 @@ def validate_references(data, authorization):
 
 
 def save_topic(data, actor, authorization, pk=None, partial=False, *, role):
-    if type(role) is not int or role not in (1, 2):
-        raise PermissionDenied("Only administrators and lecturers may modify topics.")
-    if role == 2 and "status" in data:
-        raise PermissionDenied({"status": "Only administrators may change topic status."})
+    if type(role) is not int or role != 1:
+        raise PermissionDenied("Only administrators may modify topics.")
     obj = get_topic(pk) if pk is not None else None
     if obj is not None and data.get("topic_id", pk) != pk:
         raise ValidationError({"topic_id": "Topic ID cannot be changed."})
@@ -45,7 +43,7 @@ def save_topic(data, actor, authorization, pk=None, partial=False, *, role):
     now = timezone.now()
     values = dict(data)
     if obj is None:
-        values.setdefault("status", 1 if role == 1 else 0)
+        values.setdefault("status", 1)
     if obj is not None:
         values.pop("topic_id", None)
         if not partial:

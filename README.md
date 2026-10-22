@@ -7,6 +7,25 @@
 - Có database sẵn: `database/DB_ProjectManagerment.db`.
 - Các cổng `5173`, `8000–8004`, `8500` còn trống.
 
+## Swagger / tài liệu API
+
+Sau khi build và chạy API Gateway, mở **http://localhost:8000/swagger/**.
+OpenAPI JSON nằm tại **http://localhost:8000/openapi.json**. Tài liệu bao gồm
+API auth, academic, đăng ký, đề tài và health qua các prefix gateway hiện có.
+Swagger UI và tài liệu được đóng gói cùng gateway, không cần CDN hoặc các
+backend đang hoạt động để mở trang tài liệu.
+
+Để thử API, gọi `POST /auth/login/`, sao chép `access`, bấm **Authorize** và
+dán token (không thêm chữ `Bearer`). Các quyền admin/giảng viên/sinh viên vẫn
+do service kiểm tra. Token không được lưu qua reload; các thao tác tạo, sửa,
+xóa chỉ được gửi khi bấm **Try it out → Execute**.
+
+Nếu gateway đã chạy từ image cũ, cần build/recreate riêng gateway để hiển thị
+Swagger: từ `api-gateway`, chạy `docker compose up -d --build api-gateway`.
+Không cần cài thêm package hoặc khởi động lại các Django service cho thay đổi này.
+OpenAPI là file tĩnh: cập nhật cùng thay đổi API và chạy kiểm thử contract;
+xem [hướng dẫn bảo trì và kiểm thử](api-gateway/README.md#swagger-and-openapi).
+
 ## Cách chạy dự án
 
 Các lệnh dưới đây dùng PowerShell, bắt đầu từ thư mục gốc repository.
@@ -99,7 +118,7 @@ Bốn backend dùng chung file SQLite `database/DB_ProjectManagerment.db`, nhưn
 
 Schema `Registrations` có cột `Point` nullable (`NUMERIC`); `NULL` nghĩa là chưa chấm. Khi nâng cấp một database cũ, dừng các service ghi rồi chạy `py database/add_registration_point.py --db database/DB_ProjectManagerment.db --backup D:/backups/registration-before-point.db` từ thư mục gốc. Chọn đường dẫn backup chưa tồn tại và nằm ngoài repository. Script tạo backup nhất quán trước khi thêm cột; không chạy Django migration cho bảng này. Triển khai schema trước khi chạy backend mới. Nếu cần rollback, dừng mọi writer, sao lưu trạng thái hiện tại rồi khôi phục backup; điểm ghi sau thời điểm backup cần được xuất và đối soát riêng.
 
-Admin chấm/sửa điểm cho mọi đăng ký còn hiệu lực; giảng viên chỉ chấm/sửa đăng ký thuộc đề tài mình hướng dẫn. Chỉ chấm điểm khi đề tài ở trạng thái 3 (Đóng đăng ký); API trả 409 `topic_not_closed` ở trạng thái khác. Điểm theo thang 0–10 (tối đa hai chữ số thập phân) và được thao tác trong chi tiết đề tài. Sinh viên xem điểm đăng ký của chính mình ở mục hiện tại và lịch sử. API thuộc `regist-service`, tra đề tài qua REST từ `topic-service` và kiểm tra giảng viên hướng dẫn đối với role 2; xem [hợp đồng API](services/regist-service/README.md).
+Admin chấm/sửa điểm cho mọi đăng ký còn hiệu lực. Giảng viên chỉ xem đề tài được phân hướng dẫn, danh sách sinh viên của các đề tài đó và chấm/sửa điểm; không được tạo, sửa, xóa đề tài hay hủy/xóa đăng ký sinh viên. Quyền được kiểm tra tại API và giao diện dựa trên JWT, không dùng ID do người gọi tự khai báo. Chỉ chấm điểm khi đề tài ở trạng thái 3 (Đóng đăng ký); API trả 409 `topic_not_closed` ở trạng thái khác. Điểm theo thang 0–10 (tối đa hai chữ số thập phân) và được thao tác trong chi tiết đề tài. Sinh viên xem điểm đăng ký của chính mình ở mục hiện tại và lịch sử. API thuộc `regist-service`, tra đề tài qua REST từ `topic-service` và kiểm tra giảng viên hướng dẫn đối với role 2; xem [hợp đồng API](services/regist-service/README.md).
 
 Admin có thể chuyển đề tài sang trạng thái 3 để đóng đăng ký. Đề tài này không xuất hiện trong danh sách đề tài mở (chỉ trạng thái 2); sinh viên đã đăng ký không thể tự hủy. Regist-service xác minh trạng thái đề tài qua REST và trả 409 `topic_registration_closed` nếu sinh viên hủy khi đề tài đã đóng. Trang sinh viên cũng khóa nút hủy sau khi tra cứu trạng thái; backend luôn kiểm tra lại lúc xử lý yêu cầu.
 

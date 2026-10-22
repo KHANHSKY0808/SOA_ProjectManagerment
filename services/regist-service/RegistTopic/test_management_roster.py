@@ -30,6 +30,10 @@ class TopicRosterTests(TransactionTestCase):
         self.authenticate(1)
         self.names_patch = patch.object(clients.academic_client, "student_names", return_value={
             "student_names": {"S1": "Nguyen An"}, "names_unavailable": False})
+        self.ownership_patch = patch.object(clients.topic_client, "management_topic", return_value={
+            "topic_id": "T1", "advisor_id": "manager", "status": 3})
+        self.ownership = self.ownership_patch.start()
+        self.addCleanup(self.ownership_patch.stop)
         self.names = self.names_patch.start()
         self.addCleanup(self.names_patch.stop)
         self.network_patch = patch.object(clients, "fetch_json", side_effect=AssertionError("Live network forbidden"))
@@ -93,7 +97,7 @@ class TopicRosterTests(TransactionTestCase):
 
 
     def test_management_cancellation_audit_history_and_idempotence(self):
-        for role in (1, 2):
+        for role in (1,):
             for initial in (1, None, 2):
                 self.authenticate(role)
                 Registration.objects.all().delete()
@@ -256,7 +260,7 @@ class TopicRosterTests(TransactionTestCase):
 
 
     def test_permanent_topic_cleanup_all_statuses_isolated_and_idempotent(self):
-        for role in (1, 2):
+        for role in (1,):
             self.authenticate(role)
             for i, status in enumerate((None, 0, 1, 2)):
                 Registration.objects.create(registration_id=f"R{i}", topic_id="T1", student_id="S1", status=status)
@@ -293,3 +297,31 @@ class TopicRosterTests(TransactionTestCase):
         self.assertTrue(Registration.objects.filter(pk="R1").exists())
         self.assertEqual(self.client.delete("/api/v1/topics/unknown/registrations/").data["deleted_count"], 0)
         self.assertTrue(Registration.objects.filter(pk="R1").exists())
+
+    def test_lecturer_reads_require_current_advisor_and_writes_are_denied(self):
+        Registration.objects.create(registration_id="R1", topic_id="T1", student_id="S1", status=1)
+        self.authenticate(2)
+        for advisor in ("other", None):
+            self.ownership.return_value = {"topic_id": "T1", "advisor_id": advisor, "status": 3}
+            for url in (self.url, self.url + "R1/"):
+                self.assertEqual(self.client.get(url).status_code, 403)
+        self.names.assert_not_called()
+        self.ownership.side_effect = clients.DependencyUnavailable()
+        for url in (self.url, self.url + "R1/"):
+            self.assertEqual(self.client.get(url).status_code, 503)
+        from rest_framework.exceptions import NotFound
+        self.ownership.side_effect = NotFound()
+        self.assertEqual(self.client.get(self.url).status_code, 404)
+        self.ownership.reset_mock()
+        for url in (self.url, self.url + "R1/"):
+            self.assertEqual(self.client.delete(url).status_code, 403)
+        self.ownership.assert_not_called()
+        obj = Registration.objects.get(pk="R1")
+        self.assertEqual(obj.status, 1)
+        self.assertIsNone(obj.updated_at)
+        self.assertIsNone(obj.point)
+
+    def test_admin_roster_read_does_not_require_topic_dependency(self):
+        self.ownership.side_effect = clients.DependencyUnavailable()
+        self.assertEqual(self.client.get(self.url).status_code, 200)
+        self.ownership.assert_not_called()

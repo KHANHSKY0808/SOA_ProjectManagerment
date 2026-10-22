@@ -3,7 +3,7 @@ import { normalizeApiError } from '../../services/api-error'
 import { getTopicRoster, cancelTopicRegistration, getTopicRegistrationState, getTopicRegistrationDetail, gradeTopicRegistration } from './roster-api'
 import type { RegisteredStudent } from './roster-api'
 
-export function useTopicRoster(topicId: string | undefined, logout: () => void, onGradeStatusChanged?: () => void) {
+export function useTopicRoster(topicId: string | undefined, logout: () => void, onGradeStatusChanged?: () => void, canCancel = false) {
   const [rows, setRows] = useState<RegisteredStudent[]>([])
   const [next, setNext] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -55,7 +55,7 @@ export function useTopicRoster(topicId: string | undefined, logout: () => void, 
     return () => { disposed = true; active.current?.abort(); mutation.current?.abort() }
   }, [topicId, load])
   function choose(student: RegisteredStudent) {
-    if (locked.current || uncertain || loading || grading) return
+    if (!canCancel || locked.current || uncertain || loading || grading) return
     setSelected(student); setActionError(''); setNotice('')
   }
   function back() {
@@ -119,7 +119,7 @@ export function useTopicRoster(topicId: string | undefined, logout: () => void, 
     setSelected(null); setUncertain(false); setActionError(''); setNotice(message)
   }
   async function perform(checking: boolean) {
-    if (!topicId || !selected || locked.current || loading || (uncertain && !checking)) return
+    if (!canCancel || !topicId || !selected || locked.current || loading || (uncertain && !checking)) return
     const student = selected
     locked.current = true; setBusy(true); setActionError('')
     active.current?.abort()

@@ -1,0 +1,2 @@
+# Validation tooling only; never installed in the gateway image or Django services.
+openapi-spec-validator==0.7.2

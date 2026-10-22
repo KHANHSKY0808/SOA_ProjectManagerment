@@ -13,7 +13,8 @@ from .views import RegistrationAPIView
 class TopicManagerPermission(BasePermission):
     def has_permission(self, request, view):
         role = request.auth.get("role") if request.auth else None
-        return bool(request.user and request.user.is_authenticated and type(role) is int and role in (1, 2))
+        return bool(request.user and request.user.is_authenticated and type(role) is int
+                    and (role == 1 or (role == 2 and request.method in ("GET", "HEAD", "OPTIONS"))))
 
 
 class TopicGraderPermission(BasePermission):
@@ -52,7 +53,15 @@ class RegistrationPurgeDTO(serializers.Serializer):
     deleted_count = serializers.IntegerField(min_value=0)
 
 
-class TopicRegistrationsView(RegistrationAPIView):
+class AdvisorReadMixin:
+    def check_advisor(self, request, topic_id):
+        if request.auth["role"] == 2:
+            services.require_topic_advisor(
+                request.auth["user_id"], topic_id,
+                request.headers.get("Authorization", ""), self.request_id)
+
+
+class TopicRegistrationsView(AdvisorReadMixin, RegistrationAPIView):
     permission_classes = [TopicManagerPermission]
     http_method_names = ["get", "delete", "head", "options"]
 
@@ -61,6 +70,7 @@ class TopicRegistrationsView(RegistrationAPIView):
         return Response(RegistrationPurgeDTO({"topic_id": topic_id, "deleted_count": count}).data)
 
     def get(self, request, topic_id):
+        self.check_advisor(request, topic_id)
         query = RosterQuery(data=request.query_params)
         query.is_valid(raise_exception=True)
         rows = list(Registration.objects.filter(topic_id=topic_id,
@@ -105,11 +115,12 @@ class TopicRegistrationPointView(RegistrationAPIView):
         return Response(PointResponseDTO(obj).data)
 
 
-class TopicRegistrationDetailView(RegistrationAPIView):
+class TopicRegistrationDetailView(AdvisorReadMixin, RegistrationAPIView):
     permission_classes = [TopicManagerPermission]
     http_method_names = ["get", "delete", "head", "options"]
 
     def get(self, request, topic_id, registration_id):
+        self.check_advisor(request, topic_id)
         obj = services.get_topic_registration(topic_id, registration_id)
         return Response(RegistrationStateDTO(obj).data)
 

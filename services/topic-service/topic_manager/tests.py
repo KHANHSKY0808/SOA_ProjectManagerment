@@ -154,7 +154,7 @@ class TopicPersistenceTests(TransactionTestCase):
         for prefix in ("/api/", "/api/v1/"):
             collection = prefix + "topics/"
             detail = collection + "DT001/"
-            for role, initial in ((1, 1), (2, 0)):
+            for role, initial in ((1, 1),):
                 self.authenticate(role)
                 self.assertEqual(self.create(prefix).data["status"], initial)
                 for method, payload in (("put", self.data), ("patch", {"name": "Revision"})):
@@ -215,41 +215,51 @@ class TopicPersistenceTests(TransactionTestCase):
                 self.assertEqual(self.request(method, path, self.data).status_code, 401)
         self.assertEqual(self.client.get("/health/").status_code, 200)
 
-    def test_management_detail_ids_and_shared_lecturer_crud_both_aliases(self):
+    def test_lecturer_reads_only_assigned_topics_and_cannot_mutate_both_aliases(self):
+        self.create()
+        Topic.objects.create(topic_id="OTHER", name="Other advisor", major_id="1")
         with connection.cursor() as cursor:
-            cursor.execute("INSERT INTO Users VALUES ('lecturer-user')")
+            cursor.execute("INSERT INTO Lecturers VALUES ('GV002')")
+        Topic.objects.create(topic_id="ASSIGNED-OTHER", name="Assigned elsewhere", major_id="1", advisor_id="GV002")
         for prefix in ("/api/", "/api/v1/"):
-            with self.subTest(prefix=prefix):
-                collection = prefix + "topics/"
-                detail_url = collection + "DT001/"
-                self.authenticate(1)
-                self.create(prefix)
-                for role in (1, 2):
-                    self.authenticate(role, "lecturer-user" if role == 2 else "admin")
-                    detail = self.client.get(detail_url)
-                    self.assertEqual(detail.status_code, 200)
-                    self.assertEqual(detail.data["major_id"], "1")
-                    self.assertEqual(detail.data["advisor_id"], "GV001")
-                    self.assertEqual(detail.data["avisor_name"], "Nguyen An")
-                    listed = self.client.get(collection).data[0]
-                    self.assertNotIn("major_id", listed)
-                    self.assertNotIn("advisor_id", listed)
-                # A lecturer can edit/delete another user's topic under the approved shared policy.
-                changed = self.request("patch", detail_url, {"name": "Lecturer revision"})
-                self.assertEqual(changed.status_code, 200)
-                self.assertEqual(changed.data["updated_by"], "lecturer-user")
-                self.assertEqual(Topic.objects.get().advisor_id, "GV001")
-                self.assertEqual(self.request("put", detail_url, self.data).status_code, 200)
-                self.assertEqual(self.request("patch", detail_url, {"topic_id": "changed"}).status_code, 400)
-                self.assertEqual(self.client.delete(detail_url).status_code, 204)
-                created = self.create(prefix)
-                self.assertEqual(created.data["updated_by"], "lecturer-user")
-                self.assertNotIn("major_id", created.data)
-                self.assertEqual(self.client.delete(detail_url).status_code, 204)
+            collection = prefix + "topics/"
+            self.authenticate(2, "GV001")
+            self.assertEqual([row["topic_id"] for row in self.client.get(collection).data], ["DT001"])
+            detail = self.client.get(collection + "DT001/")
+            self.assertEqual(detail.status_code, 200)
+            self.assertEqual(detail.data["advisor_id"], "GV001")
+            self.assertEqual(detail.data["major_id"], "1")
+            self.assertEqual(self.client.get(collection + "OTHER/").status_code, 404)
+            self.assertEqual(self.client.get(collection + "ASSIGNED-OTHER/").status_code, 404)
+            for method, url, payload in (
+                ("post", collection, {**self.data, "topic_id": "NEW"}),
+                ("put", collection + "DT001/", self.data),
+                ("patch", collection + "DT001/", {"name": "Forbidden"}),
+                ("delete", collection + "DT001/", None),
+                ("delete", collection + "OTHER/", None)):
+                self.assertEqual(self.request(method, url, payload).status_code, 403)
+            self.authenticate(2, "OTHER-LECTURER")
+            self.assertEqual(self.client.get(collection).data, [])
+            self.assertEqual(self.client.get(collection + "DT001/").status_code, 404)
+            self.assertEqual(self.client.get(collection + "OTHER/").status_code, 404)
+            # A caller cannot override authenticated ownership using query parameters.
+            self.assertEqual(self.client.get(collection + "?advisor_id=GV001").data, [])
+            self.authenticate(1)
+            self.assertEqual(len(self.client.get(collection).data), 3)
+        self.assertEqual(Topic.objects.get(pk="DT001").name, self.data["name"])
+        self.assertEqual(Topic.objects.get(pk="DT001").status, 1)
+        self.assertEqual(Topic.objects.count(), 3)
+        self.cleanup.assert_not_called()
+
+    def test_service_layer_rejects_lecturer_save_before_reference_calls(self):
+        from rest_framework.exceptions import PermissionDenied
+        with self.assertRaises(PermissionDenied):
+            services.save_topic(self.data, "GV001", "Bearer token", role=2)
+        self.academic.assert_not_called()
+        self.assertFalse(Topic.objects.exists())
 
     def test_management_detail_retains_ids_during_name_outage_and_nullable_advisor(self):
         self.create()
-        self.authenticate(2)
         self.names.side_effect = clients.DependencyUnavailable()
         self.assertEqual(self.request("patch", "/api/topics/DT001/", {"advisor_id": None}).status_code, 200)
         result = self.client.get("/api/topics/DT001/").data
@@ -319,7 +329,7 @@ class TopicPersistenceTests(TransactionTestCase):
         self.assertTrue(Topic.objects.exists())
 
     def test_cascade_orchestration_closes_before_http_and_deletes_topic(self):
-        for role in (1, 2):
+        for role in (1,):
             self.authenticate(role)
             self.create()
             with connection.cursor() as cursor:
@@ -381,7 +391,7 @@ class TopicPersistenceTests(TransactionTestCase):
 
     def test_storage_errors_are_safe(self):
         for method, path in [("get", "/api/topics/DT001/"), ("delete", "/api/topics/DT001/")]:
-            with patch.object(Topic.objects, "get", side_effect=OperationalError("secret SQL")):
+            with patch("django.db.models.query.QuerySet.get", side_effect=OperationalError("secret SQL")):
                 response = self.request(method, path)
                 self.assertEqual(response.status_code, 503)
                 self.assertNotIn("secret", str(response.data))

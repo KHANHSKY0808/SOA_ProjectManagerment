@@ -6,8 +6,10 @@ import type { TopicState } from '../useTopics'
 
 export function TopicDetailModal({ state }: { state: TopicState }) {
   const { user, logout } = useAuth()
-  const canViewRoster = user?.role === 1 || user?.role === 2
-  const roster = useTopicRoster(state.mode === 'detail' && canViewRoster ? state.selected?.topic_id : undefined, logout, state.retryDetail)
+  const canCancel = user?.role === 1
+  const canViewRoster = !state.detailLoading && !state.detailError && !!state.detail &&
+    (user?.role === 1 || (user?.role === 2 && !!state.detail.advisor_id && state.detail.advisor_id === user.user_id))
+  const roster = useTopicRoster(state.mode === 'detail' && canViewRoster ? state.selected?.topic_id : undefined, logout, state.retryDetail, canCancel)
   if (state.mode !== 'detail') return null
   const row = state.detail
   const canGrade = !state.detailLoading && !state.detailError && row?.status === 3 &&
@@ -41,7 +43,7 @@ export function TopicDetailModal({ state }: { state: TopicState }) {
           {student.status !== 1 && <span className="academic-hint"> (Cần kiểm tra trạng thái đăng ký)</span>}</td>
           <td>{student.point ?? 'Chưa chấm'}</td>
           <td>{canGrade && <button type="button" aria-label={`Chấm điểm ${student.student_id || student.registration_id}`} disabled={roster.busy || roster.loading || !!roster.selected || !!roster.grading} onClick={() => roster.chooseGrade(student)}>{student.point === null ? 'Chấm điểm' : 'Sửa điểm'}</button>}{' '}
-            <button type="button" className="topic-danger" aria-label={`Hủy đăng ký ${student.student_id || student.registration_id}`} disabled={roster.busy || roster.loading || !!roster.selected || !!roster.grading} onClick={() => roster.choose(student)}>Hủy đăng ký</button></td>
+            {canCancel && <button type="button" className="topic-danger" aria-label={`Hủy đăng ký ${student.student_id || student.registration_id}`} disabled={roster.busy || roster.loading || !!roster.selected || !!roster.grading} onClick={() => roster.choose(student)}>Hủy đăng ký</button>}</td>
         </tr>)}</tbody>
       </table></div>}
       {roster.next && !roster.error && <button type="button" disabled={roster.loading || roster.busy || !!roster.selected || !!roster.grading} onClick={roster.more}>Xem thêm sinh viên</button>}
@@ -57,7 +59,7 @@ export function TopicDetailModal({ state }: { state: TopicState }) {
           <button type="button" disabled={roster.busy || roster.gradeUncertain} onClick={roster.backGrade}>Quay lại</button>
         </div>
       </form>}
-      {roster.selected && <div role="group" aria-label="Xác nhận hủy đăng ký">
+      {canCancel && roster.selected && <div role="group" aria-label="Xác nhận hủy đăng ký">
         <p>Hủy đăng ký của sinh viên {roster.selected.student_name ? `${roster.selected.student_name} (${roster.selected.student_id || 'Chưa xác định'})` : roster.selected.student_id || roster.selected.registration_id} khỏi đề tài này?</p>
         {roster.actionError && <p role="alert" className="academic-error">{roster.actionError}</p>}
         <div className="academic-actions">

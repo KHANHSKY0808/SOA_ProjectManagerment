@@ -103,10 +103,16 @@ def get_topic_registration(topic_id, registration_id):
     return obj
 
 
-def grade_topic_registration(actor, role, topic_id, registration_id, point, authorization, request_id):
+def require_topic_advisor(actor, topic_id, authorization, request_id):
     topic = topic_client.management_topic(topic_id, authorization, request_id)
-    if role != 1 and topic["advisor_id"] != actor:
-        raise PermissionDenied("Only the topic advisor may grade this registration.")
+    if topic["advisor_id"] != actor:
+        raise PermissionDenied("Only the assigned advisor may access this topic's registrations.")
+    return topic
+
+
+def grade_topic_registration(actor, role, topic_id, registration_id, point, authorization, request_id):
+    topic = (topic_client.management_topic(topic_id, authorization, request_id) if role == 1
+             else require_topic_advisor(actor, topic_id, authorization, request_id))
     if topic["status"] != 3:
         raise TopicNotClosed()
     with transaction.atomic():

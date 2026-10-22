@@ -424,10 +424,11 @@ describe('Login and role routes', () => {
     expect(screen.getByRole('heading', { name: 'Quản lý đề tài', level: 1 })).toBeVisible()
     expect(screen.getByRole('link', { name: 'Quản lý đề tài' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByTestId('path').textContent).toBe(path)
-    expect(screen.getByRole('button', { name: 'Tạo đề tài' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Xem chi tiết DT001' })).toBeEnabled()
-    expect(screen.getByRole('button', { name: 'Sửa DT001' })).toBeEnabled()
-    expect(screen.getByRole('button', { name: 'Xóa DT001' })).toBeEnabled()
+    for (const name of ['Tạo đề tài', 'Sửa DT001', 'Xóa DT001']) {
+      if (role === 1) expect(screen.getByRole('button', { name })).toBeEnabled()
+      else expect(screen.queryByRole('button', { name })).not.toBeInTheDocument()
+    }
     expect(mock.history.get.find(request => request.url === '/topics/api/v1/topics/')?.headers?.Authorization).toBe('Bearer saved-token')
   })
 
