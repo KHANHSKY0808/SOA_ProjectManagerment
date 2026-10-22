@@ -29,6 +29,7 @@ foreach ($service in $services) {
 Sửa `.env` của cả bốn backend trước khi chạy:
 
 - Đặt cùng một `JWT_SIGNING_KEY` để phát hành và kiểm tra JWT.
+- Access token do auth-service cấp khi đăng nhập hoặc refresh có thời hạn 30 phút. Khởi động lại auth-service để áp dụng; token đã cấp giữ thời điểm hết hạn cũ, thời hạn refresh token không đổi.
 - Đặt cùng một `INTERNAL_SERVICE_TOKEN` không rỗng cho các lời gọi nội bộ; dùng giá trị riêng, khác JWT key.
 - Đặt `CONSUL_AUTO_REGISTER=true`, `CONSUL_URL=http://localhost:8500`.
 - Giữ đúng tên service, port và instance ID riêng trong `.env.example`. Với Docker Desktop, dùng `CONSUL_SERVICE_ADDRESS=host.docker.internal`, health URL tương ứng và cho phép host này trong `ALLOWED_HOSTS`.

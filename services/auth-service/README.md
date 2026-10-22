@@ -42,6 +42,10 @@ For example, gateway URL `/auth/login/` is forwarded to this service's
 
 ### `POST /login/`
 
+Access tokens issued by login or refresh are valid for 30 minutes (1800 seconds).
+Refresh-token lifetime is unchanged. Restart auth-service to load this setting;
+already-issued tokens retain their original expiration.
+
 Request DTO: provide one of `identifier`, `email`, or `userid`, together with
 `password`.
 

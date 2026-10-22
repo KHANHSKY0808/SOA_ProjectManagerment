@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 import os
+from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -131,6 +132,7 @@ INTERNAL_SERVICE_TOKEN = os.getenv("INTERNAL_SERVICE_TOKEN", "")
 
 SIMPLE_JWT = {
     "SIGNING_KEY": JWT_SIGNING_KEY,
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
 }
 
 
