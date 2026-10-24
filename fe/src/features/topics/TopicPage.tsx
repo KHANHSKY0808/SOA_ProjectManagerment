@@ -17,13 +17,18 @@ export function TopicPage() {
     <div className="academic-toolbar">
       <TopicSearch query={state.query} onChange={state.setQuery} onSearch={state.search} />
       <div className="academic-actions">
-        <button type="button" disabled={state.loading || state.busy || !!state.mode} onClick={() => void state.reload()}>Tải lại</button>
-        {canCreate && <button type="button" className="academic-primary" disabled={state.busy || !!state.mode} onClick={state.open}>Tạo đề tài</button>}
+        <button type="button" disabled={state.loading || state.busy || !!state.mode || !!state.approval} onClick={() => void state.reload()}>Tải lại</button>
+        {canCreate && <button type="button" className="academic-primary" disabled={state.busy || !!state.mode || !!state.approval} onClick={state.open}>Tạo đề tài</button>}
       </div>
     </div>
     {state.notice && <p role="status" className="academic-success">{state.notice}</p>}
+    {state.approvalError && <p role="alert" className="academic-error">{state.approvalError}</p>}
+    {state.approval && <div className="academic-actions">
+      <p>{state.busy ? 'Đang xử lý duyệt đề tài' : 'Kiểm tra kết quả duyệt đề tài'}: {state.approval.name} ({state.approval.topic_id})</p>
+      {!state.busy && <button type="button" onClick={state.checkApproval}>Kiểm tra kết quả duyệt</button>}
+    </div>}
     {state.listError && <p role="alert" className="academic-error">{state.listError}</p>}
-    {state.loading ? <p role="status">Đang tải đề tài…</p> : !state.listError && <TopicTable rows={state.rows} total={state.total} canManage={canManage} disabled={state.busy || !!state.mode} onAction={state.show} />}
+    {state.loading ? <p role="status">Đang tải đề tài…</p> : !state.listError && <TopicTable rows={state.rows} total={state.total} canManage={canManage} disabled={state.busy || !!state.mode || !!state.approval} onAction={state.show} onApprove={row => void state.approve(row)} />}
     <TopicDetailModal state={state} />
     {canCreate && <TopicCreateModal state={state} />}
     {canManage && <TopicDeleteModal state={state} />}

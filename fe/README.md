@@ -1,5 +1,11 @@
 # Frontend — Quản lý đồ án tốt nghiệp
 
+Windows: từ thư mục gốc, chạy `start-services.bat` để mở frontend `5173` cùng
+bốn backend. Cần cài Node/npm, chạy `npm ci` trong `fe`, chuẩn bị venv/requirements
+và `.env` cho backend trước. `start-services.bat --dry-run` chỉ kiểm tra và in lệnh.
+Mỗi tiến trình có cửa sổ riêng; dùng Ctrl+C để dừng. Consul/Gateway chạy riêng,
+xem README gốc. BAT không tự cài package, tạo `.env` hoặc chạy migrations.
+
 React + Vite + TypeScript, dùng npm, React Router và Axios client chung. Đã triển khai đăng nhập, bảo vệ route theo role và dashboard chung. Quản trị viên có thể quản lý khoa, ngành, sinh viên, giảng viên và quản lý đề tài qua API Gateway. Giảng viên chỉ xem đề tài được phân hướng dẫn và chấm/sửa điểm sinh viên thuộc đề tài đó; không được tạo, sửa, xóa đề tài hoặc hủy đăng ký sinh viên. Các luồng được kiểm thử bằng API mock; chưa xác minh với tài khoản backend thực tế.
 
 ## Chạy tại máy
@@ -346,10 +352,40 @@ Gateway/backend thực. CSS có bố cục mobile và bảng cuộn ngang, nhưn
 chứng trực quan trên thiết bị thực.
 
 
+### Trang quản lý đăng ký Admin
+
+Route `/admin/registrations` dành cho role 1 hiển thị selectbox mã/tên đề tài,
+mặc định chọn đề tài đầu tiên. Thông tin đề tài gồm mã, tên, GVHD, ngành,
+trạng thái, GPA yêu cầu và chỉ tiêu. Bảng sinh viên đang đăng ký hiển thị mã
+đăng ký, mã sinh viên, họ tên, học kỳ, ngày đăng ký, trạng thái và điểm.
+Có tải lại, tải thêm, trạng thái rỗng/lỗi và cảnh báo khi thiếu họ tên.
+
+Hủy đăng ký cần xác nhận; chấm/sửa điểm chỉ khi đề tài ở trạng thái 3, theo
+thang 0–10 với tối đa hai chữ số thập phân. Trong lúc xác nhận, chấm điểm hoặc
+kiểm tra kết quả ghi chưa rõ, lựa chọn đề tài bị khóa để giữ đúng đối tượng
+thao tác. Request cũ được hủy khi đổi đề tài; mỗi đề tài có trạng thái riêng.
+Danh sách chỉ gồm đăng ký chưa hủy theo API hiện có, không bổ sung hồ sơ cá
+nhân hay lịch sử hủy. Thành phần TopicRoster dùng chung với chi tiết đề tài.
+
+Kiểm thử: `npm test --prefix fe -- AdminRegistrationPage TopicPage App.test roster-api`
+từ thư mục gốc, sau đó chạy typecheck, lint và build frontend.
+
 ### Quyền chỉnh trạng thái đề tài
 
-Admin sửa/duyệt đề tài với đủ trạng thái: Chờ duyệt (0), Đã duyệt (1),
-Mở đăng ký (2), Đóng đăng ký (3). Form tạo của Admin giữ lựa chọn 2/3, mặc định 2.
+Khi giảng viên mở form tạo đề tài, frontend chỉ tải danh sách ngành; không gọi
+`/academic/api/v1/lecturers/` vì API hồ sơ tổng hợp này dành cho Admin. GVHD được
+gán theo người dùng hiện tại và backend xác minh lại. Admin vẫn tải danh sách
+giảng viên để chọn GVHD trong form tạo/sửa.
+
+Admin duyệt đề tài bằng nút **Duyệt** trên danh sách, chỉ hiện ở đề tài Chờ duyệt
+(0). Nút gửi PATCH với status 1 (Đã duyệt), không tự mở đăng ký. Form sửa đề tài
+chờ duyệt hiển thị trạng thái chỉ đọc; cần duyệt trên danh sách trước khi mở/đóng.
+Form sửa không có lựa chọn 0/1: đề tài đã duyệt có thể chọn Mở đăng ký (2) hoặc
+Đóng đăng ký (3); nếu chưa chọn, sửa nội dung giữ nguyên trạng thái hiện tại.
+Form tạo của Admin giữ lựa chọn 2/3, mặc định 2.
+Khi duyệt có lỗi mạng/timeout, các thao tác bị khóa và có nút **Kiểm tra kết quả
+duyệt** đọc lại đề tài; không tự gửi lại PATCH. Chỉ gửi lại khi đã xác minh đề tài
+vẫn chờ duyệt. API và quyền backend hiện có không thay đổi.
 Giảng viên có nút Tạo đề tài; form ẩn GVHD và trạng thái, gửi advisor_id theo
 user_id hiện tại và status 0. Backend luôn gán lại hai giá trị này theo JWT.
 Giảng viên không có nút sửa/xóa và không được duyệt đề tài qua API.

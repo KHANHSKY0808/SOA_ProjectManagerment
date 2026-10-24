@@ -41,9 +41,9 @@ export function TopicCreateModal({ state }: { state: TopicState }) {
             {editing && !state.majors.some(row => row.major_id === state.draft?.major_id) && <option value={state.draft.major_id}>{state.detail?.major_name || state.draft.major_id} (hiện tại)</option>}
             {state.majors.map(row => <option key={row.major_id} value={row.major_id} disabled={!numericMajor(row.major_id)}>{row.name ? `${row.name} (${row.major_id})` : row.major_id}{!numericMajor(row.major_id) ? ' — Mã ngành chưa được hỗ trợ' : ''}</option>)}
           </select>{error('major_id')}</div>
-          {state.canSetStatus && <div><label htmlFor="topic-status">Trạng thái</label><select id="topic-status" name="status" value={state.draft.status ?? ''} onChange={event => state.change('status', event.target.value)} {...accessibility('status')}>
-            <option value="" disabled>Chọn trạng thái</option>
-            {(editing ? [0, 1, 2, 3] as const : [2, 3] as const).map(status => <option key={status} value={status}>{topicStatusLabels[status]}</option>)}
+          {state.canSetStatus && editing && state.detail?.status === 0 ? <div><span>Trạng thái</span><p>Chờ duyệt — dùng nút Duyệt trên danh sách đề tài.</p></div> : state.canSetStatus && <div><label htmlFor="topic-status">Trạng thái</label><select id="topic-status" name="status" value={state.draft.status === 2 || state.draft.status === 3 ? state.draft.status : ''} onChange={event => state.change('status', event.target.value)} {...accessibility('status')}>
+            <option value="" disabled>{editing ? 'Giữ trạng thái hiện tại' : 'Chọn trạng thái'}</option>
+            {([2, 3] as const).map(status => <option key={status} value={status}>{topicStatusLabels[status]}</option>)}
           </select>{error('status')}</div>}
           <div className="topic-description"><label htmlFor="topic-description">Mô tả đề tài</label><textarea id="topic-description" name="description" rows={5} value={state.draft.description} onChange={event => state.change('description', event.target.value)} {...accessibility('description')} />{error('description')}</div>
         </div>

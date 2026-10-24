@@ -1,5 +1,12 @@
 # Topic Service
 
+Windows: from the repository root, run `start-services.bat` to launch this service
+on port 8004 alongside Auth, Academic, Registration and the frontend. Prepare
+each service venv/requirements and `.env`, plus frontend dependencies, first.
+Use `start-services.bat --dry-run` to check prerequisites without starting servers.
+Stop each server with Ctrl+C in its own window. Consul/Gateway run separately;
+see the root README for setup and individual startup commands.
+
 `topic-service` owns the existing `Topics` table in the shared project
 database. It uses database-first mapping (`managed = False`) and never creates
 or migrates that schema.

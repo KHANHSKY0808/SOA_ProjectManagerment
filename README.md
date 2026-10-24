@@ -1,4 +1,4 @@
-﻿# Quản lý đồ án tốt nghiệp — SOA
+# Quản lý đồ án tốt nghiệp — SOA
 
 ## Yêu cầu môi trường (Requirements)
 
@@ -56,6 +56,24 @@ Sửa `.env` của cả bốn backend trước khi chạy:
 Tự tạo các secret thay cho giá trị mẫu; không commit `.env`. Database được ánh xạ theo schema có sẵn, **không chạy migrations để tạo lại bảng nghiệp vụ**.
 
 ### 2. Chạy backend và Gateway
+
+**Chạy nhanh trên Windows:** sau khi chuẩn bị venv/requirements cho bốn backend,
+`.env`, database và chạy `npm ci` trong `fe`, mở terminal ở thư mục gốc:
+
+```powershell
+.\start-services.bat
+# Chỉ kiểm tra điều kiện và xem lệnh, không mở server:
+.\start-services.bat --dry-run
+```
+
+BAT mở 5 cửa sổ riêng: Auth `8001`, Academic `8002`, Registration `8003`,
+Topic `8004` và frontend `5173`. Có thể gọi BAT bằng đường dẫn tuyệt đối từ
+thư mục khác. Script kiểm tra toàn bộ interpreter/manage.py, Node/npm và Vite
+trước khi mở tiến trình; không cài dependencies, sửa `.env` hay chạy migrations.
+Xem log mỗi cửa sổ để biết service đã sẵn sàng hoặc gặp lỗi. Dừng bằng `Ctrl+C`
+trong từng cửa sổ rồi đóng cửa sổ; dừng cửa sổ launcher không dừng các server.
+Không chạy lại khi các cổng đã bị chiếm. Consul và Gateway cần khởi động riêng
+theo hướng dẫn bên dưới; log-service chưa được khởi động bằng BAT.
 
 Khởi động Docker Desktop và container Consul hiện có. Mở **bốn terminal**, mỗi terminal chạy một dòng dưới đây từ thư mục gốc:
 
@@ -118,9 +136,20 @@ Bốn backend dùng chung file SQLite `database/DB_ProjectManagerment.db`, nhưn
 
 Schema `Registrations` có cột `Point` nullable (`NUMERIC`); `NULL` nghĩa là chưa chấm. Khi nâng cấp một database cũ, dừng các service ghi rồi chạy `py database/add_registration_point.py --db database/DB_ProjectManagerment.db --backup D:/backups/registration-before-point.db` từ thư mục gốc. Chọn đường dẫn backup chưa tồn tại và nằm ngoài repository. Script tạo backup nhất quán trước khi thêm cột; không chạy Django migration cho bảng này. Triển khai schema trước khi chạy backend mới. Nếu cần rollback, dừng mọi writer, sao lưu trạng thái hiện tại rồi khôi phục backup; điểm ghi sau thời điểm backup cần được xuất và đối soát riêng.
 
-Admin chấm/sửa điểm cho mọi đăng ký còn hiệu lực. Giảng viên được tạo đề tài Chờ duyệt (0), GVHD tự gán theo user_id trong JWT; giao diện ẩn lựa chọn GVHD. Chỉ Admin duyệt đề tài qua form sửa với đủ trạng thái 0/1/2/3. Giảng viên xem đề tài được phân hướng dẫn, danh sách sinh viên và chấm/sửa điểm; không được sửa, xóa, tự duyệt đề tài hay hủy/xóa đăng ký sinh viên. Quyền được kiểm tra tại API và giao diện dựa trên JWT, không dùng ID do người gọi tự khai báo. Chỉ chấm điểm khi đề tài ở trạng thái 3 (Đóng đăng ký); API trả 409 `topic_not_closed` ở trạng thái khác. Điểm theo thang 0–10 (tối đa hai chữ số thập phân) và được thao tác trong chi tiết đề tài. Sinh viên xem điểm đăng ký của chính mình ở mục hiện tại và lịch sử. API thuộc `regist-service`, tra đề tài qua REST từ `topic-service` và kiểm tra giảng viên hướng dẫn đối với role 2; xem [hợp đồng API](services/regist-service/README.md).
+Admin chấm/sửa điểm cho mọi đăng ký còn hiệu lực. Giảng viên được tạo đề tài Chờ duyệt (0), GVHD tự gán theo user_id trong JWT; giao diện ẩn lựa chọn GVHD. Chỉ Admin duyệt đề tài bằng nút Duyệt trên danh sách khi trạng thái là 0, chuyển sang Đã duyệt (1). Form sửa không có lựa chọn 0/1; sau khi duyệt có thể chọn Mở đăng ký (2) hoặc Đóng đăng ký (3). Sửa nội dung không tự đổi trạng thái. Giảng viên xem đề tài được phân hướng dẫn, danh sách sinh viên và chấm/sửa điểm; không được sửa, xóa, tự duyệt đề tài hay hủy/xóa đăng ký sinh viên. Quyền được kiểm tra tại API và giao diện dựa trên JWT, không dùng ID do người gọi tự khai báo. Chỉ chấm điểm khi đề tài ở trạng thái 3 (Đóng đăng ký); API trả 409 `topic_not_closed` ở trạng thái khác. Điểm theo thang 0–10 (tối đa hai chữ số thập phân) và được thao tác trong chi tiết đề tài. Sinh viên xem điểm đăng ký của chính mình ở mục hiện tại và lịch sử. API thuộc `regist-service`, tra đề tài qua REST từ `topic-service` và kiểm tra giảng viên hướng dẫn đối với role 2; xem [hợp đồng API](services/regist-service/README.md).
 
 Admin có thể chuyển đề tài sang trạng thái 3 để đóng đăng ký. Đề tài này không xuất hiện trong danh sách đề tài mở (chỉ trạng thái 2); sinh viên đã đăng ký không thể tự hủy. Regist-service xác minh trạng thái đề tài qua REST và trả 409 `topic_registration_closed` nếu sinh viên hủy khi đề tài đã đóng. Trang sinh viên cũng khóa nút hủy sau khi tra cứu trạng thái; backend luôn kiểm tra lại lúc xử lý yêu cầu.
+
+## Quản lý đăng ký dành cho Admin
+
+Tại `/admin/registrations`, chọn đề tài bằng selectbox mã/tên để xem thông tin đề tài
+và sinh viên đang đăng ký. Bảng gồm mã đăng ký, mã sinh viên, họ tên, học kỳ,
+ngày đăng ký, trạng thái và điểm, hỗ trợ tải thêm khi có nhiều sinh viên.
+Admin có thể hủy đăng ký sau xác nhận hoặc chấm/sửa điểm (0–10, tối đa hai chữ số
+thập phân) khi đề tài đã đóng đăng ký (trạng thái 3). Nếu kết quả ghi chưa rõ do
+lỗi mạng, dùng chức năng kiểm tra kết quả trước khi thao tác tiếp.
+Trang tái sử dụng API hiện có của topic-service và regist-service qua Gateway;
+không đổi schema, cổng hoặc hợp đồng REST.
 
 ## Các service
 

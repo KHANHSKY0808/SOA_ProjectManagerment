@@ -1,9 +1,10 @@
 import { topicStatusLabel } from '../topic-api'
 import type { Topic } from '../topic-api'
 
-export function TopicTable({ rows, total, canManage, disabled, onAction }: {
+export function TopicTable({ rows, total, canManage, disabled, onAction, onApprove }: {
   rows: Topic[]; total: number; canManage: boolean; disabled: boolean
   onAction: (row: Topic, action: 'detail' | 'edit' | 'delete') => void
+  onApprove: (row: Topic) => void
 }) {
   return <>
     <p className="academic-count">Hiển thị {rows.length} / {total} đề tài</p>
@@ -14,6 +15,7 @@ export function TopicTable({ rows, total, canManage, disabled, onAction }: {
         <td><div className="academic-actions topic-row-actions">
           <button type="button" disabled={disabled} aria-label={`Xem chi tiết ${row.topic_id}`} onClick={() => onAction(row, 'detail')}>Chi tiết</button>
           {canManage && <>
+            {row.status === 0 && <button type="button" className="academic-primary" disabled={disabled} aria-label={`Duyệt ${row.topic_id}`} onClick={() => onApprove(row)}>Duyệt</button>}
             <button type="button" disabled={disabled} aria-label={`Sửa ${row.topic_id}`} onClick={() => onAction(row, 'edit')}>Sửa</button>
             <button type="button" disabled={disabled} className="topic-danger" aria-label={`Xóa ${row.topic_id}`} onClick={() => onAction(row, 'delete')}>Xóa</button>
           </>}

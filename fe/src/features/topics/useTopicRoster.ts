@@ -161,5 +161,6 @@ export function useTopicRoster(topicId: string | undefined, logout: () => void, 
     saveGrade: () => { void submitGrade(false) }, checkGrade: () => { void submitGrade(true) },
     choose, back, cancel: () => { void perform(false) }, check: () => { void perform(true) },
     retry: () => { if (!selected && !uncertain) void load(cursor.current) },
+    reload: () => { if (!selected && !grading && !uncertain && !gradeUncertain) void load('') },
     more: () => { if (next && !loading && !selected && !grading && !uncertain && !gradeUncertain) void load(next) } }
 }

@@ -1,5 +1,12 @@
 # Registration Service
 
+Windows: from the repository root, run `start-services.bat` to launch this service
+on port 8003 alongside Auth, Academic, Topic and the frontend. Prepare each
+service venv/requirements and `.env`, plus frontend dependencies, first.
+Use `start-services.bat --dry-run` to check prerequisites without starting servers.
+Stop each server with Ctrl+C in its own window. Consul/Gateway run separately;
+see the root README for setup and individual startup commands.
+
 This service owns the existing `Registrations` table and implements student topic
 registration. It reads academic/topic references through REST, validates JWTs
 locally, and never queries another service's tables. No schema migration is needed.

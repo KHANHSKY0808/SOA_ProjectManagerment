@@ -1,5 +1,12 @@
 # Auth Service
 
+Windows: from the repository root, run `start-services.bat` to launch this service
+on port 8001 alongside Academic, Registration, Topic and the frontend. Prepare
+each service venv/requirements and `.env`, plus frontend dependencies, first.
+Use `start-services.bat --dry-run` to check prerequisites without starting servers.
+Stop each server with Ctrl+C in its own window. Consul/Gateway run separately;
+see the root README for setup and individual startup commands.
+
 `auth-service` is the identity provider for the graduation-project management
 system. It authenticates records in the existing `Users` table, issues JWTs,
 and exposes the authenticated user's safe profile. It does not return a

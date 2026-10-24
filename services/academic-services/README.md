@@ -1,5 +1,12 @@
 # Academic Service
 
+Windows: from the repository root, run `start-services.bat` to launch this service
+on port 8002 alongside Auth, Registration, Topic and the frontend. Prepare each
+service venv/requirements and `.env`, plus frontend dependencies, first.
+Use `start-services.bat --dry-run` to check prerequisites without starting servers.
+Stop each server with Ctrl+C in its own window. Consul/Gateway run separately;
+see the root README for setup and individual startup commands.
+
 Academic Service owns departments, majors, sub-majors, students, and lecturers.
 This implementation exposes CRUD APIs for these five resources at port
 `8002`. Through the API Gateway, prepend `/academic` to every service path.

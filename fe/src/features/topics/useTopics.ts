@@ -38,6 +38,8 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
   const [busy, setBusy] = useState(false)
   const [uncertain, setUncertain] = useState(false)
   const [notice, setNotice] = useState('')
+  const [approval, setApproval] = useState<Topic | null>(null)
+  const [approvalError, setApprovalError] = useState('')
   const locked = useRef(false)
   const original = useRef<CreateTopic | null>(null)
   const pendingPatch = useRef<TopicUpdate>({})
@@ -84,7 +86,8 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
     setOptionsReady(false); setOptionsLoading(true); setOptionsError('')
     try {
       const [courses, advisors] = await Promise.all([
-        listRecords('majors', controller.signal), listRecords('lecturers', controller.signal),
+        listRecords('majors', controller.signal),
+        isLecturer ? Promise.resolve<Lecturer[]>([]) : listRecords('lecturers', controller.signal),
       ])
       if (controller.signal.aborted) return
       setMajors(courses); setLecturers(advisors); setOptionsReady(true)
@@ -98,7 +101,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
     setDetail(null); setDetailError(''); setDraft(null); original.current = null
   }
   function open() {
-    if (!canCreate || locked.current || mode) return
+    if (!canCreate || locked.current || mode || approval) return
     try {
       const id = createTopicId()
       resetForm(); setMode('create'); setSelected(null)
@@ -129,7 +132,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
     } finally { if (!controller.signal.aborted) setDetailLoading(false) }
   }
   function show(row: Topic, next: 'detail' | 'edit' | 'delete') {
-    if (locked.current || mode || (next !== 'detail' && !canManage)) return
+    if (locked.current || mode || approval || (next !== 'detail' && !canManage)) return
     resetForm(); setSelected(row); setMode(next)
     if (next !== 'delete') void loadDetail(row, next === 'edit')
     if (next === 'edit') void loadOptions()
@@ -147,6 +150,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
   }
   function change(key: TopicField, value: string) {
     if (locked.current || uncertain || (key === 'status' && !canSetStatus) || (key === 'advisor_id' && isLecturer)) return
+    if (key === 'status' && (![2, 3].includes(Number(value)) || (mode === 'edit' && original.current?.status === 0))) return
     setDraft(previous => previous && { ...previous, [key]: key === 'status' ? (value === '' ? undefined : Number(value) as TopicStatus) : key === 'req_GPA' || key === 'studentQuota' ? (value === '' ? NaN : Number(value)) : value })
     setErrors(previous => ({ ...previous, [key]: undefined }))
   }
@@ -168,7 +172,8 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
     if (!values.name) invalid.name = 'Vui lòng nhập tên đề tài.'
     if (!isLecturer && changed('advisor_id') && !lecturers.some(row => row.lecturer_id === draft.advisor_id)) invalid.advisor_id = 'Vui lòng chọn giáo viên hướng dẫn.'
     if (changed('major_id') && (!majors.some(row => row.major_id === draft.major_id) || !numericMajor(draft.major_id))) invalid.major_id = 'Vui lòng chọn ngành có mã số hợp lệ.'
-    if (canSetStatus && (!editing || changed('status')) && ![0, 1, 2, 3].includes(values.status as number)) invalid.status = 'Vui lòng chọn trạng thái hợp lệ.'
+    if (canSetStatus && (!editing || changed('status')) &&
+        (![2, 3].includes(values.status as number) || (editing && original.current?.status === 0))) invalid.status = 'Vui lòng chọn trạng thái hợp lệ.'
     setErrors(invalid)
     const first = Object.keys(invalid)[0] as TopicField | undefined
     if (first) return first
@@ -260,11 +265,48 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
       } else setFormError(failureMessage(cause))
     } finally { locked.current = false; if (!controller.signal.aborted) setBusy(false) }
   }
+  async function approve(row: Topic, checking = false) {
+    if (!canManage || locked.current || mode || (checking ? approval?.topic_id !== row.topic_id : !!approval || row.status !== 0)) return
+    locked.current = true; setBusy(true); setApproval(row); setApprovalError(''); setNotice('')
+    loadRequest.current?.abort()
+    const controller = new AbortController()
+    mutation.current = controller
+    try {
+      if (checking) {
+        const current = await getTopic(row.topic_id, controller.signal)
+        if (controller.signal.aborted) return
+        setApproval(null)
+        setRows(previous => previous.map(item => item.topic_id === current.topic_id ? current : item))
+        if (current.status === 1) setNotice('Đã xác nhận đề tài được duyệt.')
+        else if (current.status === 0) setApprovalError('Đề tài vẫn chờ duyệt. Bạn có thể bấm Duyệt lại nếu cần.')
+        else setApprovalError('Trạng thái đề tài đã thay đổi. Hãy kiểm tra danh sách trước khi thao tác tiếp.')
+      } else {
+        await updateTopic(row.topic_id, { status: 1 }, controller.signal)
+        if (controller.signal.aborted) return
+        setApproval(null)
+        setRows(previous => previous.map(item => item.topic_id === row.topic_id ? { ...item, status: 1 } : item))
+        setNotice('Đã duyệt đề tài.')
+      }
+      await reload()
+    } catch (cause) {
+      if (controller.signal.aborted) return
+      const failure = normalizeApiError(cause)
+      if (failure.status === 404) {
+        setApproval(null); setApprovalError('Đề tài không còn tồn tại.'); await reload()
+      } else {
+        if (!checking && !ambiguousWrite(cause)) setApproval(null)
+        const message = failureMessage(cause)
+        setApprovalError(checking ? `${message} Chưa kiểm tra được kết quả duyệt. Vui lòng kiểm tra lại.` :
+          ambiguousWrite(cause) ? `${message} Chưa xác định kết quả duyệt. Hãy kiểm tra trước khi gửi lại.` : message)
+      }
+    } finally { locked.current = false; if (!controller.signal.aborted) setBusy(false) }
+  }
   const normalized = appliedQuery.toLocaleLowerCase('vi')
   const visibleRows = rows.filter(row => [row.topic_id, row.name].some(value => value.toLocaleLowerCase('vi').includes(normalized)))
   return { rows: visibleRows, total: rows.length, loading, listError, query, setQuery,
     search: () => setAppliedQuery(query.trim()), reload, mode, selected, detail, detailLoading, detailError, retryDetail,
     canSetStatus, isLecturer, draft, majors, lecturers, optionsReady, optionsLoading, optionsError, loadOptions, formError, errors, busy,
-    uncertain, notice, open, show, close, change, save, remove, checkResult }
+    uncertain, notice, open, show, close, change, save, remove, checkResult,
+    approval, approvalError, approve, checkApproval: () => { if (approval) void approve(approval, true) } }
 }
 export type TopicState = ReturnType<typeof useTopics>
