@@ -1,0 +1,892 @@
+{
+  "schemaVersion": 1,
+  "status": "pass",
+  "command": "local-schema-diagram-verification",
+  "schemaSource": "read-only SQLite metadata",
+  "databaseSha256": "30c3deb5f6f9ff79bd59936858dffc845be22944e8567e40b4bd21e4389037e6",
+  "cardinalityCorrections": [
+    {
+      "id": "rel_audit_users",
+      "before": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": false,
+        "toOptional": false
+      },
+      "after": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": true,
+        "toOptional": true
+      }
+    },
+    {
+      "id": "rel_majors_faculties",
+      "before": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": false,
+        "toOptional": false
+      },
+      "after": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": true,
+        "toOptional": true
+      }
+    },
+    {
+      "id": "rel_specs_majors",
+      "before": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": false,
+        "toOptional": false
+      },
+      "after": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": true,
+        "toOptional": true
+      }
+    },
+    {
+      "id": "rel_lecturers_users",
+      "before": {
+        "fromCardinality": "one",
+        "toCardinality": "one",
+        "fromOptional": false,
+        "toOptional": false
+      },
+      "after": {
+        "fromCardinality": "one",
+        "toCardinality": "one",
+        "fromOptional": true,
+        "toOptional": true
+      }
+    },
+    {
+      "id": "rel_lecturers_faculties",
+      "before": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": false,
+        "toOptional": false
+      },
+      "after": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": true,
+        "toOptional": true
+      }
+    },
+    {
+      "id": "rel_students_users",
+      "before": {
+        "fromCardinality": "one",
+        "toCardinality": "one",
+        "fromOptional": false,
+        "toOptional": false
+      },
+      "after": {
+        "fromCardinality": "one",
+        "toCardinality": "one",
+        "fromOptional": true,
+        "toOptional": true
+      }
+    },
+    {
+      "id": "rel_students_majors",
+      "before": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": false,
+        "toOptional": false
+      },
+      "after": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": true,
+        "toOptional": false
+      }
+    },
+    {
+      "id": "rel_students_specs",
+      "before": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": true,
+        "toOptional": false
+      },
+      "after": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": true,
+        "toOptional": true
+      }
+    },
+    {
+      "id": "rel_topics_lecturers",
+      "before": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": true,
+        "toOptional": false
+      },
+      "after": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": true,
+        "toOptional": true
+      }
+    },
+    {
+      "id": "rel_topics_majors",
+      "before": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": false,
+        "toOptional": false
+      },
+      "after": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": true,
+        "toOptional": false
+      }
+    },
+    {
+      "id": "rel_topics_users",
+      "before": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": true,
+        "toOptional": false
+      },
+      "after": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": true,
+        "toOptional": true
+      }
+    },
+    {
+      "id": "rel_regist_students",
+      "before": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": false,
+        "toOptional": false
+      },
+      "after": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": true,
+        "toOptional": true
+      }
+    },
+    {
+      "id": "rel_regist_topics",
+      "before": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": false,
+        "toOptional": false
+      },
+      "after": {
+        "fromCardinality": "many",
+        "toCardinality": "one",
+        "fromOptional": true,
+        "toOptional": true
+      }
+    }
+  ],
+  "cardinalityConvention": "from=referencing child; to=referenced parent; a parent can have zero child rows; parent optionality follows declared SQLite NOT NULL, including SQLite nullable non-integer primary keys.",
+  "schema": {
+    "AuditLogs": {
+      "columns": [
+        [
+          0,
+          "AuditId",
+          "TEXT",
+          0,
+          null,
+          1
+        ],
+        [
+          1,
+          "Action",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          2,
+          "ActionBy",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          3,
+          "IpAddress",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          4,
+          "CreatedAt",
+          "TEXT",
+          0,
+          null,
+          0
+        ]
+      ],
+      "foreign_keys": [
+        [
+          0,
+          0,
+          "Users",
+          "ActionBy",
+          "UserId",
+          "NO ACTION",
+          "NO ACTION",
+          "NONE"
+        ]
+      ],
+      "unique_columns": [],
+      "ddl": "CREATE TABLE \"AuditLogs\" (\r\n    \"AuditId\"     TEXT,\r\n    \"Action\"      TEXT,\r\n    \"ActionBy\"    TEXT,\r\n    \"IpAddress\"   TEXT,\r\n    \"CreatedAt\"   TEXT,\r\n\r\n    CONSTRAINT \"PK_AuditLogs\"\r\n        PRIMARY KEY (\"AuditId\"),\r\n\r\n    CONSTRAINT \"FK_AuditLogs_Users_ActionBy\"\r\n        FOREIGN KEY (\"ActionBy\")\r\n        REFERENCES \"Users\" (\"UserId\")\r\n)"
+    },
+    "Faculties": {
+      "columns": [
+        [
+          0,
+          "FacultyId",
+          "TEXT",
+          1,
+          null,
+          1
+        ],
+        [
+          1,
+          "FacultyName",
+          "TEXT",
+          1,
+          null,
+          0
+        ]
+      ],
+      "foreign_keys": [],
+      "unique_columns": [],
+      "ddl": "CREATE TABLE \"Faculties\" (\r\n    \"FacultyId\"   TEXT NOT NULL,\r\n    \"FacultyName\" TEXT NOT NULL,\r\n\r\n    CONSTRAINT \"PK_Faculties\"\r\n        PRIMARY KEY (\"FacultyId\")\r\n)"
+    },
+    "Lecturers": {
+      "columns": [
+        [
+          0,
+          "LecturerId",
+          "TEXT",
+          0,
+          null,
+          1
+        ],
+        [
+          1,
+          "FacultyId",
+          "TEXT",
+          0,
+          null,
+          0
+        ]
+      ],
+      "foreign_keys": [
+        [
+          0,
+          0,
+          "Users",
+          "LecturerId",
+          "UserId",
+          "NO ACTION",
+          "NO ACTION",
+          "NONE"
+        ],
+        [
+          1,
+          0,
+          "Faculties",
+          "FacultyId",
+          "FacultyId",
+          "NO ACTION",
+          "NO ACTION",
+          "NONE"
+        ]
+      ],
+      "unique_columns": [],
+      "ddl": "CREATE TABLE \"Lecturers\" (\r\n    \"LecturerId\" TEXT,\r\n    \"FacultyId\"  TEXT,\r\n\r\n    CONSTRAINT \"PK_Lecturers\"\r\n        PRIMARY KEY (\"LecturerId\"),\r\n\r\n    CONSTRAINT \"FK_Lecturers_Faculties_FacultyId\"\r\n        FOREIGN KEY (\"FacultyId\")\r\n        REFERENCES \"Faculties\" (\"FacultyId\"),\r\n\r\n    CONSTRAINT \"FK_Lecturers_Users_LecturerId\"\r\n        FOREIGN KEY (\"LecturerId\")\r\n        REFERENCES \"Users\" (\"UserId\")\r\n)"
+    },
+    "Majors": {
+      "columns": [
+        [
+          0,
+          "MajorId",
+          "TEXT",
+          0,
+          null,
+          1
+        ],
+        [
+          1,
+          "MajorName",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          2,
+          "FacultyId",
+          "TEXT",
+          0,
+          null,
+          0
+        ]
+      ],
+      "foreign_keys": [
+        [
+          0,
+          0,
+          "Faculties",
+          "FacultyId",
+          "FacultyId",
+          "NO ACTION",
+          "NO ACTION",
+          "NONE"
+        ]
+      ],
+      "unique_columns": [],
+      "ddl": "CREATE TABLE \"Majors\" (\r\n    \"MajorId\"   TEXT,\r\n    \"MajorName\" TEXT,\r\n    \"FacultyId\" TEXT,\r\n\r\n    CONSTRAINT \"PK_Majors\"\r\n        PRIMARY KEY (\"MajorId\"),\r\n\r\n    CONSTRAINT \"FK_Majors_Faculties_FacultyId\"\r\n        FOREIGN KEY (\"FacultyId\")\r\n        REFERENCES \"Faculties\" (\"FacultyId\")\r\n)"
+    },
+    "Registrations": {
+      "columns": [
+        [
+          0,
+          "RegistrationId",
+          "TEXT",
+          0,
+          null,
+          1
+        ],
+        [
+          1,
+          "StudentId",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          2,
+          "TopicId",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          3,
+          "Semester",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          4,
+          "Status",
+          "INTEGER",
+          0,
+          null,
+          0
+        ],
+        [
+          5,
+          "Notes",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          6,
+          "Reason",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          7,
+          "CreatedAt",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          8,
+          "UpdatedAt",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          9,
+          "UpdatedBy",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          10,
+          "Point",
+          "NUMERIC",
+          0,
+          null,
+          0
+        ]
+      ],
+      "foreign_keys": [
+        [
+          0,
+          0,
+          "Topics",
+          "TopicId",
+          "TopicId",
+          "NO ACTION",
+          "NO ACTION",
+          "NONE"
+        ],
+        [
+          1,
+          0,
+          "Students",
+          "StudentId",
+          "StudentId",
+          "NO ACTION",
+          "NO ACTION",
+          "NONE"
+        ]
+      ],
+      "unique_columns": [],
+      "ddl": "CREATE TABLE \"Registrations\" (\r\n    \"RegistrationId\" TEXT,\r\n    \"StudentId\"      TEXT,\r\n    \"TopicId\"        TEXT,\r\n    \"Semester\"      TEXT,\r\n    \"Status\"        INTEGER,\r\n    \"Notes\"         TEXT,\r\n    \"Reason\"        TEXT,\r\n    \"CreatedAt\"     TEXT,\r\n    \"UpdatedAt\"     TEXT,\r\n    \"UpdatedBy\"     TEXT, \"Point\" NUMERIC,\r\n\r\n    CONSTRAINT \"PK_Registrations\"\r\n        PRIMARY KEY (\"RegistrationId\"),\r\n\r\n    CONSTRAINT \"FK_Registrations_Students_StudentId\"\r\n        FOREIGN KEY (\"StudentId\")\r\n        REFERENCES \"Students\" (\"StudentId\"),\r\n\r\n    CONSTRAINT \"FK_Registrations_Topics_TopicId\"\r\n        FOREIGN KEY (\"TopicId\")\r\n        REFERENCES \"Topics\" (\"TopicId\")\r\n)"
+    },
+    "Specializations": {
+      "columns": [
+        [
+          0,
+          "SpecializationId",
+          "TEXT",
+          0,
+          null,
+          1
+        ],
+        [
+          1,
+          "SpecializationName",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          2,
+          "MajorId",
+          "TEXT",
+          0,
+          null,
+          0
+        ]
+      ],
+      "foreign_keys": [
+        [
+          0,
+          0,
+          "Majors",
+          "MajorId",
+          "MajorId",
+          "NO ACTION",
+          "NO ACTION",
+          "NONE"
+        ]
+      ],
+      "unique_columns": [],
+      "ddl": "CREATE TABLE \"Specializations\" (\r\n    \"SpecializationId\"   TEXT,\r\n    \"SpecializationName\" TEXT,\r\n    \"MajorId\"            TEXT,\r\n\r\n    CONSTRAINT \"PK_Specializations\"\r\n        PRIMARY KEY (\"SpecializationId\"),\r\n\r\n    CONSTRAINT \"FK_Specializations_Majors_MajorId\"\r\n        FOREIGN KEY (\"MajorId\")\r\n        REFERENCES \"Majors\" (\"MajorId\")\r\n)"
+    },
+    "Students": {
+      "columns": [
+        [
+          0,
+          "StudentId",
+          "TEXT",
+          0,
+          null,
+          1
+        ],
+        [
+          1,
+          "MajorId",
+          "TEXT",
+          1,
+          null,
+          0
+        ],
+        [
+          2,
+          "SpecializationId",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          3,
+          "AccumulatedCredits",
+          "INTEGER",
+          1,
+          null,
+          0
+        ],
+        [
+          4,
+          "GPA",
+          "REAL",
+          1,
+          null,
+          0
+        ]
+      ],
+      "foreign_keys": [
+        [
+          0,
+          0,
+          "Specializations",
+          "SpecializationId",
+          "SpecializationId",
+          "NO ACTION",
+          "NO ACTION",
+          "NONE"
+        ],
+        [
+          1,
+          0,
+          "Majors",
+          "MajorId",
+          "MajorId",
+          "NO ACTION",
+          "NO ACTION",
+          "NONE"
+        ],
+        [
+          2,
+          0,
+          "Users",
+          "StudentId",
+          "UserId",
+          "NO ACTION",
+          "NO ACTION",
+          "NONE"
+        ]
+      ],
+      "unique_columns": [],
+      "ddl": "CREATE TABLE \"Students\" (\r\n    \"StudentId\"         TEXT,\r\n    \"MajorId\"           TEXT NOT NULL,\r\n    \"SpecializationId\"  TEXT,\r\n    \"AccumulatedCredits\" INTEGER NOT NULL,\r\n    \"GPA\"               REAL NOT NULL,\r\n\r\n    CONSTRAINT \"PK_Students\"\r\n        PRIMARY KEY (\"StudentId\"),\r\n\r\n    CONSTRAINT \"FK_Students_Users_StudentId\"\r\n        FOREIGN KEY (\"StudentId\")\r\n        REFERENCES \"Users\" (\"UserId\"),\r\n\r\n    CONSTRAINT \"FK_Students_Majors_MajorId\"\r\n        FOREIGN KEY (\"MajorId\")\r\n        REFERENCES \"Majors\" (\"MajorId\"),\r\n\r\n    CONSTRAINT \"FK_Students_Specializations_SpecializationId\"\r\n        FOREIGN KEY (\"SpecializationId\")\r\n        REFERENCES \"Specializations\" (\"SpecializationId\")\r\n)"
+    },
+    "Topics": {
+      "columns": [
+        [
+          0,
+          "TopicId",
+          "TEXT",
+          1,
+          null,
+          1
+        ],
+        [
+          1,
+          "TopicName",
+          "TEXT",
+          1,
+          null,
+          0
+        ],
+        [
+          2,
+          "Description",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          3,
+          "FileUrl",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          4,
+          "MajorId",
+          "TEXT",
+          1,
+          null,
+          0
+        ],
+        [
+          5,
+          "Status",
+          "INTEGER",
+          0,
+          null,
+          0
+        ],
+        [
+          6,
+          "AdvisorId",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          7,
+          "CreatedAt",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          8,
+          "UpdatedAt",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          9,
+          "UpdatedBy",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          10,
+          "req_GPA",
+          "REAL",
+          1,
+          "0",
+          0
+        ],
+        [
+          11,
+          "studentQuota",
+          "INTEGER",
+          1,
+          "1",
+          0
+        ]
+      ],
+      "foreign_keys": [
+        [
+          0,
+          0,
+          "Users",
+          "UpdatedBy",
+          "UserId",
+          "NO ACTION",
+          "NO ACTION",
+          "NONE"
+        ],
+        [
+          1,
+          0,
+          "Majors",
+          "MajorId",
+          "MajorId",
+          "NO ACTION",
+          "NO ACTION",
+          "NONE"
+        ],
+        [
+          2,
+          0,
+          "Lecturers",
+          "AdvisorId",
+          "LecturerId",
+          "NO ACTION",
+          "NO ACTION",
+          "NONE"
+        ]
+      ],
+      "unique_columns": [],
+      "ddl": "CREATE TABLE \"Topics\" (\r\n    \"TopicId\"       TEXT NOT NULL,\r\n    \"TopicName\"     TEXT NOT NULL,\r\n    \"Description\"   TEXT,\r\n    \"FileUrl\"       TEXT,\r\n    \"MajorId\"       TEXT NOT NULL,\r\n    \"Status\"        INTEGER,\r\n    \"AdvisorId\"     TEXT,\r\n    \"CreatedAt\"     TEXT,\r\n    \"UpdatedAt\"     TEXT,\r\n    \"UpdatedBy\"     TEXT, \"req_GPA\" REAL NOT NULL DEFAULT 0 CHECK (typeof(\"req_GPA\") IN ('real', 'integer') AND \"req_GPA\" >= 0 AND \"req_GPA\" <= 4), \"studentQuota\" INTEGER NOT NULL DEFAULT 1 CHECK (typeof(\"studentQuota\") = 'integer' AND \"studentQuota\" BETWEEN 1 AND 2147483647),\r\n\r\n    CONSTRAINT \"PK_Topics\"\r\n        PRIMARY KEY (\"TopicId\"),\r\n\r\n    CONSTRAINT \"FK_Topics_Lecturers_AdvisorId\"\r\n        FOREIGN KEY (\"AdvisorId\")\r\n        REFERENCES \"Lecturers\" (\"LecturerId\"),\r\n\r\n    CONSTRAINT \"FK_Topics_Majors_MajorId\"\r\n        FOREIGN KEY (\"MajorId\")\r\n        REFERENCES \"Majors\" (\"MajorId\"),\r\n\r\n    CONSTRAINT \"FK_Topics_Users_UpdatedBy\"\r\n        FOREIGN KEY (\"UpdatedBy\")\r\n        REFERENCES \"Users\" (\"UserId\")\r\n)"
+    },
+    "Users": {
+      "columns": [
+        [
+          0,
+          "UserId",
+          "TEXT",
+          1,
+          null,
+          1
+        ],
+        [
+          1,
+          "LastName",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          2,
+          "FirstName",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          3,
+          "Gender",
+          "INTEGER",
+          0,
+          null,
+          0
+        ],
+        [
+          4,
+          "DateOfBirth",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          5,
+          "Password",
+          "TEXT",
+          1,
+          null,
+          0
+        ],
+        [
+          6,
+          "Email",
+          "TEXT",
+          1,
+          null,
+          0
+        ],
+        [
+          7,
+          "Phone",
+          "TEXT",
+          1,
+          null,
+          0
+        ],
+        [
+          8,
+          "Role",
+          "INTEGER",
+          1,
+          null,
+          0
+        ],
+        [
+          9,
+          "Status",
+          "INTEGER",
+          0,
+          null,
+          0
+        ],
+        [
+          10,
+          "CreatedAt",
+          "TEXT",
+          0,
+          null,
+          0
+        ],
+        [
+          11,
+          "UpdatedAt",
+          "TEXT",
+          0,
+          null,
+          0
+        ]
+      ],
+      "foreign_keys": [],
+      "unique_columns": [
+        "Email",
+        "Phone"
+      ],
+      "ddl": "CREATE TABLE \"Users\" (\r\n    \"UserId\"       TEXT NOT NULL,\r\n    \"LastName\"     TEXT,\r\n    \"FirstName\"    TEXT,\r\n    \"Gender\"       INTEGER,\r\n    \"DateOfBirth\"  TEXT,\r\n    \"Password\"     TEXT NOT NULL,\r\n    \"Email\"        TEXT NOT NULL UNIQUE,\r\n    \"Phone\"        TEXT NOT NULL UNIQUE,\r\n    \"Role\"         INTEGER NOT NULL,\r\n    \"Status\"       INTEGER,\r\n    \"CreatedAt\"    TEXT,\r\n    \"UpdatedAt\"    TEXT,\r\n\r\n    CONSTRAINT \"PK_Users\"\r\n        PRIMARY KEY (\"UserId\")\r\n)"
+    }
+  },
+  "counts": {
+    "tables": 9,
+    "foreignKeys": 13,
+    "columns": 55
+  },
+  "limitations": [
+    "Physical foreign keys do not authorize services to access tables owned by other services.",
+    "AuditLogs is represented because the physical table exists; no logging/event pipeline is asserted.",
+    "Original Archify CLI unavailable; no new Archify certification is claimed.",
+    "Offline preview uses System.Drawing/Consolas and approximates styling; live browser fonts, narrow viewport interactions and exports were not verified."
+  ],
+  "verifiedAt": "2026-10-24T11:20:17.604389+00:00",
+  "checks": {
+    "sqliteMetadataTableColumnTypeAndKeyCoverage": "pass",
+    "all13ForeignKeysAndNullability": "pass",
+    "candidateAndEmbeddedSpecConsistency": "pass",
+    "svgParseAndEntityRowBounds": "pass",
+    "routesConnectBoundariesWithoutCrossingTables": "pass",
+    "markerDefinitionsAndContinuousPaths": "pass",
+    "legendPreserved": "pass",
+    "constraintsRecordedAndPointRetained": "pass",
+    "noExplanatoryCards": "pass",
+    "unchangedBundledViewerScripts": "pass",
+    "historicalReceiptsInvalidated": "pass",
+    "databaseAnd358OutsideFilesPreserved": "pass",
+    "offlinePreview": "reviewed: System.Drawing schema/route preview; not a browser screenshot",
+    "offlineTextFit": "pass: no type/name overlap or row overflow in approximate Consolas metrics",
+    "viewerSyntaxAndEmbeddedJson": "pass",
+    "gitDiffCheck": "pass"
+  },
+  "browserCheck": "unavailable: no apps/browsers, Computer Use native pipe unavailable",
+  "archifyCertification": "not-run",
+  "specification": {
+    "path": ".archify/erd-project-management-db-20261014-220854/candidate.json",
+    "sha256": "696ed71b480614e135f9a2440e1c5321224cd9794965a1651aa59186065eb61f",
+    "bytes": 19111
+  },
+  "artifact": {
+    "path": ".archify/erd-project-management-db-20261014-220854/database-erd.html",
+    "sha256": "d2c64a207dd6c9ff4ed794b6905a0cdb4c2f3ef4d0f0cbaa93266376cbfa4e2a",
+    "bytes": 886459
+  }
+}

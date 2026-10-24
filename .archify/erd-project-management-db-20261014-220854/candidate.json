@@ -7,8 +7,17 @@
     "quality_profile": "standard",
     "repository": {
       "url": "https://github.com/YangKlee/SOA_ProjectManagerment",
-      "revision": "75e912c2f0899e34fb02c6b6238acb28affb1ef3",
+      "revision": "f70be0d4b094c0d27039ebe5e42d39619c9a58fa",
       "provider": "github"
+    },
+    "language": "en",
+    "provenance": {
+      "updated_at": "2026-10-24T11:15:00.796202+00:00",
+      "source": "current SQLite schema and local model mappings",
+      "database_sha256": "30c3deb5f6f9ff79bd59936858dffc845be22944e8567e40b4bd21e4389037e6",
+      "database_access": "read-only metadata; no row data",
+      "renderer": "manual SVG update; bundled Archify viewer preserved",
+      "archify_certification": "not-run"
     }
   },
   "layout": {
@@ -26,25 +35,94 @@
       "sources": [
         {
           "path": "services/auth-service/authentication/models.py",
-          "line": 1,
-          "end_line": 20,
+          "line": 4,
+          "end_line": 26,
           "label": "Users Model Definition"
         }
       ],
       "attributes": [
-        { "name": "UserId", "type": "TEXT", "key": "pk" },
-        { "name": "LastName", "type": "TEXT" },
-        { "name": "FirstName", "type": "TEXT" },
-        { "name": "Gender", "type": "INTEGER" },
-        { "name": "DateOfBirth", "type": "TEXT" },
-        { "name": "Password", "type": "TEXT" },
-        { "name": "Email", "type": "TEXT", "key": "uk" },
-        { "name": "Phone", "type": "TEXT", "key": "uk" },
-        { "name": "Role", "type": "INTEGER" },
-        { "name": "Status", "type": "INTEGER" },
-        { "name": "CreatedAt", "type": "TEXT" },
-        { "name": "UpdatedAt", "type": "TEXT" }
-      ]
+        {
+          "name": "UserId",
+          "type": "TEXT",
+          "key": "pk",
+          "nullable": false,
+          "default": null
+        },
+        {
+          "name": "LastName",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "FirstName",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "Gender",
+          "type": "INTEGER",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "DateOfBirth",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "Password",
+          "type": "TEXT",
+          "nullable": false,
+          "default": null
+        },
+        {
+          "name": "Email",
+          "type": "TEXT",
+          "key": "uk",
+          "nullable": false,
+          "default": null
+        },
+        {
+          "name": "Phone",
+          "type": "TEXT",
+          "key": "uk",
+          "nullable": false,
+          "default": null
+        },
+        {
+          "name": "Role",
+          "type": "INTEGER",
+          "nullable": false,
+          "default": null
+        },
+        {
+          "name": "Status",
+          "type": "INTEGER",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "CreatedAt",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "UpdatedAt",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        }
+      ],
+      "owner": "auth-service",
+      "schema_source": {
+        "path": "database/DB_ProjectManagerment.db",
+        "table": "Users",
+        "method": "read-only SQLite schema metadata"
+      }
     },
     {
       "id": "AuditLogs",
@@ -56,17 +134,50 @@
         {
           "path": "services/log-services/README.md",
           "line": 1,
-          "end_line": 11,
-          "label": "Audit Log Storage Spec"
+          "label": "Log service status; AuditLogs schema comes from SQLite"
         }
       ],
       "attributes": [
-        { "name": "AuditId", "type": "TEXT", "key": "pk" },
-        { "name": "Action", "type": "TEXT" },
-        { "name": "ActionBy", "type": "TEXT", "key": "fk", "references": "Users.UserId" },
-        { "name": "IpAddress", "type": "TEXT" },
-        { "name": "CreatedAt", "type": "TEXT" }
-      ]
+        {
+          "name": "AuditId",
+          "type": "TEXT",
+          "key": "pk",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "Action",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "ActionBy",
+          "type": "TEXT",
+          "key": "fk",
+          "references": "Users.UserId",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "IpAddress",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "CreatedAt",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        }
+      ],
+      "owner": "log-service",
+      "schema_source": {
+        "path": "database/DB_ProjectManagerment.db",
+        "table": "AuditLogs",
+        "method": "read-only SQLite schema metadata"
+      }
     },
     {
       "id": "Faculties",
@@ -77,15 +188,32 @@
       "sources": [
         {
           "path": "services/academic-services/DeparmentManager/models.py",
-          "line": 1,
+          "line": 4,
           "end_line": 14,
           "label": "Faculty Department Model"
         }
       ],
       "attributes": [
-        { "name": "FacultyId", "type": "TEXT", "key": "pk" },
-        { "name": "FacultyName", "type": "TEXT" }
-      ]
+        {
+          "name": "FacultyId",
+          "type": "TEXT",
+          "key": "pk",
+          "nullable": false,
+          "default": null
+        },
+        {
+          "name": "FacultyName",
+          "type": "TEXT",
+          "nullable": false,
+          "default": null
+        }
+      ],
+      "owner": "academic-service",
+      "schema_source": {
+        "path": "database/DB_ProjectManagerment.db",
+        "table": "Faculties",
+        "method": "read-only SQLite schema metadata"
+      }
     },
     {
       "id": "Majors",
@@ -96,16 +224,40 @@
       "sources": [
         {
           "path": "services/academic-services/MajorManager/models.py",
-          "line": 1,
-          "end_line": 14,
+          "line": 6,
+          "end_line": 17,
           "label": "Major Model Definition"
         }
       ],
       "attributes": [
-        { "name": "MajorId", "type": "TEXT", "key": "pk" },
-        { "name": "MajorName", "type": "TEXT" },
-        { "name": "FacultyId", "type": "TEXT", "key": "fk", "references": "Faculties.FacultyId" }
-      ]
+        {
+          "name": "MajorId",
+          "type": "TEXT",
+          "key": "pk",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "MajorName",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "FacultyId",
+          "type": "TEXT",
+          "key": "fk",
+          "references": "Faculties.FacultyId",
+          "nullable": true,
+          "default": null
+        }
+      ],
+      "owner": "academic-service",
+      "schema_source": {
+        "path": "database/DB_ProjectManagerment.db",
+        "table": "Majors",
+        "method": "read-only SQLite schema metadata"
+      }
     },
     {
       "id": "Specializations",
@@ -116,16 +268,40 @@
       "sources": [
         {
           "path": "services/academic-services/SubMajorManager/models.py",
-          "line": 1,
+          "line": 6,
           "end_line": 14,
           "label": "SubMajor Specialization Model"
         }
       ],
       "attributes": [
-        { "name": "SpecializationId", "type": "TEXT", "key": "pk" },
-        { "name": "SpecializationName", "type": "TEXT" },
-        { "name": "MajorId", "type": "TEXT", "key": "fk", "references": "Majors.MajorId" }
-      ]
+        {
+          "name": "SpecializationId",
+          "type": "TEXT",
+          "key": "pk",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "SpecializationName",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "MajorId",
+          "type": "TEXT",
+          "key": "fk",
+          "references": "Majors.MajorId",
+          "nullable": true,
+          "default": null
+        }
+      ],
+      "owner": "academic-service",
+      "schema_source": {
+        "path": "database/DB_ProjectManagerment.db",
+        "table": "Specializations",
+        "method": "read-only SQLite schema metadata"
+      }
     },
     {
       "id": "Lecturers",
@@ -136,15 +312,38 @@
       "sources": [
         {
           "path": "services/academic-services/LectureManager/models.py",
-          "line": 1,
-          "end_line": 14,
+          "line": 6,
+          "end_line": 22,
           "label": "Lecturer Model Definition"
         }
       ],
       "attributes": [
-        { "name": "LecturerId", "type": "TEXT", "key": ["pk", "fk"], "references": "Users.UserId" },
-        { "name": "FacultyId", "type": "TEXT", "key": "fk", "references": "Faculties.FacultyId" }
-      ]
+        {
+          "name": "LecturerId",
+          "type": "TEXT",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "Users.UserId",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "FacultyId",
+          "type": "TEXT",
+          "key": "fk",
+          "references": "Faculties.FacultyId",
+          "nullable": true,
+          "default": null
+        }
+      ],
+      "owner": "academic-service",
+      "schema_source": {
+        "path": "database/DB_ProjectManagerment.db",
+        "table": "Lecturers",
+        "method": "read-only SQLite schema metadata"
+      }
     },
     {
       "id": "Students",
@@ -156,18 +355,58 @@
       "sources": [
         {
           "path": "services/academic-services/StudentManager/models.py",
-          "line": 1,
-          "end_line": 14,
+          "line": 7,
+          "end_line": 17,
           "label": "Student Model Definition"
         }
       ],
       "attributes": [
-        { "name": "StudentId", "type": "TEXT", "key": ["pk", "fk"], "references": "Users.UserId" },
-        { "name": "MajorId", "type": "TEXT", "key": "fk", "references": "Majors.MajorId" },
-        { "name": "SpecializationId", "type": "TEXT", "key": "fk", "references": "Specializations.SpecializationId" },
-        { "name": "AccumulatedCredits", "type": "INTEGER" },
-        { "name": "GPA", "type": "REAL" }
-      ]
+        {
+          "name": "StudentId",
+          "type": "TEXT",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "Users.UserId",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "MajorId",
+          "type": "TEXT",
+          "key": "fk",
+          "references": "Majors.MajorId",
+          "nullable": false,
+          "default": null
+        },
+        {
+          "name": "SpecializationId",
+          "type": "TEXT",
+          "key": "fk",
+          "references": "Specializations.SpecializationId",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "AccumulatedCredits",
+          "type": "INTEGER",
+          "nullable": false,
+          "default": null
+        },
+        {
+          "name": "GPA",
+          "type": "REAL",
+          "nullable": false,
+          "default": null
+        }
+      ],
+      "owner": "academic-service",
+      "schema_source": {
+        "path": "database/DB_ProjectManagerment.db",
+        "table": "Students",
+        "method": "read-only SQLite schema metadata"
+      }
     },
     {
       "id": "Topics",
@@ -178,23 +417,100 @@
       "sources": [
         {
           "path": "services/topic-service/topic_manager/models.py",
-          "line": 1,
-          "end_line": 19,
+          "line": 4,
+          "end_line": 21,
           "label": "Topic Model Definition"
         }
       ],
       "attributes": [
-        { "name": "TopicId", "type": "TEXT", "key": "pk" },
-        { "name": "TopicName", "type": "TEXT" },
-        { "name": "Description", "type": "TEXT" },
-        { "name": "FileUrl", "type": "TEXT" },
-        { "name": "MajorId", "type": "TEXT", "key": "fk", "references": "Majors.MajorId" },
-        { "name": "Status", "type": "INTEGER" },
-        { "name": "AdvisorId", "type": "TEXT", "key": "fk", "references": "Lecturers.LecturerId" },
-        { "name": "CreatedAt", "type": "TEXT" },
-        { "name": "UpdatedAt", "type": "TEXT" },
-        { "name": "UpdatedBy", "type": "TEXT", "key": "fk", "references": "Users.UserId" }
-      ]
+        {
+          "name": "TopicId",
+          "type": "TEXT",
+          "key": "pk",
+          "nullable": false,
+          "default": null
+        },
+        {
+          "name": "TopicName",
+          "type": "TEXT",
+          "nullable": false,
+          "default": null
+        },
+        {
+          "name": "Description",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "FileUrl",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "MajorId",
+          "type": "TEXT",
+          "key": "fk",
+          "references": "Majors.MajorId",
+          "nullable": false,
+          "default": null
+        },
+        {
+          "name": "Status",
+          "type": "INTEGER",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "AdvisorId",
+          "type": "TEXT",
+          "key": "fk",
+          "references": "Lecturers.LecturerId",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "CreatedAt",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "UpdatedAt",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "UpdatedBy",
+          "type": "TEXT",
+          "key": "fk",
+          "references": "Users.UserId",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "req_GPA",
+          "type": "REAL",
+          "nullable": false,
+          "default": "0",
+          "check": "typeof(\"req_GPA\") IN ('real', 'integer') AND \"req_GPA\" >= 0 AND \"req_GPA\" <= 4"
+        },
+        {
+          "name": "studentQuota",
+          "type": "INTEGER",
+          "nullable": false,
+          "default": "1",
+          "check": "typeof(\"studentQuota\") = 'integer' AND \"studentQuota\" BETWEEN 1 AND 2147483647"
+        }
+      ],
+      "owner": "topic-service",
+      "schema_source": {
+        "path": "database/DB_ProjectManagerment.db",
+        "table": "Topics",
+        "method": "read-only SQLite schema metadata"
+      }
     },
     {
       "id": "Registrations",
@@ -205,24 +521,90 @@
       "sources": [
         {
           "path": "services/regist-service/RegistTopic/models.py",
-          "line": 1,
+          "line": 3,
           "end_line": 19,
           "label": "Registration Model Definition"
         }
       ],
       "attributes": [
-        { "name": "RegistrationId", "type": "TEXT", "key": "pk" },
-        { "name": "StudentId", "type": "TEXT", "key": "fk", "references": "Students.StudentId" },
-        { "name": "TopicId", "type": "TEXT", "key": "fk", "references": "Topics.TopicId" },
-        { "name": "Semester", "type": "TEXT" },
-        { "name": "Status", "type": "INTEGER" },
-        { "name": "Notes", "type": "TEXT" },
-        { "name": "Reason", "type": "TEXT" },
-        { "name": "CreatedAt", "type": "TEXT" },
-        { "name": "UpdatedAt", "type": "TEXT" },
-        { "name": "UpdatedBy", "type": "TEXT" },
-        { "name": "Point", "type": "NUMERIC" }
-      ]
+        {
+          "name": "RegistrationId",
+          "type": "TEXT",
+          "key": "pk",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "StudentId",
+          "type": "TEXT",
+          "key": "fk",
+          "references": "Students.StudentId",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "TopicId",
+          "type": "TEXT",
+          "key": "fk",
+          "references": "Topics.TopicId",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "Semester",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "Status",
+          "type": "INTEGER",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "Notes",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "Reason",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "CreatedAt",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "UpdatedAt",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "UpdatedBy",
+          "type": "TEXT",
+          "nullable": true,
+          "default": null
+        },
+        {
+          "name": "Point",
+          "type": "NUMERIC",
+          "nullable": true,
+          "default": null
+        }
+      ],
+      "owner": "regist-service",
+      "schema_source": {
+        "path": "database/DB_ProjectManagerment.db",
+        "table": "Registrations",
+        "method": "read-only SQLite schema metadata"
+      }
     }
   ],
   "relationships": [
@@ -231,49 +613,77 @@
       "from": "AuditLogs",
       "to": "Users",
       "fromCardinality": "many",
-      "toCardinality": "one"
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": true,
+      "fromColumn": "ActionBy",
+      "toColumn": "UserId"
     },
     {
       "id": "rel_majors_faculties",
       "from": "Majors",
       "to": "Faculties",
       "fromCardinality": "many",
-      "toCardinality": "one"
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": true,
+      "fromColumn": "FacultyId",
+      "toColumn": "FacultyId"
     },
     {
       "id": "rel_specs_majors",
       "from": "Specializations",
       "to": "Majors",
       "fromCardinality": "many",
-      "toCardinality": "one"
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": true,
+      "fromColumn": "MajorId",
+      "toColumn": "MajorId"
     },
     {
       "id": "rel_lecturers_users",
       "from": "Lecturers",
       "to": "Users",
       "fromCardinality": "one",
-      "toCardinality": "one"
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": true,
+      "fromColumn": "LecturerId",
+      "toColumn": "UserId"
     },
     {
       "id": "rel_lecturers_faculties",
       "from": "Lecturers",
       "to": "Faculties",
       "fromCardinality": "many",
-      "toCardinality": "one"
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": true,
+      "fromColumn": "FacultyId",
+      "toColumn": "FacultyId"
     },
     {
       "id": "rel_students_users",
       "from": "Students",
       "to": "Users",
       "fromCardinality": "one",
-      "toCardinality": "one"
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": true,
+      "fromColumn": "StudentId",
+      "toColumn": "UserId"
     },
     {
       "id": "rel_students_majors",
       "from": "Students",
       "to": "Majors",
       "fromCardinality": "many",
-      "toCardinality": "one"
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": false,
+      "fromColumn": "MajorId",
+      "toColumn": "MajorId"
     },
     {
       "id": "rel_students_specs",
@@ -281,7 +691,10 @@
       "to": "Specializations",
       "fromCardinality": "many",
       "fromOptional": true,
-      "toCardinality": "one"
+      "toCardinality": "one",
+      "toOptional": true,
+      "fromColumn": "SpecializationId",
+      "toColumn": "SpecializationId"
     },
     {
       "id": "rel_topics_lecturers",
@@ -289,14 +702,21 @@
       "to": "Lecturers",
       "fromCardinality": "many",
       "fromOptional": true,
-      "toCardinality": "one"
+      "toCardinality": "one",
+      "toOptional": true,
+      "fromColumn": "AdvisorId",
+      "toColumn": "LecturerId"
     },
     {
       "id": "rel_topics_majors",
       "from": "Topics",
       "to": "Majors",
       "fromCardinality": "many",
-      "toCardinality": "one"
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": false,
+      "fromColumn": "MajorId",
+      "toColumn": "MajorId"
     },
     {
       "id": "rel_topics_users",
@@ -304,48 +724,32 @@
       "to": "Users",
       "fromCardinality": "many",
       "fromOptional": true,
-      "toCardinality": "one"
+      "toCardinality": "one",
+      "toOptional": true,
+      "fromColumn": "UpdatedBy",
+      "toColumn": "UserId"
     },
     {
       "id": "rel_regist_students",
       "from": "Registrations",
       "to": "Students",
       "fromCardinality": "many",
-      "toCardinality": "one"
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": true,
+      "fromColumn": "StudentId",
+      "toColumn": "StudentId"
     },
     {
       "id": "rel_regist_topics",
       "from": "Registrations",
       "to": "Topics",
       "fromCardinality": "many",
-      "toCardinality": "one"
-    }
-  ],
-  "cards": [
-    {
-      "dot": "cyan",
-      "title": "Identity & Logical Access",
-      "items": [
-        "Users lưu trữ thông tin tài khoản đăng nhập tập trung, vai trò (Admin / Giảng viên / Sinh viên) và thông tin liên hệ duy nhất.",
-        "Students và Lecturers quan hệ 1-1 với Users: StudentId và LecturerId đóng vai trò vừa là khóa chính vừa là khóa ngoại trỏ về Users.UserId.",
-        "AuditLogs ghi vết bất đồng bộ lịch sử thao tác hệ thống."
-      ]
-    },
-    {
-      "dot": "emerald",
-      "title": "Academic Structure",
-      "items": [
-        "Phân cấp học thuật: Khoa (Faculties) -> Ngành (Majors) -> Chuyên ngành (Specializations).",
-        "Mỗi sinh viên thuộc về một Ngành chính và có thể thuộc một Chuyên ngành tùy chọn; theo dõi tiến độ tốt nghiệp qua GPA và tín chỉ tích lũy."
-      ]
-    },
-    {
-      "dot": "violet",
-      "title": "Topic Registration & Scoring",
-      "items": [
-        "Topics đại diện cho đề tài đồ án tốt nghiệp, thuộc một Ngành và được hướng dẫn bởi một Giảng viên (AdvisorId).",
-        "Registrations quản lý việc sinh viên đăng ký đề tài theo từng kỳ học (Semester); cột Point lưu điểm số hoàn thành đồ án sau bảo vệ."
-      ]
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": true,
+      "fromColumn": "TopicId",
+      "toColumn": "TopicId"
     }
   ]
 }
