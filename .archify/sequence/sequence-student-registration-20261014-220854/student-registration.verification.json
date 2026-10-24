@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "command": "local-document-verification",
+  "status": "pass",
+  "verifiedAt": "2026-10-24T10:26:21.982022+00:00",
+  "specification": {
+    "path": ".archify/sequence-student-registration-20261014-220854/candidate.json",
+    "sha256": "c007f77776f9a397b6f8a8818dade7764d4b806a761370b189b7b9a7ab8e5054",
+    "bytes": 9294
+  },
+  "artifact": {
+    "path": ".archify/sequence-student-registration-20261014-220854/student-registration.html",
+    "sha256": "7cec8ef0d89806de01ab5d80f8f2644cca65d5da2884578b64c91545785fd030",
+    "bytes": 840854
+  },
+  "counts": {
+    "participants": 6,
+    "messages": 25,
+    "guard_self_messages": 4,
+    "note_boxes": 0,
+    "secondary_arrow_annotations": 0,
+    "side_cards": 0,
+    "segments": 5
+  },
+  "checks": {
+    "candidate_json_and_svg_parse": "pass",
+    "embedded_spec_matches_candidate": "pass",
+    "notes_annotations_and_side_cards_absent": "pass",
+    "message_participants_ids_labels_and_order": "pass",
+    "one_primary_label_per_message": "pass",
+    "label_masks_within_canvas": "pass",
+    "vertical_spacing_and_phase_heading_clearance": "pass",
+    "gpa_quota_guards_retained": "pass",
+    "bundled_viewer_runtime_unchanged_from_previous_artifact": "pass (asserted before writing)",
+    "historical_receipts_remain_historical": "pass",
+    "viewer_script_compilation_and_json_parse": "pass"
+  },
+  "limitations": [
+    "No live browser check or new screenshot is claimed for this edit; Computer Use was unavailable during the preceding update.",
+    "Checks cover authored JSON/SVG geometry and viewer syntax, not browser-specific rendering or interactions.",
+    "Original Archify CLI is unavailable; the bundled viewer scripts are preserved."
+  ],
+  "archifyCertification": "not-run",
+  "browserCheck": "not-run"
+}

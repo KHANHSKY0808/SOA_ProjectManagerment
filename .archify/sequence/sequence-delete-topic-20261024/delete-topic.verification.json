@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "command": "local-diagram-verification",
+  "status": "pass",
+  "verifiedAt": "2026-10-24T10:37:23.587730+00:00",
+  "specification": {
+    "path": ".archify/sequence-delete-topic-20261024/candidate.json",
+    "sha256": "ed35f47a3dd8531518bcbc63e48c817566d256373768b0c9057c338472aec7d2",
+    "bytes": 10636
+  },
+  "artifact": {
+    "path": ".archify/sequence-delete-topic-20261024/delete-topic.html",
+    "sha256": "8438a7a49723887af26f842520608954d68780b48e156bad8809600c6cfc3cf2",
+    "bytes": 838949
+  },
+  "counts": {
+    "participants": 6,
+    "messages": 18,
+    "phases": 4,
+    "noteBoxes": 0,
+    "secondaryAnnotations": 0,
+    "sideCards": 0
+  },
+  "checks": {
+    "jsonSvgAndEmbeddedSpec": "pass",
+    "messageReferencesLabelsAndOrdering": "pass",
+    "labelMasksAndPhaseBounds": "pass",
+    "localSourceAnchors": "pass",
+    "englishAuthoredContent": "pass",
+    "unchangedViewerRuntime": "pass",
+    "sourceContractAndGuardOrdering": "pass",
+    "offlineTextMeasurements": "pass: zero overflow; System.Drawing/Consolas approximation",
+    "offlineSvgGeometryPreview": "reviewed: no clipping/overlapping message labels detected; not a browser screenshot",
+    "viewerScriptCompilationAndEmbeddedJson": "pass"
+  },
+  "archifyCertification": "not-run",
+  "browserCheck": "unavailable: Computer Use reported no apps/browsers and a native pipe unavailable error",
+  "limitations": [
+    "Authored locally using the unchanged bundled viewer; original Archify CLI is unavailable.",
+    "Static source/geometry checks do not certify live browser fonts, interactions or export.",
+    "REST dependencies and APIs were not executed for this documentation-only task.",
+    "Offline preview approximates SVG using System.Drawing and Consolas; live browser/narrow viewport/export behavior was not verified."
+  ],
+  "sourceFiles": [
+    {
+      "path": "api-gateway/discovery.py",
+      "sha256": "e68d795a57287a7605dbaa41581b44e1df06152f27800928abebb9173b5ed2e6"
+    },
+    {
+      "path": "fe/src/features/topics/useTopics.ts",
+      "sha256": "0e076b1f137d5a9b2655fe34719d5c072b05c42175ea8d3e8675c1463e877acc"
+    },
+    {
+      "path": "services/regist-service/RegistTopic/models.py",
+      "sha256": "65af77bd0b06bea6c614c444d431310aeb140a9f102734275ffac91fc9da8fc7"
+    },
+    {
+      "path": "services/regist-service/RegistTopic/services.py",
+      "sha256": "a9b14b5fa953f106b438f4b5a9fdb3c993042e61ddc19cc617f9cab067ee501b"
+    },
+    {
+      "path": "services/topic-service/topic_manager/models.py",
+      "sha256": "d5ff7e308fa00435ce2d99a1f9803cb1535f58174ab48eb5b6ec7e723ddf57c6"
+    },
+    {
+      "path": "services/topic-service/topic_manager/services.py",
+      "sha256": "eabda1fe9635eedd862b506b78d1444ee4f4c4b6085399269a462204d8b5a367"
+    }
+  ]
+}

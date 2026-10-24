@@ -1,0 +1,383 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Grade or Revise a Registration Score",
+    "output": ".archify/sequence-grade-registration-20261024/grade-registration.html",
+    "quality_profile": "showcase",
+    "language": "en",
+    "repository": {
+      "url": "https://github.com/YangKlee/SOA_ProjectManagerment",
+      "revision": "0527ab58cd5e19bec2cea96891097588ea120bba",
+      "provider": "github"
+    },
+    "provenance": {
+      "created_at": "2026-10-24T10:37:23.587730+00:00",
+      "source": "current local working tree",
+      "base_revision": "0527ab58cd5e19bec2cea96891097588ea120bba",
+      "uncommitted_sources": false,
+      "renderer": "local SVG authoring with unchanged bundled Archify viewer",
+      "archify_certification": "not-run"
+    }
+  },
+  "layout": {
+    "width": 1640,
+    "height": 1699,
+    "participant_x": {
+      "actor": 160.0,
+      "gateway": 490.0,
+      "regist": 820.0,
+      "topic": 1150.0,
+      "reg_db": 1480.0
+    }
+  },
+  "participants": [
+    {
+      "id": "actor",
+      "label": "Admin / Lecturer UI",
+      "type": "frontend",
+      "sublabel": "Role 1 or assigned role 2",
+      "sources": [
+        {
+          "path": "fe/src/features/topics/useTopicRoster.ts",
+          "line": 73,
+          "label": "Grading and admin cancellation UI"
+        }
+      ]
+    },
+    {
+      "id": "gateway",
+      "label": "API Gateway",
+      "type": "cloud",
+      "sublabel": "Nginx :8000",
+      "sources": [
+        {
+          "path": "api-gateway/discovery.py",
+          "line": 164,
+          "label": "Gateway route generation and header forwarding"
+        }
+      ]
+    },
+    {
+      "id": "regist",
+      "label": "regist-service",
+      "type": "backend",
+      "sublabel": "Django REST :8003",
+      "sources": [
+        {
+          "path": "services/regist-service/RegistTopic/services.py",
+          "line": 147,
+          "label": "Grade ownership, status and idempotency guards"
+        }
+      ]
+    },
+    {
+      "id": "topic",
+      "label": "topic-service",
+      "type": "backend",
+      "sublabel": "Django REST :8004",
+      "sources": [
+        {
+          "path": "services/topic-service/topic_manager/views.py",
+          "line": 81,
+          "label": "Role-filtered management detail"
+        }
+      ]
+    },
+    {
+      "id": "reg_db",
+      "label": "Registrations / SQLite",
+      "type": "database",
+      "sublabel": "Owned by regist-service",
+      "sources": [
+        {
+          "path": "services/regist-service/RegistTopic/models.py",
+          "line": 3,
+          "label": "Registrations table owned by regist-service"
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 536,
+      "label": "1. Submit a score for a topic registration"
+    },
+    {
+      "from": 564,
+      "to": 924,
+      "label": "2. Resolve topic ownership and registration status"
+    },
+    {
+      "from": 952,
+      "to": 1461,
+      "label": "3. Registration-owned writer transaction"
+    },
+    {
+      "from": 1489,
+      "to": 1654,
+      "label": "4. Return the score to the UI"
+    }
+  ],
+  "messages": [
+    {
+      "from": "actor",
+      "to": "gateway",
+      "label": "PUT /registrations/api/v1/topics/{topic_id}/registrations/{registration_id}/point/",
+      "variant": "emphasis",
+      "id": "grade-registration-01",
+      "lines": [
+        "PUT /registrations/api/v1/topics/{topic_id}/",
+        "registrations/{registration_id}/point/"
+      ],
+      "y": 242,
+      "phase": 0
+    },
+    {
+      "from": "gateway",
+      "to": "regist",
+      "label": "PUT /api/v1/topics/{topic_id}/registrations/{registration_id}/point/",
+      "variant": "default",
+      "id": "grade-registration-02",
+      "lines": [
+        "PUT /api/v1/topics/{topic_id}/registrations/",
+        "{registration_id}/point/"
+      ],
+      "y": 330,
+      "phase": 0
+    },
+    {
+      "from": "regist",
+      "to": "regist",
+      "label": "Local JWT + role in {1,2}; invalid -> 401/403",
+      "variant": "emphasis",
+      "id": "grade-registration-03",
+      "lines": [
+        "Local JWT + role in {1,2}; invalid -> 401/403"
+      ],
+      "y": 402,
+      "phase": 0
+    },
+    {
+      "from": "regist",
+      "to": "regist",
+      "label": "point: 0..10, at most 2 decimal places; invalid -> 400",
+      "variant": "emphasis",
+      "id": "grade-registration-04",
+      "lines": [
+        "point: 0..10, at most 2 decimal places; invalid -> 400"
+      ],
+      "y": 494,
+      "phase": 0
+    },
+    {
+      "from": "regist",
+      "to": "topic",
+      "label": "GET /api/v1/topics/{topic_id}/",
+      "variant": "default",
+      "id": "grade-registration-05",
+      "lines": [
+        "GET /api/v1/topics/{topic_id}/"
+      ],
+      "y": 630,
+      "phase": 1
+    },
+    {
+      "from": "topic",
+      "to": "regist",
+      "label": "200 advisor_id, status / not visible 404 / unavailable 503",
+      "variant": "return",
+      "id": "grade-registration-06",
+      "lines": [
+        "200 advisor_id, status / not visible 404 / unavailable",
+        "503"
+      ],
+      "y": 718,
+      "phase": 1
+    },
+    {
+      "from": "regist",
+      "to": "regist",
+      "label": "Lecturer must match advisor_id; mismatch -> 403",
+      "variant": "emphasis",
+      "id": "grade-registration-07",
+      "lines": [
+        "Lecturer must match advisor_id; mismatch -> 403"
+      ],
+      "y": 790,
+      "phase": 1
+    },
+    {
+      "from": "regist",
+      "to": "regist",
+      "label": "Topic status != 3 -> 409 topic_not_closed; stop",
+      "variant": "emphasis",
+      "id": "grade-registration-08",
+      "lines": [
+        "Topic status != 3 -> 409 topic_not_closed; stop"
+      ],
+      "y": 882,
+      "phase": 1
+    },
+    {
+      "from": "regist",
+      "to": "reg_db",
+      "label": "BEGIN + writer lock; SELECT by topic_id and registration_id",
+      "variant": "emphasis",
+      "id": "grade-registration-09",
+      "lines": [
+        "BEGIN + writer lock; SELECT by topic_id and",
+        "registration_id"
+      ],
+      "y": 1034,
+      "phase": 2
+    },
+    {
+      "from": "reg_db",
+      "to": "regist",
+      "label": "Scoped registration / missing -> 404",
+      "variant": "return",
+      "id": "grade-registration-10",
+      "lines": [
+        "Scoped registration / missing -> 404"
+      ],
+      "y": 1106,
+      "phase": 2
+    },
+    {
+      "from": "regist",
+      "to": "regist",
+      "label": "Status=0 -> 409 registration_cancelled; stop",
+      "variant": "emphasis",
+      "id": "grade-registration-11",
+      "lines": [
+        "Status=0 -> 409 registration_cancelled; stop"
+      ],
+      "y": 1178,
+      "phase": 2
+    },
+    {
+      "from": "regist",
+      "to": "regist",
+      "label": "Same point -> 200 existing DTO; do not change audit",
+      "variant": "emphasis",
+      "id": "grade-registration-12",
+      "lines": [
+        "Same point -> 200 existing DTO; do not change audit"
+      ],
+      "y": 1270,
+      "phase": 2
+    },
+    {
+      "from": "regist",
+      "to": "reg_db",
+      "label": "UPDATE Point + UpdatedAt/UpdatedBy; COMMIT",
+      "variant": "emphasis",
+      "id": "grade-registration-13",
+      "lines": [
+        "UPDATE Point + UpdatedAt/UpdatedBy; COMMIT"
+      ],
+      "y": 1362,
+      "phase": 2
+    },
+    {
+      "from": "reg_db",
+      "to": "regist",
+      "label": "Saved point / conflict 409 / storage unavailable 503",
+      "variant": "return",
+      "id": "grade-registration-14",
+      "lines": [
+        "Saved point / conflict 409 / storage unavailable 503"
+      ],
+      "y": 1434,
+      "phase": 2
+    },
+    {
+      "from": "regist",
+      "to": "gateway",
+      "label": "200 {registration_id, topic_id, point, updated_at}",
+      "variant": "return",
+      "id": "grade-registration-15",
+      "lines": [
+        "200 {registration_id, topic_id, point, updated_at}"
+      ],
+      "y": 1555,
+      "phase": 3
+    },
+    {
+      "from": "gateway",
+      "to": "actor",
+      "label": "Update displayed score; uncertain -> GET before retry",
+      "variant": "return",
+      "id": "grade-registration-16",
+      "lines": [
+        "Update displayed score; uncertain -> GET before retry"
+      ],
+      "y": 1627,
+      "phase": 3
+    }
+  ],
+  "activations": [
+    {
+      "participant": "actor",
+      "from": 239,
+      "to": 248,
+      "type": "frontend"
+    },
+    {
+      "participant": "gateway",
+      "from": 239,
+      "to": 336,
+      "type": "cloud"
+    },
+    {
+      "participant": "regist",
+      "from": 327,
+      "to": 518,
+      "type": "backend"
+    },
+    {
+      "participant": "regist",
+      "from": 627,
+      "to": 906,
+      "type": "backend"
+    },
+    {
+      "participant": "topic",
+      "from": 627,
+      "to": 724,
+      "type": "backend"
+    },
+    {
+      "participant": "regist",
+      "from": 1031,
+      "to": 1440,
+      "type": "backend"
+    },
+    {
+      "participant": "reg_db",
+      "from": 1031,
+      "to": 1440,
+      "type": "database"
+    },
+    {
+      "participant": "actor",
+      "from": 1624,
+      "to": 1633,
+      "type": "frontend"
+    },
+    {
+      "participant": "gateway",
+      "from": 1552,
+      "to": 1633,
+      "type": "cloud"
+    },
+    {
+      "participant": "regist",
+      "from": 1552,
+      "to": 1561,
+      "type": "backend"
+    }
+  ]
+}

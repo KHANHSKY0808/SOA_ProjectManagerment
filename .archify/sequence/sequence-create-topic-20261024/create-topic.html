@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="archify 3.1.0">
   <meta name="archify-reader-contract" content="declared-wide-v1">
-  <title>Student Topic Registration Sequence Diagram</title>
+  <title>Create a Topic</title>
   <script>
     // Resolve the theme before first paint so light-preference users don't
     // see a dark flash. The toolbar script below re-applies with UI state.
@@ -5150,20 +5150,20 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
            data-preset-badge-blueprint="BLUEPRINT / REV 01"
            data-preset-badge-editorial="EDITORIAL / FIELD NOTE">
         <div class="pulse-dot"></div>
-        <h1>Student Topic Registration Sequence</h1>
+        <h1>Create a Topic</h1>
       </div>
     </div>
 
-    <script id="archify-source-evidence-data" type="application/json">{"schemaVersion":1,"verified":true,"repository":{"url":"https://github.com/YangKlee/SOA_ProjectManagerment","revision":"75e912c2f0899e34fb02c6b6238acb28affb1ef3","shortRevision":"75e912c","label":"YangKlee/SOA_ProjectManagerment","href":"https://github.com/YangKlee/SOA_ProjectManagerment/tree/75e912c2f0899e34fb02c6b6238acb28affb1ef3"},"referenceCount":7,"nodes":{"student":[{"path":"fe/package.json","line":1,"endLine":23,"label":"Student UI Client","href":"https://github.com/YangKlee/SOA_ProjectManagerment/blob/75e912c2f0899e34fb02c6b6238acb28affb1ef3/fe/package.json#L1-L23"}],"gateway":[{"path":"api-gateway/nginx.conf","line":8,"endLine":28,"label":"Gateway Routing","href":"https://github.com/YangKlee/SOA_ProjectManagerment/blob/75e912c2f0899e34fb02c6b6238acb28affb1ef3/api-gateway/nginx.conf#L8-L28"}],"regist":[{"path":"services/regist-service/config/urls.py","line":22,"endLine":26,"label":"Registration APIs","href":"https://github.com/YangKlee/SOA_ProjectManagerment/blob/75e912c2f0899e34fb02c6b6238acb28affb1ef3/services/regist-service/config/urls.py#L22-L26"}],"academic":[{"path":"services/academic-services/config/urls.py","line":26,"endLine":34,"label":"Student Profile Check","href":"https://github.com/YangKlee/SOA_ProjectManagerment/blob/75e912c2f0899e34fb02c6b6238acb28affb1ef3/services/academic-services/config/urls.py#L26-L34"}],"topic":[{"path":"services/topic-service/config/urls.py","line":20,"endLine":23,"label":"Topic Detail APIs","href":"https://github.com/YangKlee/SOA_ProjectManagerment/blob/75e912c2f0899e34fb02c6b6238acb28affb1ef3/services/topic-service/config/urls.py#L20-L23"}],"db":[{"path":"README.md","line":94,"endLine":96,"label":"Persistence Layer","href":"https://github.com/YangKlee/SOA_ProjectManagerment/blob/75e912c2f0899e34fb02c6b6238acb28affb1ef3/README.md#L94-L96"}],"logger":[{"path":"services/log-services/README.md","line":1,"endLine":11,"label":"Audit Service","href":"https://github.com/YangKlee/SOA_ProjectManagerment/blob/75e912c2f0899e34fb02c6b6238acb28affb1ef3/services/log-services/README.md#L1-L11"}]}}</script>
+    <script id="archify-source-evidence-data" type="application/json">{"schemaVersion": 1, "verified": false, "source": "current local working tree", "repository": null, "referenceCount": 5, "nodes": {"actor": [{"path": "fe/src/features/topics/useTopics.ts", "line": 156, "label": "Topic creation and update forms"}], "gateway": [{"path": "api-gateway/discovery.py", "line": 164, "label": "Gateway route generation and header forwarding"}], "topic": [{"path": "services/topic-service/topic_manager/services.py", "line": 36, "label": "Topic save transaction and reference validation"}], "academic": [{"path": "services/topic-service/topic_manager/clients.py", "line": 82, "label": "Academic reference and name contracts"}], "topic_db": [{"path": "services/topic-service/topic_manager/models.py", "line": 4, "label": "Topics table owned by topic-service"}]}}</script>
+    <script id="registration-sequence-spec" type="application/json">{"schema_version": 1, "diagram_type": "sequence", "meta": {"title": "Create a Topic", "output": ".archify/sequence-create-topic-20261024/create-topic.html", "quality_profile": "showcase", "language": "en", "repository": {"url": "https://github.com/YangKlee/SOA_ProjectManagerment", "revision": "0527ab58cd5e19bec2cea96891097588ea120bba", "provider": "github"}, "provenance": {"created_at": "2026-10-24T10:37:23.587730+00:00", "source": "current local working tree", "base_revision": "0527ab58cd5e19bec2cea96891097588ea120bba", "uncommitted_sources": false, "renderer": "local SVG authoring with unchanged bundled Archify viewer", "archify_certification": "not-run"}}, "layout": {"width": 1640, "height": 1923, "participant_x": {"actor": 160.0, "gateway": 490.0, "topic": 820.0, "academic": 1150.0, "topic_db": 1480.0}}, "participants": [{"id": "actor", "label": "Admin / React UI", "type": "frontend", "sublabel": "Role 1", "sources": [{"path": "fe/src/features/topics/useTopics.ts", "line": 156, "label": "Topic creation and update forms"}]}, {"id": "gateway", "label": "API Gateway", "type": "cloud", "sublabel": "Nginx :8000", "sources": [{"path": "api-gateway/discovery.py", "line": 164, "label": "Gateway route generation and header forwarding"}]}, {"id": "topic", "label": "topic-service", "type": "backend", "sublabel": "Django REST :8004", "sources": [{"path": "services/topic-service/topic_manager/services.py", "line": 36, "label": "Topic save transaction and reference validation"}]}, {"id": "academic", "label": "academic-service", "type": "backend", "sublabel": "Django REST :8002", "sources": [{"path": "services/topic-service/topic_manager/clients.py", "line": 82, "label": "Academic reference and name contracts"}]}, {"id": "topic_db", "label": "Topics / SQLite", "type": "database", "sublabel": "Owned by topic-service", "sources": [{"path": "services/topic-service/topic_manager/models.py", "line": 4, "label": "Topics table owned by topic-service"}]}], "segments": [{"from": 160, "to": 504, "label": "1. Submit a new topic"}, {"from": 532, "to": 1112, "label": "2. Validate academic references before writing"}, {"from": 1140, "to": 1449, "label": "3. Topic-owned local transaction"}, {"from": 1477, "to": 1878, "label": "4. Enrich the committed response and return"}], "messages": [{"from": "actor", "to": "actor", "label": "Generate topic UUID; enter topic fields and GPA/quota", "variant": "emphasis", "id": "create-topic-01", "lines": ["Generate topic UUID; enter topic fields and GPA/quota"], "y": 226, "phase": 0}, {"from": "actor", "to": "gateway", "label": "POST /topics/api/v1/topics/", "variant": "emphasis", "id": "create-topic-02", "lines": ["POST /topics/api/v1/topics/"], "y": 318, "phase": 0}, {"from": "gateway", "to": "topic", "label": "POST /api/v1/topics/ + Bearer JWT", "variant": "default", "id": "create-topic-03", "lines": ["POST /api/v1/topics/ + Bearer JWT"], "y": 390, "phase": 0}, {"from": "topic", "to": "topic", "label": "Admin role=1 + DTO validation; failures -> 401/403/400", "variant": "emphasis", "id": "create-topic-04", "lines": ["Admin role=1 + DTO validation; failures -> 401/403/400"], "y": 462, "phase": 0}, {"from": "topic", "to": "academic", "label": "GET /api/majors/{major_id}/", "variant": "default", "id": "create-topic-05", "lines": ["GET /api/majors/{major_id}/"], "y": 598, "phase": 1}, {"from": "academic", "to": "topic", "label": "200 major / 404 missing / lookup failure", "variant": "return", "id": "create-topic-06", "lines": ["200 major / 404 missing / lookup failure"], "y": 670, "phase": 1}, {"from": "topic", "to": "topic", "label": "Missing reference -> 400; lookup failure -> 503; stop", "variant": "emphasis", "id": "create-topic-07", "lines": ["Missing reference -> 400; lookup failure -> 503; stop"], "y": 742, "phase": 1}, {"from": "topic", "to": "academic", "label": "[If advisor_id] GET /api/lecturers/{advisor_id}/", "variant": "default", "id": "create-topic-08", "lines": ["[If advisor_id] GET /api/lecturers/{advisor_id}/"], "y": 834, "phase": 1}, {"from": "academic", "to": "topic", "label": "200 lecturer / 404 missing / lookup failure", "variant": "return", "id": "create-topic-09", "lines": ["200 lecturer / 404 missing / lookup failure"], "y": 906, "phase": 1}, {"from": "topic", "to": "topic", "label": "Missing reference -> 400; lookup failure -> 503; stop", "variant": "emphasis", "id": "create-topic-10", "lines": ["Missing reference -> 400; lookup failure -> 503; stop"], "y": 978, "phase": 1}, {"from": "topic", "to": "topic", "label": "Omitted defaults: status=1, req_GPA=0, studentQuota=1", "variant": "emphasis", "id": "create-topic-11", "lines": ["Omitted defaults: status=1, req_GPA=0, studentQuota=1"], "y": 1070, "phase": 1}, {"from": "topic", "to": "topic_db", "label": "BEGIN; SELECT duplicate TopicId", "variant": "emphasis", "id": "create-topic-12", "lines": ["BEGIN; SELECT duplicate TopicId"], "y": 1206, "phase": 2}, {"from": "topic_db", "to": "topic", "label": "Duplicate -> 409; otherwise continue", "variant": "return", "id": "create-topic-13", "lines": ["Duplicate -> 409; otherwise continue"], "y": 1278, "phase": 2}, {"from": "topic", "to": "topic_db", "label": "INSERT Topics + created/updated audit fields", "variant": "emphasis", "id": "create-topic-14", "lines": ["INSERT Topics + created/updated audit fields"], "y": 1350, "phase": 2}, {"from": "topic_db", "to": "topic", "label": "COMMIT new topic / conflict 409 / storage 503", "variant": "return", "id": "create-topic-15", "lines": ["COMMIT new topic / conflict 409 / storage 503"], "y": 1422, "phase": 2}, {"from": "topic", "to": "academic", "label": "POST /api/v1/topic-display-names/", "variant": "default", "id": "create-topic-16", "lines": ["POST /api/v1/topic-display-names/"], "y": 1543, "phase": 3}, {"from": "academic", "to": "topic", "label": "200 major/advisor names / lookup failure", "variant": "return", "id": "create-topic-17", "lines": ["200 major/advisor names / lookup failure"], "y": 1615, "phase": 3}, {"from": "topic", "to": "topic", "label": "[On lookup failure] keep saved topic; names=null", "variant": "emphasis", "id": "create-topic-18", "lines": ["[On lookup failure] keep saved topic; names=null"], "y": 1687, "phase": 3}, {"from": "topic", "to": "gateway", "label": "201 Created - TopicResponseDTO", "variant": "return", "id": "create-topic-19", "lines": ["201 Created - TopicResponseDTO"], "y": 1779, "phase": 3}, {"from": "gateway", "to": "actor", "label": "201 -> close form and reload topic list", "variant": "return", "id": "create-topic-20", "lines": ["201 -> close form and reload topic list"], "y": 1851, "phase": 3}], "activations": [{"participant": "actor", "from": 223, "to": 324, "type": "frontend"}, {"participant": "gateway", "from": 315, "to": 396, "type": "cloud"}, {"participant": "topic", "from": 387, "to": 486, "type": "backend"}, {"participant": "topic", "from": 595, "to": 1094, "type": "backend"}, {"participant": "academic", "from": 595, "to": 912, "type": "backend"}, {"participant": "topic", "from": 1203, "to": 1428, "type": "backend"}, {"participant": "topic_db", "from": 1203, "to": 1428, "type": "database"}, {"participant": "actor", "from": 1848, "to": 1857, "type": "frontend"}, {"participant": "gateway", "from": 1776, "to": 1857, "type": "cloud"}, {"participant": "topic", "from": 1540, "to": 1785, "type": "backend"}, {"participant": "academic", "from": 1540, "to": 1621, "type": "backend"}]}</script>
     <script id="archify-i18n-data" type="application/json">{"locale":"en","messages":{"viewer.kind.frontend":"Frontend","viewer.kind.backend":"Backend","viewer.kind.database":"Database","viewer.kind.cloud":"Cloud","viewer.kind.security":"Security","viewer.kind.messagebus":"Message bus","viewer.kind.external":"External","viewer.kind.neutral":"Neutral","viewer.kind.node":"Node","viewer.kind.start":"Start","viewer.kind.active":"Active","viewer.kind.waiting":"Waiting","viewer.kind.decision":"Decision","viewer.kind.success":"Success","viewer.kind.failure":"Failure","viewer.toolbar.actions":"Diagram actions","viewer.theme.toggle.title":"Toggle theme (T)","viewer.theme.toggle":"Toggle color theme","viewer.theme.dark":"Dark","viewer.theme.light":"Light","viewer.preset.choose.title":"Choose visual style (S cycles)","viewer.preset.choose":"Choose visual style","viewer.preset.style":"Style","viewer.preset.menu":"Visual style","viewer.preset.identity":"Visual identity","viewer.preset.cycles":"to cycle","viewer.preset.classic":"Classic","viewer.preset.classic.short":"Classic","viewer.preset.classic.hint":"Stable technical default","viewer.preset.flow":"Signal Flow","viewer.preset.flow.short":"Flow","viewer.preset.flow.hint":"Motion-forward presentation","viewer.preset.blueprint":"Blueprint","viewer.preset.blueprint.hint":"Engineering review","viewer.preset.editorial":"Editorial","viewer.preset.editorial.hint":"Publication and launch notes","viewer.preset.badge.signalFlow":"SIGNAL FLOW","viewer.preset.badge.blueprint":"BLUEPRINT / REV 01","viewer.preset.badge.editorial":"EDITORIAL / FIELD NOTE","viewer.preset.badge.editorialPlate":"ARCHIFY / PLATE 04","viewer.preset.current":"Visual style: {style}. Choose visual style","viewer.motion.live":"Live","viewer.motion.still":"Still","viewer.motion.pause":"Pause motion","viewer.motion.resume":"Resume motion","viewer.motion.reduced":"Motion paused by reduced-motion preference","viewer.motion.hidden":"Motion paused while this page is hidden","viewer.motion.yielding":"Pause motion; currently yielding to {owner}","viewer.motion.yielding.title":"Live preview enabled · yielding to {owner}","viewer.owner.route":"Route Probe","viewer.owner.lens":"Semantic Lens","viewer.owner.relationship":"Relationship Preview","viewer.owner.intent":"Intent Trace","viewer.owner.focus":"semantic focus","viewer.owner.legend":"legend preview","viewer.owner.reader":"reader interaction","viewer.present.enter":"Enter presentation stage","viewer.present.enter.title":"Presentation stage (F)","viewer.present.exit":"Exit presentation stage","viewer.present.exit.title":"Exit presentation stage (F or Escape)","viewer.present.present":"Present","viewer.present.exit.label":"Exit","viewer.export.button":"Export","viewer.export.button.title":"Export diagram (E)","viewer.export.diagram":"Export diagram","viewer.export.menu":"Export","viewer.export.subtitle":"Portable, clean outputs","viewer.export.share":"Share","viewer.export.shareCard":"Share Card","viewer.export.routeShareCard":"Route Share Card","viewer.export.reachShareCard":"Reach Share Card","viewer.export.copyDiagram":"Copy diagram","viewer.export.clipboardPng":"PNG to clipboard","viewer.export.raster":"Raster images","viewer.export.image":"Image","viewer.export.lossless":"Lossless image","viewer.export.compact":"Compact image","viewer.export.modern":"Modern image","viewer.export.vectorMotion":"Vector and motion","viewer.export.vectorMotion.heading":"Vector \u0026 motion","viewer.export.editable":"Editable vector","viewer.export.svg.auto":"SVG · Auto","viewer.export.svg.auto.hint":"Matches host theme","viewer.export.svg.light":"SVG · Light","viewer.export.svg.light.hint":"Always light","viewer.export.svg.dark":"SVG · Dark","viewer.export.svg.dark.hint":"Always dark","viewer.export.motion6s":"6s motion","viewer.export.unsupported":"Not supported by this browser","viewer.export.clipboardUnsupported":"Clipboard image write not supported by this browser","viewer.export.clipboardUnsupported.short":"Clipboard image write not supported in this browser.","viewer.export.motionUnavailable":"Motion capture unavailable in this browser","viewer.export.webmUnavailable":"WebM unavailable in this browser","viewer.export.failed":"Export failed: {message}","viewer.export.unknownVariant":"Unknown Share Card variant: {variant}","viewer.export.routeRequired":"Trace a route before exporting a Route Share Card","viewer.export.reachRequired":"Trace authored reach before exporting a Reach Share Card","viewer.export.unknown":"unknown","viewer.export.routeFailed":"Route Share Card export failed: {message}","viewer.export.reachFailed":"Reach Share Card export failed: {message}","viewer.export.copyFailed":"Copy failed: {message}","viewer.export.copiedPng":"Copied PNG to clipboard","viewer.export.downloadedRoute":"Downloaded Route Share Card","viewer.export.downloadedReach":"Downloaded Reach Share Card","viewer.export.downloadedWebm":"Downloaded WebM","viewer.export.recording":"Recording 6 seconds of motion…","viewer.export.card.routeSummary.one":"Path: {source} → {target} · {count} step","viewer.export.card.routeSummary.other":"Path: {source} → {target} · {count} steps","viewer.export.card.reachSummary":"Authored {direction} from {origin} · {nodes} · {links} · max {hops}","viewer.export.card.node.one":"{count} node","viewer.export.card.node.other":"{count} nodes","viewer.export.card.link.one":"{count} link","viewer.export.card.link.other":"{count} links","viewer.export.card.hop.one":"{count} hop","viewer.export.card.hop.other":"{count} hops","viewer.export.card.routeBadge":"ARCHIFY · ROUTE · {hops}","viewer.export.card.reachBadge":"ARCHIFY · {direction} REACH","viewer.export.direction.upstream":"Upstream","viewer.export.direction.downstream":"Downstream","viewer.export.error.canvasUnavailable":"Canvas unavailable for {label}","viewer.export.error.contextUnavailable":"2D canvas context unavailable for {label}","viewer.export.error.toBlobUnavailable":"canvas.toBlob unavailable for {label}","viewer.export.error.toBlobNull":"canvas.toBlob returned no data for {label}","viewer.export.error.variantsCombined":"Share Card variants cannot be combined","viewer.export.error.viewerState":"Share Card export could not remove temporary viewer state","viewer.export.error.routeState":"Route Card export could not preserve the resolved route safely","viewer.export.error.reachState":"Reach Card export could not preserve authored reach safely","viewer.export.error.webmRequirements":"WebM motion export requires a trace animation and browser MediaRecorder support","viewer.export.error.mediaRecorder":"MediaRecorder failed","viewer.export.error.emptyWebm":"MediaRecorder produced an empty WebM","viewer.export.error.webmBackground":"SVG background could not be loaded for WebM export","viewer.guide.title":"Explore this system","viewer.focus.selectedNodes":"{count} selected nodes","viewer.guide.eyebrow":"Diagram guide","viewer.guide.close":"Close diagram guide","viewer.guide.inspecting":"Inspecting compiled semantics","viewer.guide.actions":"Diagram exploration actions","viewer.guide.find":"Find any node","viewer.guide.find.hint":"Search labels, responsibilities, kinds, and stable IDs.","viewer.guide.route":"Trace a route","viewer.guide.route.aria":"Trace a directed route","viewer.guide.route.hint":"Ask how two semantic nodes connect in authored direction.","viewer.guide.map":"See the whole system","viewer.guide.map.hint":"Open Semantic Radar with a live viewport and stable nodes.","viewer.guide.lens":"Compare semantic kinds","viewer.guide.lens.hint":"Count roles, reveal their traffic, and compare direct authored links.","viewer.guide.present":"Enter Presentation Stage","viewer.guide.present.hint":"Give the live diagram the viewport without changing export.","viewer.guide.shortcuts":"Additional keyboard shortcuts","viewer.guide.shortcut.export":"Export","viewer.guide.shortcut.theme":"Theme","viewer.guide.shortcut.style":"Style","viewer.guide.shortcut.reset":"Reset","viewer.guide.shortcut.zoomIn":"Zoom in","viewer.guide.shortcut.zoomOut":"Zoom out","viewer.guide.shortcut.close":"Close","viewer.guide.credit":"Find Archify useful? A star on GitHub helps","viewer.guide.star":"Star","viewer.guide.facts":"{nodes} · {relationships}","viewer.guide.fact.node.one":"{count} semantic node","viewer.guide.fact.node.other":"{count} semantic nodes","viewer.guide.fact.relationship.one":"{count} relationship","viewer.guide.fact.relationship.other":"{count} relationships","viewer.guide.open":"Open diagram guide","viewer.finder.title":"Find a node","viewer.finder.close":"Close node finder","viewer.finder.placeholder":"Search labels or IDs","viewer.finder.search":"Search diagram nodes","viewer.finder.results":"Diagram nodes","viewer.finder.empty":"No matching nodes","viewer.finder.result.focus":"Focus {label}","viewer.finder.result.routeStart":"Choose {label} as route start","viewer.finder.result.routeTarget":"Choose {label} as route destination, {links}","viewer.finder.status.empty":"No matching nodes","viewer.finder.status.count.one":"{count} matching node","viewer.finder.status.count.other":"{count} matching nodes","viewer.finder.noun.nodes":"nodes","viewer.finder.link.one":"{count} link","viewer.finder.link.other":"{count} links","viewer.finder.result.focus.one":"Focus {label}, {count} related connection","viewer.finder.result.focus.other":"Focus {label}, {count} related connections","viewer.finder.status.filtered":"{visible} of {available} {noun}","viewer.finder.status.all":"{available} {noun}","viewer.passport.eyebrow":"Semantic passport","viewer.passport.metadata":"Node metadata","viewer.passport.evidence":"Verified source evidence","viewer.passport.verified":"Verified source","viewer.passport.verificationScope":"Verified against local Git at the pinned revision. Remote access has not been checked.","viewer.passport.reach":"Authored reach","viewer.passport.reach.trace":"Trace authored reachability","viewer.passport.upstream":"Upstream","viewer.passport.downstream":"Downstream","viewer.passport.upstream.trace":"Trace upstream authored reachability","viewer.passport.downstream.trace":"Trace downstream authored reachability","viewer.passport.close":"Close semantic passport","viewer.passport.move":"Move semantic passport. Drag, use arrow keys, or press Home to reset.","viewer.passport.copy":"Copy link","viewer.passport.copy.focus":"Copy link to focused node","viewer.passport.relations":"Relations","viewer.passport.relations.show":"Show connected relationships","viewer.passport.relations.hide":"Hide connected relationships","viewer.passport.relations.list":"Connected relationships","viewer.passport.copyRelation":"Copy relation","viewer.passport.copyNode":"Copy node","viewer.passport.copyPinned":"Copy link to pinned relationship","viewer.passport.copySource":"Copy link to source node","viewer.passport.copy.focused.success":"Focused node link copied","viewer.passport.copy.pinned.success":"Pinned relationship link copied","viewer.passport.copy.focused.failed":"Could not copy focused node link","viewer.passport.copy.pinned.failed":"Could not copy pinned relationship link","viewer.passport.relationship.none":"No connected relationships","viewer.passport.relationship.count.one":"{count} relation","viewer.passport.relationship.count.other":"{count} relations","viewer.passport.relationship.show.one":"Show {count} connected relationship","viewer.passport.relationship.show.other":"Show {count} connected relationships","viewer.passport.relationship.summary":"{out} outgoing · {in} incoming{loops}","viewer.passport.relationship.loops":" · {count} loop","viewer.passport.relationship.explorer":"Direct relationship explorer","viewer.passport.relationship.help":"Use arrow keys to explore relationships. Press Enter or Space to pin details; Escape clears.","viewer.passport.relationship.loopsBack":"loops back","viewer.passport.relationship.connectsTo":"connects to","viewer.passport.relationship.connectsFrom":"connects from","viewer.passport.relationship.pinned":"Pinned relationship · {from} → {to} · {label}","viewer.passport.relationship.inspect":"Inspect relationship {index} of {total}: {from} to {to}, {label}. Press Enter for details.","viewer.passport.relationship.group.out":"Outgoing","viewer.passport.relationship.group.in":"Incoming","viewer.passport.relationship.group.loop":"Self loops","viewer.passport.relationship.row":"{group}: {relationship}, {neighbor}","viewer.passport.relationship.direction.out":"OUT →","viewer.passport.relationship.direction.in":"← IN","viewer.passport.relationship.direction.loop":"LOOP","viewer.passport.sourceCount.one":"{count} verified source reference","viewer.passport.sourceCount.other":"{count} verified source references","viewer.passport.repository.open":"Open verified repository revision {revision}","viewer.passport.source.open":"Open verified source {path} at revision {revision}","viewer.passport.source.openLink":"Open ↗","viewer.passport.reach.upstream.one":"Trace {count} upstream authored node","viewer.passport.reach.upstream.other":"Trace {count} upstream authored nodes","viewer.passport.reach.downstream.one":"Trace {count} downstream authored node","viewer.passport.reach.downstream.other":"Trace {count} downstream authored nodes","viewer.passport.reach.noUpstream":"No upstream authored nodes","viewer.passport.reach.noDownstream":"No downstream authored nodes","viewer.passport.reach.status":"{direction} · {nodes} nodes · {links} links · max {hops} hops","viewer.route.eyebrow":"Path","viewer.route.start":"Click where the path starts","viewer.route.start.find":"Find start","viewer.route.start.find.aria":"Find a route start","viewer.route.copy":"Copy link","viewer.route.copy.aria":"Copy link to traced route","viewer.route.clear":"Clear","viewer.route.clear.aria":"Clear route probe","viewer.route.traced":"Path","viewer.route.pickTwo":"Click two nodes on the diagram","viewer.route.pickOne":"Click a node on the diagram","viewer.route.controls":"Route journey controls","viewer.route.previous":"Previous route position","viewer.route.play":"Play route journey","viewer.route.pause":"Pause route journey","viewer.route.replay":"Replay route journey","viewer.route.next":"Next route position","viewer.route.journey":"Journey","viewer.route.pause.label":"Pause","viewer.route.replay.label":"Replay","viewer.route.overview":"Overview","viewer.route.overview.aria":"Show complete route overview","viewer.route.instructions":"Click a start, then an end. Paths follow the arrows.","viewer.route.destination":"Where does the path from {label} end?","viewer.route.destination.find":"Find target","viewer.route.destination.find.aria":"Find a reachable route destination","viewer.route.differentDestination":"Choose a different destination","viewer.route.distinct":"Pick two different nodes.","viewer.route.unreachable":"Cannot reach {label} from here","viewer.route.unreachable.detail":"{target} cannot be reached from {source} along the arrows. Pick a highlighted node.","viewer.route.start.instructions":"Next, pick the end. Only nodes you can reach will light up.","viewer.route.copy.success":"Traced route link copied","viewer.route.copy.failed":"Could not copy traced route link","viewer.route.position":"Route position {index} of {total}: {label}","viewer.route.step":"Step {index} of {total} · {phase} · {label}","viewer.route.motionRequired":"Automatic journey requires Live motion","viewer.route.trigger.clear":"Clear traced route","viewer.route.overview.status":"{nodes} · {hops} · shortest path","viewer.route.overview.node.one":"{count} node","viewer.route.overview.node.other":"{count} nodes","viewer.route.overview.hop.one":"{count} step","viewer.route.overview.hop.other":"{count} steps","viewer.route.phase.playing":"Playing","viewer.route.phase.complete":"Complete","viewer.route.phase.inspecting":"Inspecting","viewer.route.destination.count.one":"{count} reachable node is highlighted. Click it.","viewer.route.destination.count.other":"{count} reachable nodes are highlighted. Click one.","viewer.route.noOutgoing":"No arrows lead out of this node. Clear it and pick another start.","viewer.route.result.title":"{source} to {target}","viewer.route.finder.source.title":"Choose route start","viewer.route.finder.source.placeholder":"Search route sources","viewer.route.finder.source.empty":"No matching route sources","viewer.route.finder.source.results":"Nodes that can start a route","viewer.route.finder.source.noun":"route sources","viewer.route.finder.source.badge":"start","viewer.route.finder.target.title":"Destination from {label}","viewer.route.finder.target.placeholder":"Search reachable destinations","viewer.route.finder.target.empty":"No matching reachable destinations","viewer.route.finder.target.results":"Reachable route destinations","viewer.route.finder.target.noun":"reachable destinations","viewer.route.hop.one":"{count} hop","viewer.route.hop.other":"{count} hops","viewer.lens.eyebrow":"Semantic lens","viewer.lens.title":"Compare system roles","viewer.lens.close":"Close semantic lens","viewer.lens.instruction":"Choose up to two semantic kinds. One reveals its real traffic; two compare only direct authored relationships.","viewer.lens.kinds":"Semantic kinds","viewer.lens.choose":"Choose a kind to inspect its nodes and touching relationships.","viewer.lens.copy":"Copy link to semantic lens","viewer.lens.clear":"Clear semantic lens","viewer.lens.open":"Open semantic lens","viewer.lens.openActive":"Open active semantic lens","viewer.lens.legend":"Semantic legend","viewer.lens.legend.inspect.one":"Inspect {label}, {count} node","viewer.lens.legend.inspect.other":"Inspect {label}, {count} nodes","viewer.lens.kind.count.one":"{label}, {count} node","viewer.lens.kind.count.other":"{label}, {count} nodes","viewer.lens.compare.one":"{first} → {second}: {forward} · {second} → {first}: {reverse} · {count} direct relationship","viewer.lens.compare.other":"{first} → {second}: {forward} · {second} → {first}: {reverse} · {count} direct relationships","viewer.lens.single":"{nodes} · {relationships} · connected peers remain visible","viewer.lens.node.one":"{count} {label} node","viewer.lens.node.other":"{count} {label} nodes","viewer.lens.relationship.one":"{count} touching relationship","viewer.lens.relationship.other":"{count} touching relationships","viewer.radar.title":"Semantic radar","viewer.radar.building":"Building overview","viewer.radar.openFull":"Open full semantic radar","viewer.radar.open":"Open radar","viewer.radar.close":"Close semantic radar","viewer.radar.surface":"Diagram overview. Click a node to focus it, or use arrow keys to pan.","viewer.radar.click":"Click node","viewer.radar.drag":"Drag to pan","viewer.radar.space":"Semantic radar needs more MAP space.","viewer.radar.nodes":"Semantic diagram radar nodes","viewer.radar.focus":"Focus {label} from Semantic Radar","viewer.radar.status":"{count} nodes · {viewport}","viewer.radar.fullMap":"{count} nodes · full map","viewer.radar.compacted":"Radar compacted to avoid covering the Semantic Passport or MAP controls.","viewer.radar.cancelWaiting":"Cancel semantic radar waiting for more MAP space","viewer.radar.needsSpace":"Semantic radar needs more visible MAP space","viewer.radar.viewport.full":"full map","viewer.radar.viewport.width":"{percent}% width","viewer.radar.viewport.scale":"{percent}% viewport","viewer.nav.controls":"Diagram view controls","viewer.nav.route":"Trace a directed route","viewer.nav.route.title":"Trace route (R)","viewer.nav.route.short":"ROUTE","viewer.nav.radar":"Open semantic radar","viewer.nav.radar.title":"Semantic radar (M)","viewer.nav.radar.short":"MAP","viewer.nav.lens":"Open semantic lens","viewer.nav.lens.title":"Semantic lens (L)","viewer.nav.lens.short":"LENS","viewer.nav.find":"Find a node","viewer.nav.find.title":"Find a node (/)","viewer.outline.title":"Node index","viewer.rail.show":"Notes \u0026 index","viewer.rail.controls":"Side panel","viewer.rail.collapse":"Collapse side panel","viewer.rail.bottom":"Move panel below the diagram","viewer.rail.right":"Move panel beside the diagram","viewer.nav.guide":"Open diagram guide","viewer.nav.guide.title":"Diagram guide (?)","viewer.nav.zoomOut":"Zoom out","viewer.nav.zoomOut.title":"Zoom out (-)","viewer.nav.reset":"Reset diagram view","viewer.nav.reset.title":"Reset view (0)","viewer.nav.read":"READ","viewer.nav.zoomIn":"Zoom in","viewer.nav.zoomIn.title":"Zoom in (+)","viewer.nav.camera":"{hint}. Reset diagram view","viewer.nav.camera.title":"{semantic}{hint} · reset view (0)","viewer.nav.camera.semantic":"Semantic camera active · ","viewer.nav.level.map":"MAP","viewer.nav.level.read":"READ","viewer.nav.level.full":"FULL","viewer.nav.level.auto":"AUTO","viewer.nav.detail.map":"Zoom in to reveal relationship labels and node context","viewer.nav.detail.read":"Zoom in again to reveal tags and annotations","viewer.nav.detail.full":"Full diagram detail","viewer.intent.summary":"{label}. {out} outgoing, {in} incoming{loops}. {total} connections. Press Enter for details.","viewer.intent.loops":", {count} self loop","viewer.common.copied":"Copied","viewer.common.copyFailed":"Copy failed","viewer.common.copyLink":"Copy link","viewer.common.clear":"Clear","viewer.common.close":"Close"}}</script>
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 1019 848" data-sequence-column-fit="spread" data-reader-fit="width-first" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-animation="trace" data-preset="classic" data-quality-profile="showcase" data-motion-choreography="sequence">
-        <title id="archify-diagram-title">Student Topic Registration Sequence</title>
-        <desc id="archify-diagram-description">A sequence diagram generated by Archify.</desc>
-        <!-- Definitions -->
-        <defs>
+      <svg viewBox="0 0 1640 1923" data-sequence-column-fit="spread" data-reader-fit="width-first" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-animation="trace" data-preset="classic" data-quality-profile="showcase" data-motion-choreography="sequence">
+<title id="archify-diagram-title">Create a Topic</title>
+<desc id="archify-diagram-description">Source-backed sequence diagram with concise request, guard, transaction and response messages. No explanatory note boxes.</desc>
+<defs>
           <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
             <polygon points="0 0, 10 3.5, 0 7" class="m-default" />
           </marker>
@@ -5180,257 +5180,97 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
             <path d="M 40 0 L 0 0 0 40" class="c-grid" stroke-width="0.5"/>
           </pattern>
         </defs>
-
-        <!-- Background Grid -->
-        <rect width="100%" height="100%" fill="url(#grid)" />
-
-        <!-- Time Segments -->
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="0" x="48" y="155" width="923" height="105" rx="10" class="c-lane" stroke-width="1"/>
-
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="1" x="48" y="270" width="923" height="210" rx="10" class="c-lane" stroke-width="1"/>
-
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="2" x="48" y="490" width="923" height="260" rx="10" class="c-lane" stroke-width="1"/>
-
-        <!-- Lifelines -->
-        <path d="M 114 142 L 114 752" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 249.5 142 L 249.5 752" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 385 142 L 385 752" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 520.5 142 L 520.5 752" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 656 142 L 656 752" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 791.5 142 L 791.5 752" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-        <path d="M 927 142 L 927 752" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
-
-        <!-- Activations -->
-        <rect x="109" y="165" width="10" height="570" rx="3" class="c-mask"/>
-        <rect x="109" y="165" width="10" height="570" rx="3" class="c-frontend" stroke-width="1"/>
-        <rect x="244.5" y="170" width="10" height="562" rx="3" class="c-mask"/>
-        <rect x="244.5" y="170" width="10" height="562" rx="3" class="c-cloud" stroke-width="1"/>
-        <rect x="380" y="230" width="10" height="455" rx="3" class="c-mask"/>
-        <rect x="380" y="230" width="10" height="455" rx="3" class="c-backend" stroke-width="1"/>
-        <rect x="515.5" y="290" width="10" height="65" rx="3" class="c-mask"/>
-        <rect x="515.5" y="290" width="10" height="65" rx="3" class="c-backend" stroke-width="1"/>
-        <rect x="651" y="400" width="10" height="65" rx="3" class="c-mask"/>
-        <rect x="651" y="400" width="10" height="65" rx="3" class="c-backend" stroke-width="1"/>
-        <rect x="786.5" y="510" width="10" height="65" rx="3" class="c-mask"/>
-        <rect x="786.5" y="510" width="10" height="65" rx="3" class="c-database" stroke-width="1"/>
-        <rect x="922" y="620" width="10" height="35" rx="3" class="c-mask"/>
-        <rect x="922" y="620" width="10" height="35" rx="3" class="c-messagebus" stroke-width="1"/>
-
-        <!-- Messages -->
-        <g data-edge-from="student" data-edge-to="gateway" data-edge-label="POST /registrations/api/v1/registrations/" data-edge-key="0" data-edge-id="m1">
-          <path data-composition-edge-from="student" data-composition-edge-to="gateway" data-composition-edge-id="m1" data-composition-points="121,170;242.5,170" d="M 121 170 L 242.5 170" class="a-emphasis" data-animate="edge" style="--step:0" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <g data-detail="context">
-          <rect x="40.45000000000002" y="150" width="282.59999999999997" height="18" rx="3" class="c-mask"/>
-          <text x="181.75" y="160" class="t-edge-emphasis" font-size="11" text-anchor="middle">POST /registrations/api/v1/registrations/</text>
-        </g>
-        <text data-detail="context" x="133" y="188" class="t-muted" font-size="7">Bearer JWT + topic_id</text>
-        </g>
-
-        <g data-edge-from="gateway" data-edge-to="regist" data-edge-label="Forward to regist-service" data-edge-key="1" data-edge-id="m2">
-          <path data-composition-edge-from="gateway" data-composition-edge-to="regist" data-composition-edge-id="m2" data-composition-points="256.5,230;378,230" d="M 256.5 230 L 378 230" class="a-emphasis" data-animate="edge" style="--step:1" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <g data-detail="context">
-          <rect x="228.75" y="210" width="177" height="18" rx="3" class="c-mask"/>
-          <text x="317.25" y="220" class="t-edge-emphasis" font-size="11" text-anchor="middle">Forward to regist-service</text>
-        </g>
-        <text data-detail="context" x="268.5" y="248" class="t-muted" font-size="7">Propagates correlation ID</text>
-        </g>
-
-        <g data-edge-from="regist" data-edge-to="academic" data-edge-label="GET /academic/api/v1/students/{id}/" data-edge-key="2" data-edge-id="m3">
-          <path data-composition-edge-from="regist" data-composition-edge-to="academic" data-composition-edge-id="m3" data-composition-points="392,290;513.5,290" d="M 392 290 L 513.5 290" class="a-default" data-animate="edge" style="--step:2" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <g data-detail="context">
-          <rect x="331.25" y="270" width="243" height="18" rx="3" class="c-mask"/>
-          <text x="452.75" y="280" class="t-muted" font-size="11" text-anchor="middle">GET /academic/api/v1/students/{id}/</text>
-        </g>
-        <text data-detail="context" x="404" y="308" class="t-muted" font-size="7">Check GPA &amp; credits</text>
-        </g>
-
-        <g data-edge-from="academic" data-edge-to="regist" data-edge-label="200 OK (Eligible student)" data-edge-key="3" data-edge-id="m4">
-          <path data-composition-edge-from="academic" data-composition-edge-to="regist" data-composition-edge-id="m4" data-composition-points="513.5,350;392,350" d="M 513.5 350 L 392 350" class="a-default" data-animate="edge" style="--step:3" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
-        <g data-detail="context">
-          <rect x="364.25" y="330" width="177" height="18" rx="3" class="c-mask"/>
-          <text x="452.75" y="340" class="t-muted" font-size="11" text-anchor="middle">200 OK (Eligible student)</text>
-        </g>
-        </g>
-
-        <g data-edge-from="regist" data-edge-to="topic" data-edge-label="GET /topics/api/v1/topics/{id}/" data-edge-key="4" data-edge-id="m5">
-          <path data-composition-edge-from="regist" data-composition-edge-to="topic" data-composition-edge-id="m5" data-composition-points="392,400;649,400" d="M 392 400 L 649 400" class="a-default" data-animate="edge" style="--step:4" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <g data-detail="context">
-          <rect x="412.2" y="380" width="216.6" height="18" rx="3" class="c-mask"/>
-          <text x="520.5" y="390" class="t-muted" font-size="11" text-anchor="middle">GET /topics/api/v1/topics/{id}/</text>
-        </g>
-        <text data-detail="context" x="404" y="418" class="t-muted" font-size="7">Check topic status</text>
-        </g>
-
-        <g data-edge-from="topic" data-edge-to="regist" data-edge-label="200 OK (Topic valid)" data-edge-key="5" data-edge-id="m6">
-          <path data-composition-edge-from="topic" data-composition-edge-to="regist" data-composition-edge-id="m6" data-composition-points="649,460;392,460" d="M 649 460 L 392 460" class="a-default" data-animate="edge" style="--step:5" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
-        <g data-detail="context">
-          <rect x="448.5" y="440" width="144" height="18" rx="3" class="c-mask"/>
-          <text x="520.5" y="450" class="t-muted" font-size="11" text-anchor="middle">200 OK (Topic valid)</text>
-        </g>
-        </g>
-
-        <g data-edge-from="regist" data-edge-to="db" data-edge-label="INSERT INTO Registrations" data-edge-key="6" data-edge-id="m7">
-          <path data-composition-edge-from="regist" data-composition-edge-to="db" data-composition-edge-id="m7" data-composition-points="392,510;784.5,510" d="M 392 510 L 784.5 510" class="a-emphasis" data-animate="edge" style="--step:6" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <g data-detail="context">
-          <rect x="499.75" y="490" width="177" height="18" rx="3" class="c-mask"/>
-          <text x="588.25" y="500" class="t-edge-emphasis" font-size="11" text-anchor="middle">INSERT INTO Registrations</text>
-        </g>
-        <text data-detail="context" x="404" y="528" class="t-muted" font-size="7">Status=1, Point=NULL</text>
-        </g>
-
-        <g data-edge-from="db" data-edge-to="regist" data-edge-label="Query OK (1 row inserted)" data-edge-key="7" data-edge-id="m8">
-          <path data-composition-edge-from="db" data-composition-edge-to="regist" data-composition-edge-id="m8" data-composition-points="784.5,570;392,570" d="M 784.5 570 L 392 570" class="a-default" data-animate="edge" style="--step:7" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
-        <g data-detail="context">
-          <rect x="499.75" y="550" width="177" height="18" rx="3" class="c-mask"/>
-          <text x="588.25" y="560" class="t-muted" font-size="11" text-anchor="middle">Query OK (1 row inserted)</text>
-        </g>
-        </g>
-
-        <g data-edge-from="regist" data-edge-to="logger" data-edge-label="Async emit audit log" data-edge-key="8" data-edge-id="m9">
-          <path data-composition-edge-from="regist" data-composition-edge-to="logger" data-composition-edge-id="m9" data-composition-points="392,620;920,620" d="M 392 620 L 920 620" class="a-dashed" data-animate="edge" style="--step:8" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
-        <g data-detail="context">
-          <rect x="584" y="600" width="144" height="18" rx="3" class="c-mask"/>
-          <text x="656" y="610" class="t-edge-dashed" font-size="11" text-anchor="middle">Async emit audit log</text>
-        </g>
-        <text data-detail="context" x="404" y="638" class="t-muted" font-size="7">Action: REGISTER_TOPIC</text>
-        </g>
-
-        <g data-edge-from="regist" data-edge-to="gateway" data-edge-label="201 Created (Registration DTO)" data-edge-key="9" data-edge-id="m10">
-          <path data-composition-edge-from="regist" data-composition-edge-to="gateway" data-composition-edge-id="m10" data-composition-points="378,680;256.5,680" d="M 378 680 L 256.5 680" class="a-default" data-animate="edge" style="--step:9" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
-        <g data-detail="context">
-          <rect x="212.25" y="660" width="210" height="18" rx="3" class="c-mask"/>
-          <text x="317.25" y="670" class="t-muted" font-size="11" text-anchor="middle">201 Created (Registration DTO)</text>
-        </g>
-        </g>
-
-        <g data-edge-from="gateway" data-edge-to="student" data-edge-label="201 Created (Display modal)" data-edge-key="10" data-edge-id="m11">
-          <path data-composition-edge-from="gateway" data-composition-edge-to="student" data-composition-edge-id="m11" data-composition-points="242.5,730;121,730" d="M 242.5 730 L 121 730" class="a-default" data-animate="edge" style="--step:10" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
-        <g data-detail="context">
-          <rect x="86.65" y="710" width="190.2" height="18" rx="3" class="c-mask"/>
-          <text x="181.75" y="720" class="t-muted" font-size="11" text-anchor="middle">201 Created (Display modal)</text>
-        </g>
-        </g>
-
-        <!-- Segment Labels -->
-        <g data-graph-role="segment-label" data-segment-id="0">
-          <rect x="56" y="111" width="180.4" height="18" rx="3" class="c-mask"/>
-          <text x="62" y="124" class="t-muted" font-size="9" font-weight="600">1. Khởi tạo &amp; Định tuyến Ingress</text>
-        </g>
-        <g data-graph-role="segment-label" data-segment-id="1">
-          <rect x="56" y="274" width="258.4" height="18" rx="3" class="c-mask"/>
-          <text x="62" y="287" class="t-muted" font-size="9" font-weight="600">2. Kiểm tra điều kiện Sinh viên &amp; Đề tài (REST)</text>
-        </g>
-        <g data-graph-role="segment-label" data-segment-id="2">
-          <rect x="56" y="468" width="185.6" height="18" rx="3" class="c-mask"/>
-          <text x="62" y="481" class="t-muted" font-size="9" font-weight="600">3. Ghi CSDL, Audit Log &amp; Phản hồi</text>
-        </g>
-
-        <!-- Participants -->
-        <g id="node-student" data-node-id="student" data-node-label="Sinh viên" tabindex="0" role="button" aria-label="Focus Sinh viên, React Vite :5173, Sequence participant" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="React Vite :5173" data-node-context="Sequence participant">
-          <title>Sinh viên · React Vite :5173 · Sequence participant</title>
-          <rect x="62" y="72" width="104" height="60" rx="6" class="c-mask"/>
-          <rect x="62" y="72" width="104" height="60" rx="6" class="c-frontend" data-animate="node" style="--step:0" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="frontend" class="semantic-sigil s-frontend" transform="translate(68 78) scale(0.6875)">
-            <rect x="2" y="3" width="12" height="10" rx="2"/>
-            <path d="M2 6.5h12"/>
-            <circle cx="4.1" cy="4.8" r=".7" class="sigil-fill"/>
-            <circle cx="6.3" cy="4.8" r=".7" class="sigil-fill"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="114" y="108" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Sinh viên</text>
-          <text data-detail="context" x="114" y="122" class="t-muted" font-size="7" text-anchor="middle">React Vite :5173</text>
-        </g>
-
-        <g id="node-gateway" data-node-id="gateway" data-node-label="API Gateway" tabindex="0" role="button" aria-label="Focus API Gateway, Nginx :8000, Sequence participant" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="Nginx :8000" data-node-context="Sequence participant">
-          <title>API Gateway · Nginx :8000 · Sequence participant</title>
-          <rect x="197.5" y="72" width="104" height="60" rx="6" class="c-mask"/>
-          <rect x="197.5" y="72" width="104" height="60" rx="6" class="c-cloud" data-animate="node" style="--step:1" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(203.5 78) scale(0.6875)">
-            <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="249.5" y="108" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">API Gateway</text>
-          <text data-detail="context" x="249.5" y="122" class="t-muted" font-size="7" text-anchor="middle">Nginx :8000</text>
-        </g>
-
-        <g id="node-regist" data-node-id="regist" data-node-label="regist-service" tabindex="0" role="button" aria-label="Focus regist-service, Django REST :8003, Sequence participant" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Django REST :8003" data-node-context="Sequence participant">
-          <title>regist-service · Django REST :8003 · Sequence participant</title>
-          <rect x="333" y="72" width="104" height="60" rx="6" class="c-mask"/>
-          <rect x="333" y="72" width="104" height="60" rx="6" class="c-backend" data-animate="node" style="--step:2" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(339 78) scale(0.6875)">
-            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="385" y="108" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">regist-service</text>
-          <text data-detail="context" x="385" y="122" class="t-muted" font-size="7" text-anchor="middle">Django REST :8003</text>
-        </g>
-
-        <g id="node-academic" data-node-id="academic" data-node-label="academic-service" tabindex="0" role="button" aria-label="Focus academic-service, Django REST :8002, Sequence participant" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Django REST :8002" data-node-context="Sequence participant">
-          <title>academic-service · Django REST :8002 · Sequence participant</title>
-          <rect x="468.5" y="72" width="104" height="60" rx="6" class="c-mask"/>
-          <rect x="468.5" y="72" width="104" height="60" rx="6" class="c-backend" data-animate="node" style="--step:3" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(474.5 78) scale(0.6875)">
-            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="520.5" y="108" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">academic-service</text>
-          <text data-detail="context" x="520.5" y="122" class="t-muted" font-size="7" text-anchor="middle">Django REST :8002</text>
-        </g>
-
-        <g id="node-topic" data-node-id="topic" data-node-label="topic-service" tabindex="0" role="button" aria-label="Focus topic-service, Django REST :8004, Sequence participant" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Django REST :8004" data-node-context="Sequence participant">
-          <title>topic-service · Django REST :8004 · Sequence participant</title>
-          <rect x="604" y="72" width="104" height="60" rx="6" class="c-mask"/>
-          <rect x="604" y="72" width="104" height="60" rx="6" class="c-backend" data-animate="node" style="--step:4" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(610 78) scale(0.6875)">
-            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="656" y="108" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">topic-service</text>
-          <text data-detail="context" x="656" y="122" class="t-muted" font-size="7" text-anchor="middle">Django REST :8004</text>
-        </g>
-
-        <g id="node-db" data-node-id="db" data-node-label="SQLite DB" tabindex="0" role="button" aria-label="Focus SQLite DB, Registrations table, Sequence participant" aria-pressed="false" data-node-kind="database" data-node-sublabel="Registrations table" data-node-context="Sequence participant">
-          <title>SQLite DB · Registrations table · Sequence participant</title>
-          <rect x="739.5" y="72" width="104" height="60" rx="6" class="c-mask"/>
-          <rect x="739.5" y="72" width="104" height="60" rx="6" class="c-database" data-animate="node" style="--step:5" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(745.5 78) scale(0.6875)">
-            <ellipse cx="8" cy="4" rx="5" ry="2"/>
-            <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="791.5" y="108" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">SQLite DB</text>
-          <text data-detail="context" x="791.5" y="122" class="t-muted" font-size="7" text-anchor="middle">Registrations table</text>
-        </g>
-
-        <g id="node-logger" data-node-id="logger" data-node-label="log-service" tabindex="0" role="button" aria-label="Focus log-service, Async Audit Log, Sequence participant" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="Async Audit Log" data-node-context="Sequence participant">
-          <title>log-service · Async Audit Log · Sequence participant</title>
-          <rect x="875" y="72" width="104" height="60" rx="6" class="c-mask"/>
-          <rect x="875" y="72" width="104" height="60" rx="6" class="c-messagebus" data-animate="node" style="--step:6" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(881 78) scale(0.6875)">
-            <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>
-            <circle cx="5" cy="4.5" r="1" class="sigil-fill"/>
-            <circle cx="10.5" cy="8" r="1" class="sigil-fill"/>
-            <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="927" y="108" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">log-service</text>
-          <text data-detail="context" x="927" y="122" class="t-muted" font-size="7" text-anchor="middle">Async Audit Log</text>
-        </g>
-
-        <!-- Legend -->
-        <g data-legend="">
-          <text x="40" y="774" class="t-primary" font-size="12" font-weight="650">Legend</text>
-          <g data-legend-semantic-kind="emphasis" data-legend-x="40" data-legend-baseline="794" data-legend-width="118">
-            <path d="M 40 791 L 74 791" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-            <text x="83" y="794" class="t-muted" font-size="10" font-weight="500">main request</text>
-          </g>
-          <g data-legend-semantic-kind="return" data-legend-x="180" data-legend-baseline="794" data-legend-width="81">
-            <path d="M 180 791 L 214 791" class="a-default" stroke-width="1.4" stroke-dasharray="3,5" marker-end="url(#arrowhead)"/>
-            <text x="223" y="794" class="t-muted" font-size="10" font-weight="500">return</text>
-          </g>
-          <g data-legend-semantic-kind="dashed" data-legend-x="283" data-legend-baseline="794" data-legend-width="112">
-            <path d="M 283 791 L 317 791" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
-            <text x="326" y="794" class="t-muted" font-size="10" font-weight="500">async trace</text>
-          </g>
-          <g data-legend-semantic-kind="default" data-legend-x="417" data-legend-baseline="794" data-legend-width="87">
-            <path d="M 417 791 L 451 791" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-            <text x="460" y="794" class="t-muted" font-size="10" font-weight="500">message</text>
-          </g>
-        </g>
-      </svg>
+<rect width="100%" height="100%" fill="url(#grid)"/>
+<rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="0" x="50" y="160" width="1540" height="344" rx="10" class="c-lane" stroke-width="1"/>
+<rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="1" x="50" y="532" width="1540" height="580" rx="10" class="c-lane" stroke-width="1"/>
+<rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="2" x="50" y="1140" width="1540" height="309" rx="10" class="c-lane" stroke-width="1"/>
+<rect data-graph-role="structural-frame" data-composition-frame-kind="segment" data-composition-frame-id="3" x="50" y="1477" width="1540" height="401" rx="10" class="c-lane" stroke-width="1"/>
+<path d="M 160.0 132 L 160.0 1878" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+<path d="M 490.0 132 L 490.0 1878" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+<path d="M 820.0 132 L 820.0 1878" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+<path d="M 1150.0 132 L 1150.0 1878" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+<path d="M 1480.0 132 L 1480.0 1878" class="a-default" stroke-width="0.8" stroke-dasharray="3,7"/>
+<rect x="155.0" y="223" width="10" height="101" rx="3" class="c-mask"/><rect x="155.0" y="223" width="10" height="101" rx="3" class="c-frontend" stroke-width="1"/>
+<rect x="485.0" y="315" width="10" height="81" rx="3" class="c-mask"/><rect x="485.0" y="315" width="10" height="81" rx="3" class="c-cloud" stroke-width="1"/>
+<rect x="815.0" y="387" width="10" height="99" rx="3" class="c-mask"/><rect x="815.0" y="387" width="10" height="99" rx="3" class="c-backend" stroke-width="1"/>
+<rect x="815.0" y="595" width="10" height="499" rx="3" class="c-mask"/><rect x="815.0" y="595" width="10" height="499" rx="3" class="c-backend" stroke-width="1"/>
+<rect x="1145.0" y="595" width="10" height="317" rx="3" class="c-mask"/><rect x="1145.0" y="595" width="10" height="317" rx="3" class="c-backend" stroke-width="1"/>
+<rect x="815.0" y="1203" width="10" height="225" rx="3" class="c-mask"/><rect x="815.0" y="1203" width="10" height="225" rx="3" class="c-backend" stroke-width="1"/>
+<rect x="1475.0" y="1203" width="10" height="225" rx="3" class="c-mask"/><rect x="1475.0" y="1203" width="10" height="225" rx="3" class="c-database" stroke-width="1"/>
+<rect x="155.0" y="1848" width="10" height="9" rx="3" class="c-mask"/><rect x="155.0" y="1848" width="10" height="9" rx="3" class="c-frontend" stroke-width="1"/>
+<rect x="485.0" y="1776" width="10" height="81" rx="3" class="c-mask"/><rect x="485.0" y="1776" width="10" height="81" rx="3" class="c-cloud" stroke-width="1"/>
+<rect x="815.0" y="1540" width="10" height="245" rx="3" class="c-mask"/><rect x="815.0" y="1540" width="10" height="245" rx="3" class="c-backend" stroke-width="1"/>
+<rect x="1145.0" y="1540" width="10" height="81" rx="3" class="c-mask"/><rect x="1145.0" y="1540" width="10" height="81" rx="3" class="c-backend" stroke-width="1"/>
+<g data-edge-from="actor" data-edge-to="actor" data-edge-label="Generate topic UUID; enter topic fields and GPA/quota" data-edge-key="0" data-edge-id="create-topic-01"><path data-composition-edge-from="actor" data-composition-edge-to="actor" data-composition-edge-id="create-topic-01" data-composition-points="167.0,226;297.0,226;297.0,246;167.0,246" d="M 167.0 226 H 297.0 V 246 H 167.0" class="a-emphasis" data-animate="edge" style="--step:0" stroke-width="1.6" marker-end="url(#arrowhead-emphasis)"/><g><rect x="176.0" y="195" width="446.70000000000005" height="23" rx="4" class="c-mask"/><text x="184.0" y="211" class="t-primary" font-size="13" text-anchor="start">
+<tspan x="184.0" dy="0">Generate topic UUID; enter topic fields and GPA/quota</tspan>
+</text></g></g>
+<g data-edge-from="actor" data-edge-to="gateway" data-edge-label="POST /topics/api/v1/topics/" data-edge-key="1" data-edge-id="create-topic-02"><path data-composition-edge-from="actor" data-composition-edge-to="gateway" data-composition-edge-id="create-topic-02" data-composition-points="167.0,318;483.0,318" d="M 167.0 318 L 483.0 318" class="a-emphasis" data-animate="edge" style="--step:1" stroke-width="1.6" marker-end="url(#arrowhead-emphasis)"/><g><rect x="204.35" y="287" width="241.3" height="23" rx="4" class="c-mask"/><text x="325.0" y="303" class="t-primary" font-size="13" text-anchor="middle">
+<tspan x="325.0" dy="0">POST /topics/api/v1/topics/</tspan>
+</text></g></g>
+<g data-edge-from="gateway" data-edge-to="topic" data-edge-label="POST /api/v1/topics/ + Bearer JWT" data-edge-key="2" data-edge-id="create-topic-03"><path data-composition-edge-from="gateway" data-composition-edge-to="topic" data-composition-edge-id="create-topic-03" data-composition-points="497.0,390;813.0,390" d="M 497.0 390 L 813.0 390" class="a-default" data-animate="edge" style="--step:2" stroke-width="1.6" marker-end="url(#arrowhead)"/><g><rect x="510.65" y="359" width="288.7" height="23" rx="4" class="c-mask"/><text x="655.0" y="375" class="t-primary" font-size="13" text-anchor="middle">
+<tspan x="655.0" dy="0">POST /api/v1/topics/ + Bearer JWT</tspan>
+</text></g></g>
+<g data-edge-from="topic" data-edge-to="topic" data-edge-label="Admin role=1 + DTO validation; failures -&gt; 401/403/400" data-edge-key="3" data-edge-id="create-topic-04"><path data-composition-edge-from="topic" data-composition-edge-to="topic" data-composition-edge-id="create-topic-04" data-composition-points="827.0,462;957.0,462;957.0,482;827.0,482" d="M 827.0 462 H 957.0 V 482 H 827.0" class="a-emphasis" data-animate="edge" style="--step:3" stroke-width="1.6" marker-end="url(#arrowhead-emphasis)"/><g><rect x="836.0" y="431" width="454.6" height="23" rx="4" class="c-mask"/><text x="844.0" y="447" class="t-primary" font-size="13" text-anchor="start">
+<tspan x="844.0" dy="0">Admin role=1 + DTO validation; failures -&gt; 401/403/400</tspan>
+</text></g></g>
+<g data-edge-from="topic" data-edge-to="academic" data-edge-label="GET /api/majors/{major_id}/" data-edge-key="4" data-edge-id="create-topic-05"><path data-composition-edge-from="topic" data-composition-edge-to="academic" data-composition-edge-id="create-topic-05" data-composition-points="827.0,598;1143.0,598" d="M 827.0 598 L 1143.0 598" class="a-default" data-animate="edge" style="--step:4" stroke-width="1.6" marker-end="url(#arrowhead)"/><g><rect x="864.35" y="567" width="241.3" height="23" rx="4" class="c-mask"/><text x="985.0" y="583" class="t-primary" font-size="13" text-anchor="middle">
+<tspan x="985.0" dy="0">GET /api/majors/{major_id}/</tspan>
+</text></g></g>
+<g data-edge-from="academic" data-edge-to="topic" data-edge-label="200 major / 404 missing / lookup failure" data-edge-key="5" data-edge-id="create-topic-06"><path data-composition-edge-from="academic" data-composition-edge-to="topic" data-composition-edge-id="create-topic-06" data-composition-points="1143.0,670;827.0,670" d="M 1143.0 670 L 827.0 670" class="a-default" data-animate="edge" style="--step:5" stroke-width="1.6" stroke-dasharray="4,6" marker-end="url(#arrowhead)"/><g><rect x="813.0" y="639" width="344.0" height="23" rx="4" class="c-mask"/><text x="985.0" y="655" class="t-primary" font-size="13" text-anchor="middle">
+<tspan x="985.0" dy="0">200 major / 404 missing / lookup failure</tspan>
+</text></g></g>
+<g data-edge-from="topic" data-edge-to="topic" data-edge-label="Missing reference -&gt; 400; lookup failure -&gt; 503; stop" data-edge-key="6" data-edge-id="create-topic-07"><path data-composition-edge-from="topic" data-composition-edge-to="topic" data-composition-edge-id="create-topic-07" data-composition-points="827.0,742;957.0,742;957.0,762;827.0,762" d="M 827.0 742 H 957.0 V 762 H 827.0" class="a-emphasis" data-animate="edge" style="--step:6" stroke-width="1.6" marker-end="url(#arrowhead-emphasis)"/><g><rect x="836.0" y="711" width="446.70000000000005" height="23" rx="4" class="c-mask"/><text x="844.0" y="727" class="t-primary" font-size="13" text-anchor="start">
+<tspan x="844.0" dy="0">Missing reference -&gt; 400; lookup failure -&gt; 503; stop</tspan>
+</text></g></g>
+<g data-edge-from="topic" data-edge-to="academic" data-edge-label="[If advisor_id] GET /api/lecturers/{advisor_id}/" data-edge-key="7" data-edge-id="create-topic-08"><path data-composition-edge-from="topic" data-composition-edge-to="academic" data-composition-edge-id="create-topic-08" data-composition-points="827.0,834;1143.0,834" d="M 827.0 834 L 1143.0 834" class="a-default" data-animate="edge" style="--step:7" stroke-width="1.6" marker-end="url(#arrowhead)"/><g><rect x="781.4" y="803" width="407.20000000000005" height="23" rx="4" class="c-mask"/><text x="985.0" y="819" class="t-primary" font-size="13" text-anchor="middle">
+<tspan x="985.0" dy="0">[If advisor_id] GET /api/lecturers/{advisor_id}/</tspan>
+</text></g></g>
+<g data-edge-from="academic" data-edge-to="topic" data-edge-label="200 lecturer / 404 missing / lookup failure" data-edge-key="8" data-edge-id="create-topic-09"><path data-composition-edge-from="academic" data-composition-edge-to="topic" data-composition-edge-id="create-topic-09" data-composition-points="1143.0,906;827.0,906" d="M 1143.0 906 L 827.0 906" class="a-default" data-animate="edge" style="--step:8" stroke-width="1.6" stroke-dasharray="4,6" marker-end="url(#arrowhead)"/><g><rect x="801.15" y="875" width="367.7" height="23" rx="4" class="c-mask"/><text x="985.0" y="891" class="t-primary" font-size="13" text-anchor="middle">
+<tspan x="985.0" dy="0">200 lecturer / 404 missing / lookup failure</tspan>
+</text></g></g>
+<g data-edge-from="topic" data-edge-to="topic" data-edge-label="Missing reference -&gt; 400; lookup failure -&gt; 503; stop" data-edge-key="9" data-edge-id="create-topic-10"><path data-composition-edge-from="topic" data-composition-edge-to="topic" data-composition-edge-id="create-topic-10" data-composition-points="827.0,978;957.0,978;957.0,998;827.0,998" d="M 827.0 978 H 957.0 V 998 H 827.0" class="a-emphasis" data-animate="edge" style="--step:9" stroke-width="1.6" marker-end="url(#arrowhead-emphasis)"/><g><rect x="836.0" y="947" width="446.70000000000005" height="23" rx="4" class="c-mask"/><text x="844.0" y="963" class="t-primary" font-size="13" text-anchor="start">
+<tspan x="844.0" dy="0">Missing reference -&gt; 400; lookup failure -&gt; 503; stop</tspan>
+</text></g></g>
+<g data-edge-from="topic" data-edge-to="topic" data-edge-label="Omitted defaults: status=1, req_GPA=0, studentQuota=1" data-edge-key="10" data-edge-id="create-topic-11"><path data-composition-edge-from="topic" data-composition-edge-to="topic" data-composition-edge-id="create-topic-11" data-composition-points="827.0,1070;957.0,1070;957.0,1090;827.0,1090" d="M 827.0 1070 H 957.0 V 1090 H 827.0" class="a-emphasis" data-animate="edge" style="--step:10" stroke-width="1.6" marker-end="url(#arrowhead-emphasis)"/><g><rect x="836.0" y="1039" width="446.70000000000005" height="23" rx="4" class="c-mask"/><text x="844.0" y="1055" class="t-primary" font-size="13" text-anchor="start">
+<tspan x="844.0" dy="0">Omitted defaults: status=1, req_GPA=0, studentQuota=1</tspan>
+</text></g></g>
+<g data-edge-from="topic" data-edge-to="topic_db" data-edge-label="BEGIN; SELECT duplicate TopicId" data-edge-key="11" data-edge-id="create-topic-12"><path data-composition-edge-from="topic" data-composition-edge-to="topic_db" data-composition-edge-id="create-topic-12" data-composition-points="827.0,1206;1473.0,1206" d="M 827.0 1206 L 1473.0 1206" class="a-emphasis" data-animate="edge" style="--step:11" stroke-width="1.6" marker-end="url(#arrowhead-emphasis)"/><g><rect x="1013.55" y="1175" width="272.9" height="23" rx="4" class="c-mask"/><text x="1150.0" y="1191" class="t-primary" font-size="13" text-anchor="middle">
+<tspan x="1150.0" dy="0">BEGIN; SELECT duplicate TopicId</tspan>
+</text></g></g>
+<g data-edge-from="topic_db" data-edge-to="topic" data-edge-label="Duplicate -&gt; 409; otherwise continue" data-edge-key="12" data-edge-id="create-topic-13"><path data-composition-edge-from="topic_db" data-composition-edge-to="topic" data-composition-edge-id="create-topic-13" data-composition-points="1473.0,1278;827.0,1278" d="M 1473.0 1278 L 827.0 1278" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.6" stroke-dasharray="4,6" marker-end="url(#arrowhead)"/><g><rect x="993.8" y="1247" width="312.40000000000003" height="23" rx="4" class="c-mask"/><text x="1150.0" y="1263" class="t-primary" font-size="13" text-anchor="middle">
+<tspan x="1150.0" dy="0">Duplicate -&gt; 409; otherwise continue</tspan>
+</text></g></g>
+<g data-edge-from="topic" data-edge-to="topic_db" data-edge-label="INSERT Topics + created/updated audit fields" data-edge-key="13" data-edge-id="create-topic-14"><path data-composition-edge-from="topic" data-composition-edge-to="topic_db" data-composition-edge-id="create-topic-14" data-composition-points="827.0,1350;1473.0,1350" d="M 827.0 1350 L 1473.0 1350" class="a-emphasis" data-animate="edge" style="--step:13" stroke-width="1.6" marker-end="url(#arrowhead-emphasis)"/><g><rect x="962.2" y="1319" width="375.6" height="23" rx="4" class="c-mask"/><text x="1150.0" y="1335" class="t-primary" font-size="13" text-anchor="middle">
+<tspan x="1150.0" dy="0">INSERT Topics + created/updated audit fields</tspan>
+</text></g></g>
+<g data-edge-from="topic_db" data-edge-to="topic" data-edge-label="COMMIT new topic / conflict 409 / storage 503" data-edge-key="14" data-edge-id="create-topic-15"><path data-composition-edge-from="topic_db" data-composition-edge-to="topic" data-composition-edge-id="create-topic-15" data-composition-points="1473.0,1422;827.0,1422" d="M 1473.0 1422 L 827.0 1422" class="a-default" data-animate="edge" style="--step:14" stroke-width="1.6" stroke-dasharray="4,6" marker-end="url(#arrowhead)"/><g><rect x="958.25" y="1391" width="383.5" height="23" rx="4" class="c-mask"/><text x="1150.0" y="1407" class="t-primary" font-size="13" text-anchor="middle">
+<tspan x="1150.0" dy="0">COMMIT new topic / conflict 409 / storage 503</tspan>
+</text></g></g>
+<g data-edge-from="topic" data-edge-to="academic" data-edge-label="POST /api/v1/topic-display-names/" data-edge-key="15" data-edge-id="create-topic-16"><path data-composition-edge-from="topic" data-composition-edge-to="academic" data-composition-edge-id="create-topic-16" data-composition-points="827.0,1543;1143.0,1543" d="M 827.0 1543 L 1143.0 1543" class="a-default" data-animate="edge" style="--step:15" stroke-width="1.6" marker-end="url(#arrowhead)"/><g><rect x="840.65" y="1512" width="288.7" height="23" rx="4" class="c-mask"/><text x="985.0" y="1528" class="t-primary" font-size="13" text-anchor="middle">
+<tspan x="985.0" dy="0">POST /api/v1/topic-display-names/</tspan>
+</text></g></g>
+<g data-edge-from="academic" data-edge-to="topic" data-edge-label="200 major/advisor names / lookup failure" data-edge-key="16" data-edge-id="create-topic-17"><path data-composition-edge-from="academic" data-composition-edge-to="topic" data-composition-edge-id="create-topic-17" data-composition-points="1143.0,1615;827.0,1615" d="M 1143.0 1615 L 827.0 1615" class="a-default" data-animate="edge" style="--step:16" stroke-width="1.6" stroke-dasharray="4,6" marker-end="url(#arrowhead)"/><g><rect x="813.0" y="1584" width="344.0" height="23" rx="4" class="c-mask"/><text x="985.0" y="1600" class="t-primary" font-size="13" text-anchor="middle">
+<tspan x="985.0" dy="0">200 major/advisor names / lookup failure</tspan>
+</text></g></g>
+<g data-edge-from="topic" data-edge-to="topic" data-edge-label="[On lookup failure] keep saved topic; names=null" data-edge-key="17" data-edge-id="create-topic-18"><path data-composition-edge-from="topic" data-composition-edge-to="topic" data-composition-edge-id="create-topic-18" data-composition-points="827.0,1687;957.0,1687;957.0,1707;827.0,1707" d="M 827.0 1687 H 957.0 V 1707 H 827.0" class="a-emphasis" data-animate="edge" style="--step:17" stroke-width="1.6" marker-end="url(#arrowhead-emphasis)"/><g><rect x="836.0" y="1656" width="407.20000000000005" height="23" rx="4" class="c-mask"/><text x="844.0" y="1672" class="t-primary" font-size="13" text-anchor="start">
+<tspan x="844.0" dy="0">[On lookup failure] keep saved topic; names=null</tspan>
+</text></g></g>
+<g data-edge-from="topic" data-edge-to="gateway" data-edge-label="201 Created - TopicResponseDTO" data-edge-key="18" data-edge-id="create-topic-19"><path data-composition-edge-from="topic" data-composition-edge-to="gateway" data-composition-edge-id="create-topic-19" data-composition-points="813.0,1779;497.0,1779" d="M 813.0 1779 L 497.0 1779" class="a-default" data-animate="edge" style="--step:18" stroke-width="1.6" stroke-dasharray="4,6" marker-end="url(#arrowhead)"/><g><rect x="522.5" y="1748" width="265.0" height="23" rx="4" class="c-mask"/><text x="655.0" y="1764" class="t-primary" font-size="13" text-anchor="middle">
+<tspan x="655.0" dy="0">201 Created - TopicResponseDTO</tspan>
+</text></g></g>
+<g data-edge-from="gateway" data-edge-to="actor" data-edge-label="201 -&gt; close form and reload topic list" data-edge-key="19" data-edge-id="create-topic-20"><path data-composition-edge-from="gateway" data-composition-edge-to="actor" data-composition-edge-id="create-topic-20" data-composition-points="483.0,1851;167.0,1851" d="M 483.0 1851 L 167.0 1851" class="a-default" data-animate="edge" style="--step:19" stroke-width="1.6" stroke-dasharray="4,6" marker-end="url(#arrowhead)"/><g><rect x="156.95" y="1820" width="336.1" height="23" rx="4" class="c-mask"/><text x="325.0" y="1836" class="t-primary" font-size="13" text-anchor="middle">
+<tspan x="325.0" dy="0">201 -&gt; close form and reload topic list</tspan>
+</text></g></g>
+<rect x="60" y="161" width="188" height="21" rx="3" class="c-mask"/><text x="65" y="176" class="t-primary" font-size="13" font-weight="600">1. Submit a new topic</text>
+<rect x="60" y="533" width="388" height="21" rx="3" class="c-mask"/><text x="65" y="548" class="t-primary" font-size="13" font-weight="600">2. Validate academic references before writing</text>
+<rect x="60" y="1141" width="276" height="21" rx="3" class="c-mask"/><text x="65" y="1156" class="t-primary" font-size="13" font-weight="600">3. Topic-owned local transaction</text>
+<rect x="60" y="1478" width="364" height="21" rx="3" class="c-mask"/><text x="65" y="1493" class="t-primary" font-size="13" font-weight="600">4. Enrich the committed response and return</text>
+<g id="node-actor" data-node-id="actor" data-node-label="Admin / React UI" tabindex="0" role="button" aria-label="Focus Admin / React UI" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="Role 1" data-node-context="Topic creation and update forms"><title>Admin / React UI</title><rect x="65.0" y="55" width="190" height="75" rx="8" class="c-mask"/><rect x="65.0" y="55" width="190" height="75" rx="8" class="c-frontend" data-animate="node" style="--step:0" stroke-width="1.5"/><text data-node-label="" x="160.0" y="86" class="t-primary" font-size="13" font-weight="600" text-anchor="middle">Admin / React UI</text><text x="160.0" y="110" class="t-muted" font-size="10" text-anchor="middle">Role 1</text></g>
+<g id="node-gateway" data-node-id="gateway" data-node-label="API Gateway" tabindex="0" role="button" aria-label="Focus API Gateway" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="Nginx :8000" data-node-context="Gateway route generation and header forwarding"><title>API Gateway</title><rect x="395.0" y="55" width="190" height="75" rx="8" class="c-mask"/><rect x="395.0" y="55" width="190" height="75" rx="8" class="c-cloud" data-animate="node" style="--step:1" stroke-width="1.5"/><text data-node-label="" x="490.0" y="86" class="t-primary" font-size="13" font-weight="600" text-anchor="middle">API Gateway</text><text x="490.0" y="110" class="t-muted" font-size="10" text-anchor="middle">Nginx :8000</text></g>
+<g id="node-topic" data-node-id="topic" data-node-label="topic-service" tabindex="0" role="button" aria-label="Focus topic-service" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Django REST :8004" data-node-context="Topic save transaction and reference validation"><title>topic-service</title><rect x="725.0" y="55" width="190" height="75" rx="8" class="c-mask"/><rect x="725.0" y="55" width="190" height="75" rx="8" class="c-backend" data-animate="node" style="--step:2" stroke-width="1.5"/><text data-node-label="" x="820.0" y="86" class="t-primary" font-size="13" font-weight="600" text-anchor="middle">topic-service</text><text x="820.0" y="110" class="t-muted" font-size="10" text-anchor="middle">Django REST :8004</text></g>
+<g id="node-academic" data-node-id="academic" data-node-label="academic-service" tabindex="0" role="button" aria-label="Focus academic-service" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Django REST :8002" data-node-context="Academic reference and name contracts"><title>academic-service</title><rect x="1055.0" y="55" width="190" height="75" rx="8" class="c-mask"/><rect x="1055.0" y="55" width="190" height="75" rx="8" class="c-backend" data-animate="node" style="--step:3" stroke-width="1.5"/><text data-node-label="" x="1150.0" y="86" class="t-primary" font-size="13" font-weight="600" text-anchor="middle">academic-service</text><text x="1150.0" y="110" class="t-muted" font-size="10" text-anchor="middle">Django REST :8002</text></g>
+<g id="node-topic_db" data-node-id="topic_db" data-node-label="Topics / SQLite" tabindex="0" role="button" aria-label="Focus Topics / SQLite" aria-pressed="false" data-node-kind="database" data-node-sublabel="Owned by topic-service" data-node-context="Topics table owned by topic-service"><title>Topics / SQLite</title><rect x="1385.0" y="55" width="190" height="75" rx="8" class="c-mask"/><rect x="1385.0" y="55" width="190" height="75" rx="8" class="c-database" data-animate="node" style="--step:4" stroke-width="1.5"/><text data-node-label="" x="1480.0" y="86" class="t-primary" font-size="13" font-weight="600" text-anchor="middle">Topics / SQLite</text><text x="1480.0" y="110" class="t-muted" font-size="10" text-anchor="middle">Owned by topic-service</text></g>
+</svg>
       <p class="intent-trace-status no-print" id="intent-trace-status" role="status" aria-live="polite" aria-atomic="true"></p>
       <div class="diagram-guide no-print" id="diagram-guide" hidden role="dialog" aria-modal="false" aria-labelledby="diagram-guide-title">
         <div class="diagram-guide-head">
@@ -5587,7 +5427,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <div class="overview-map-hint" aria-hidden="true"><span>Click node</span><span>Drag to pan</span></div>
       </div>
       <p class="overview-map-feedback no-print" id="overview-map-feedback" role="status" aria-live="polite" hidden>Semantic radar needs more MAP space.</p>
-      <button class="rail-reveal no-print" id="rail-reveal" type="button" hidden aria-controls="reader-rail" aria-expanded="false"><span class="rail-reveal-icon" aria-hidden="true"></span><span>Notes &amp; index</span></button>
+
       <div class="diagram-nav no-print" role="toolbar" aria-label="Diagram view controls">
         <button id="btn-route-probe" type="button" aria-label="Trace a directed route" aria-pressed="false" aria-controls="route-probe" title="Trace route (R)">ROUTE</button>
         <button id="btn-overview-map" type="button" aria-label="Open semantic radar" aria-expanded="false" aria-controls="overview-map" title="Semantic radar (M)">MAP</button>
@@ -5600,54 +5440,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       </div>
     </div>
 
-    <aside class="reader-rail" id="reader-rail">
-    <div class="rail-controls no-print" role="toolbar" aria-label="Side panel">
-      <button class="rail-control" id="rail-placement" type="button" hidden aria-label="Move panel below the diagram" title="Move panel below the diagram" data-placement="right"><span class="rail-control-icon placement" aria-hidden="true"></span></button>
-      <button class="rail-control" id="rail-collapse" type="button" hidden aria-controls="reader-rail" aria-expanded="true" aria-label="Collapse side panel" title="Collapse side panel"><span class="rail-control-icon collapse" aria-hidden="true"></span></button>
-    </div>
-    <!-- Info Cards -->
-    <div class="cards">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-dot cyan"></div>
-          <h3>Ingress &amp; Stateless JWT Verification</h3>
-        </div>
-        <ul>
-          <li>Client đính kèm Bearer Token trong Authorization header qua mỗi request.</li>
-          <li>regist-service giải mã token tại chỗ (local JWT verification) bằng khóa chung JWT_SIGNING_KEY và kiểm tra Role = 3 (Sinh viên).</li>
-        </ul>
-      </div>
 
-      <div class="card">
-        <div class="card-header">
-          <div class="card-dot emerald"></div>
-          <h3>Cross-Service REST Validation</h3>
-        </div>
-        <ul>
-          <li>Tuân thủ nghiêm ngặt nguyên lý SOA: regist-service không query bảng Students hay Topics.</li>
-          <li>Các nghiệp vụ kiểm tra điều kiện sinh viên và trạng thái đề tài được ủy quyền qua HTTP/REST API của academic-service và topic-service.</li>
-        </ul>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <div class="card-dot violet"></div>
-          <h3>Persistence &amp; Async Logging</h3>
-        </div>
-        <ul>
-          <li>Lưu bản ghi vào bảng Registrations (thuộc quyền sở hữu của regist-service) với Status khởi tạo là 1 (Chờ duyệt).</li>
-          <li>Bắn thông điệp ghi log audit bất đồng bộ sang log-service mà không làm nghẽn luồng xử lý chính.</li>
-        </ul>
-      </div>
-    </div>
-    <nav class="node-outline no-print" id="node-outline" hidden aria-labelledby="node-outline-title">
-      <div class="node-outline-head">
-        <strong id="node-outline-title">Node index</strong>
-        <span class="node-outline-count" id="node-outline-count"></span>
-      </div>
-      <ol class="node-outline-list" id="node-outline-list"></ol>
-    </nav>
-    </aside>
 
   </div>
 
