@@ -17,6 +17,8 @@ class StudentPermission(BasePermission):
 class TopicReferenceDTO(serializers.Serializer):
     topic_id = serializers.CharField()
     name = serializers.CharField()
+    req_GPA = serializers.FloatField()
+    studentQuota = serializers.IntegerField()
     major_id = serializers.CharField()
     status = serializers.IntegerField(allow_null=True)
 

@@ -9,8 +9,8 @@ import { TopicPage } from './TopicPage'
 const base = '/topics/api/v1/topics/'
 const guid = '68317f4b-7445-45bf-8cbb-0c3ba05c5a50'
 const rows = [
-  { status: 1, topic_id: 'DT001', name: 'Quản lý đồ án', description: 'SOA', avisor_name: 'An Nguyễn', major_name: 'Phần mềm' },
-  { status: null, topic_id: 'DT002', name: 'Hệ thống thư viện', description: null, avisor_name: null, major_name: null },
+  { req_GPA: 0, studentQuota: 1, status: 1, topic_id: 'DT001', name: 'Quản lý đồ án', description: 'SOA', avisor_name: 'An Nguyễn', major_name: 'Phần mềm' },
+  { req_GPA: 0, studentQuota: 1, status: null, topic_id: 'DT002', name: 'Hệ thống thư viện', description: null, avisor_name: null, major_name: null },
 ]
 const lecturer = { lecturer_id: 'GV001', department_id: '1', user: { first_name: 'An', last_name: 'Nguyễn' } }
 const logout = vi.fn()
@@ -44,11 +44,28 @@ function fillForm() {
   fireEvent.change(screen.getByLabelText('Ngành', { exact: true }), { target: { value: '2' } })
 }
 
+it('submits GPA and quota and rejects invalid limits before writing', async () => {
+  mock.onPost(base).reply(201, rows[0])
+  renderPage(); await screen.findByRole('table', { name: 'Danh sách đề tài' })
+  const form = await openForm(); fillForm()
+  fireEvent.change(screen.getByLabelText('GPA yêu cầu'), { target: { value: '4.1' } })
+  fireEvent.change(screen.getByLabelText('Chỉ tiêu sinh viên'), { target: { value: '1.5' } })
+  fireEvent.submit(form)
+  expect(await screen.findByText('GPA yêu cầu phải từ 0 đến 4.')).toBeVisible()
+  expect(screen.getByText('Chỉ tiêu phải là số nguyên dương tối đa 2147483647.')).toBeVisible()
+  expect(mock.history.post).toHaveLength(0)
+  fireEvent.change(screen.getByLabelText('GPA yêu cầu'), { target: { value: '3.25' } })
+  fireEvent.change(screen.getByLabelText('Chỉ tiêu sinh viên'), { target: { value: '5' } })
+  fireEvent.submit(form)
+  await waitFor(() => expect(mock.history.post).toHaveLength(1))
+  expect(JSON.parse(mock.history.post[0].data)).toMatchObject({ req_GPA: 3.25, studentQuota: 5 })
+})
+
 describe('Topic list and creation', () => {
   it('shows four business columns, topic actions and nullable names', async () => {
     renderPage()
     const table = await screen.findByRole('table', { name: 'Danh sách đề tài' })
-    expect(within(table).getAllByRole('columnheader').map(cell => cell.textContent)).toEqual(['Mã đề tài', 'Tên đề tài', 'Giáo viên hướng dẫn', 'Tên ngành', 'Trạng thái', 'Thao tác'])
+    expect(within(table).getAllByRole('columnheader').map(cell => cell.textContent)).toEqual(['Mã đề tài', 'Tên đề tài', 'Giáo viên hướng dẫn', 'Tên ngành', 'GPA yêu cầu', 'Chỉ tiêu', 'Trạng thái', 'Thao tác'])
     expect(within(table).getByText('An Nguyễn')).toBeVisible()
     expect(within(table).getByText('Phần mềm')).toBeVisible()
     expect(within(table).getAllByText('—')).toHaveLength(2)
@@ -85,7 +102,7 @@ describe('Topic list and creation', () => {
     expect(await screen.findByText('Đã tạo đề tài.')).toBeVisible()
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(await screen.findByText(guid)).toBeVisible()
-    expect(JSON.parse(mock.history.post[0].data)).toEqual({ topic_id: guid, name: 'Đề tài mới', description: 'Mô tả SOA', advisor_id: 'GV001', major_id: '2', ...(role === 1 ? { status: 1 } : {}) })
+    expect(JSON.parse(mock.history.post[0].data)).toEqual({ req_GPA: 0, studentQuota: 1, topic_id: guid, name: 'Đề tài mới', description: 'Mô tả SOA', advisor_id: 'GV001', major_id: '2', ...(role === 1 ? { status: 1 } : {}) })
     expect(mock.history.post[0].headers?.Authorization).toBe('Bearer test-token')
     expect(crypto.randomUUID).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('button', { name: 'Tạo đề tài' })).toHaveFocus()

@@ -6,13 +6,21 @@ import { cancelRegistration, getRegistrationTopicStatus, isCurrent, listAvailabl
 const base = '/registrations/api/v1/'
 const row = { registration_id: 'R1', topic_id: 'T1', semester: null, status: 1,
   created_at: '2026-10-11T03:00:00Z', updated_at: null, point: null }
-const topic = { topic_id: 'T1', major_id: 'M1', name: 'SOA', status: 2 }
+const topic = { topic_id: 'T1', major_id: 'M1', name: 'SOA', req_GPA: 0, studentQuota: 1, registered_count: 0, eligible: true, ineligibility_reason: null, status: 2 }
 const signal = new AbortController().signal
 let mock: MockAdapter
 beforeEach(() => { mock = new MockAdapter(apiClient, { onNoMatch: 'throwException' }); setAccessToken('student-token') })
 afterEach(() => { mock.restore(); setAccessToken(null) })
 
 describe('Student registration Gateway contract', () => {
+  it.each([
+    { req_GPA: undefined }, { req_GPA: 5 }, { studentQuota: 0 }, { studentQuota: 1.5 },
+    { registered_count: -1 }, { eligible: undefined }, { eligible: true, ineligibility_reason: 'topic_quota_full' },
+    { eligible: true, registered_count: 1 },
+  ])('rejects invalid or missing eligibility fields %#', async override => {
+    mock.onGet(base + 'available-topics/').reply(200, { results: [{ ...topic, ...override }], next_after: null })
+    await expect(listAvailableTopics('', signal)).rejects.toThrow()
+  })
   it('reads topic status through the student reference endpoint with JWT and signal', async () => {
     mock.onGet('/topics/api/v1/registration-topics/T%20%23%3F/').reply(200, { topic_id: 'T #?', status: 3 })
     expect(await getRegistrationTopicStatus('T #?', signal)).toBe(3)

@@ -1,6 +1,7 @@
 """Bounded REST clients with healthy-instance discovery and failure circuits."""
 import ipaddress
 import json
+import math
 import logging
 import re
 import threading
@@ -142,7 +143,8 @@ class AcademicClient(ReferenceClient):
 
     def context(self, identity, authorization, request_id):
         def validate(payload):
-            if not isinstance(payload, dict) or payload.get("student_id") != identity or not valid_id(payload.get("department_id")):
+            if (not isinstance(payload, dict) or payload.get("student_id") != identity
+                    or not valid_id(payload.get("department_id")) or not valid_gpa(payload.get("gpa"))):
                 raise ValueError("Invalid student context")
         return self.call("/api/v1/registration-context/", authorization, request_id, validate,
                          missing=(403, PermissionDenied("Student has no valid faculty.")))
@@ -160,9 +162,16 @@ class AcademicClient(ReferenceClient):
                          {"major_ids": ids})["departments"]
 
 
+def valid_gpa(value):
+    return type(value) in (int, float) and math.isfinite(value) and 0 <= value <= 4
+
+
 def validate_topic(payload):
     if not isinstance(payload, dict) or not all(valid_id(payload.get(key)) for key in ("topic_id", "major_id")):
         raise ValueError("Invalid topic references")
+    if (not valid_gpa(payload.get("req_GPA")) or type(payload.get("studentQuota")) is not int
+            or not 1 <= payload["studentQuota"] <= 2147483647):
+        raise ValueError("Invalid topic requirements")
     if "status" not in payload or not isinstance(payload.get("name"), str) or not (payload.get("status") is None or type(payload.get("status")) is int):
         raise ValueError("Invalid topic DTO")
 

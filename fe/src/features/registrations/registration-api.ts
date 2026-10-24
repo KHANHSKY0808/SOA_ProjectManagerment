@@ -9,7 +9,11 @@ export interface Registration {
   updated_at: string | null
   point: string | null
 }
-export interface AvailableTopic { topic_id: string; name: string; major_id: string; status: 2 }
+export interface AvailableTopic {
+  topic_id: string; name: string; major_id: string; status: 2
+  req_GPA: number; studentQuota: number; registered_count: number; eligible: boolean
+  ineligibility_reason: 'gpa_requirement_not_met' | 'topic_quota_full' | null
+}
 export interface TopicPage { results: AvailableTopic[]; next_after: string | null }
 export interface RegisterInput { topic_id: string; semester?: string }
 
@@ -67,7 +71,16 @@ export async function listAvailableTopics(after: string, signal: AbortSignal): P
       throw new Error('Invalid available topic')
     }
     previous = row.topic_id
-    return { topic_id: row.topic_id, name: row.name, major_id: row.major_id, status: 2 }
+    if (typeof row.req_GPA !== 'number' || !Number.isFinite(row.req_GPA) || row.req_GPA < 0 || row.req_GPA > 4 ||
+        typeof row.studentQuota !== 'number' || !Number.isSafeInteger(row.studentQuota) || row.studentQuota < 1 || row.studentQuota > 2147483647 ||
+        typeof row.registered_count !== 'number' || !Number.isSafeInteger(row.registered_count) || row.registered_count < 0 ||
+        typeof row.eligible !== 'boolean' || ![null, 'gpa_requirement_not_met', 'topic_quota_full'].includes(row.ineligibility_reason as string | null) ||
+        row.eligible !== (row.ineligibility_reason === null) || (row.eligible && row.registered_count >= row.studentQuota)) {
+      throw new Error('Invalid topic eligibility')
+    }
+    return { topic_id: row.topic_id, name: row.name, major_id: row.major_id, status: 2,
+      req_GPA: row.req_GPA, studentQuota: row.studentQuota, registered_count: row.registered_count,
+      eligible: row.eligible, ineligibility_reason: row.ineligibility_reason as AvailableTopic['ineligibility_reason'] }
   })
   const cursor = page.next_after as string | null
   // The backend cursor belongs to the source page before faculty filtering.

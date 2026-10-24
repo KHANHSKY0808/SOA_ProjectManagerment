@@ -1,6 +1,8 @@
 import { apiClient } from '../../services/api-client'
 
 export interface Topic {
+  req_GPA: number
+  studentQuota: number
   status: number | null
   topic_id: string
   name: string
@@ -17,6 +19,8 @@ export function topicStatusLabel(status: number | null) {
   return status === 0 || status === 1 || status === 2 || status === 3 ? topicStatusLabels[status] : 'Chưa xác định'
 }
 export interface CreateTopic {
+  req_GPA: number
+  studentQuota: number
   status?: TopicStatus
   topic_id: string
   name: string
@@ -33,13 +37,15 @@ export interface TopicDetail extends Topic {
   major_id?: string
   advisor_id?: string | null
 }
-export type TopicUpdate = Partial<Pick<CreateTopic, 'name' | 'description' | 'major_id' | 'advisor_id' | 'status'>>
+export type TopicUpdate = Partial<Pick<CreateTopic, 'name' | 'description' | 'major_id' | 'advisor_id' | 'status' | 'req_GPA' | 'studentQuota'>>
 
 const path = '/topics/api/v1/topics/'
 function topic(value: unknown): Topic {
   if (!value || typeof value !== 'object') throw new Error('Invalid topic response')
   const row = value as Record<string, unknown>
   if (typeof row.topic_id !== 'string' || !row.topic_id || typeof row.name !== 'string' ||
+      typeof row.req_GPA !== 'number' || !Number.isFinite(row.req_GPA) || row.req_GPA < 0 || row.req_GPA > 4 ||
+      typeof row.studentQuota !== 'number' || !Number.isSafeInteger(row.studentQuota) || row.studentQuota < 1 || row.studentQuota > 2147483647 ||
       !(row.status === null || Number.isInteger(row.status)) ||
       !['description', 'major_name', 'avisor_name'].every(key => row[key] === null || typeof row[key] === 'string')) {
     throw new Error('Invalid topic response')

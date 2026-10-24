@@ -106,6 +106,20 @@ def published_routes(root, module="config.urls", prefix=""):
 
 
 class OpenAPIContractTests(unittest.TestCase):
+    def test_topic_requirements_and_registration_eligibility_contract(self):
+        schemas = SPEC["components"]["schemas"]
+        for name in ("TopicTopicRequestDTO", "TopicTopicRequestDTOPatch", "TopicTopicResponseDTO",
+                     "TopicTopicManagementDetailDTO", "TopicTopicReferenceDTO", "RegistAvailableTopicDTO"):
+            fields = schemas[name]["properties"]
+            self.assertEqual((fields["req_GPA"]["minimum"], fields["req_GPA"]["maximum"]), (0, 4))
+            self.assertEqual((fields["studentQuota"]["minimum"], fields["studentQuota"]["maximum"]), (1, 2147483647))
+        self.assertIn("gpa", schemas["AcademicContextDTO"]["required"])
+        self.assertTrue({"registered_count", "eligible", "ineligibility_reason"} <=
+                        set(schemas["RegistAvailableTopicDTO"]["required"]))
+        post = SPEC["paths"]["/registrations/api/v1/registrations/"]["post"]
+        self.assertIn("gpa_requirement_not_met", post["responses"]["400"]["description"])
+        self.assertIn("topic_quota_full", post["responses"]["409"]["description"])
+
     def test_openapi_semantic_validation(self):
         try:
             from openapi_spec_validator import validate

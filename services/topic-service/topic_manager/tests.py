@@ -28,7 +28,7 @@ class TopicPersistenceTests(TransactionTestCase):
             cursor.execute('CREATE TABLE Users (UserId TEXT PRIMARY KEY)')
             cursor.execute('CREATE TABLE Majors (MajorId TEXT PRIMARY KEY)')
             cursor.execute('CREATE TABLE Lecturers (LecturerId TEXT PRIMARY KEY)')
-            cursor.execute('CREATE TABLE Topics (\n                TopicId TEXT PRIMARY KEY NOT NULL, TopicName TEXT NOT NULL,\n                Description TEXT, FileUrl TEXT, MajorId TEXT NOT NULL REFERENCES Majors(MajorId),\n                Status INTEGER, AdvisorId TEXT REFERENCES Lecturers(LecturerId),\n                CreatedAt TEXT, UpdatedAt TEXT, UpdatedBy TEXT REFERENCES Users(UserId))')
+            cursor.execute('CREATE TABLE Topics (\n                TopicId TEXT PRIMARY KEY NOT NULL, TopicName TEXT NOT NULL,\n                Description TEXT, FileUrl TEXT, MajorId TEXT NOT NULL REFERENCES Majors(MajorId),\n                req_GPA REAL NOT NULL DEFAULT 0, studentQuota INTEGER NOT NULL DEFAULT 1, Status INTEGER, AdvisorId TEXT REFERENCES Lecturers(LecturerId),\n                CreatedAt TEXT, UpdatedAt TEXT, UpdatedBy TEXT REFERENCES Users(UserId))')
             cursor.execute('CREATE TABLE Registrations (RegistrationId TEXT PRIMARY KEY, TopicId TEXT REFERENCES Topics(TopicId))')
 
     @classmethod
@@ -136,6 +136,30 @@ class TopicPersistenceTests(TransactionTestCase):
                 self.assertEqual(self.request("post", "/api/topics/", payload).status_code, 400)
         self.academic.assert_not_called()
         self.assertFalse(Topic.objects.exists())
+
+    def test_requirement_defaults_updates_validation_and_permissions(self):
+        created = self.create()
+        self.assertEqual((created.data["req_GPA"], created.data["studentQuota"]), (0, 1))
+        url = "/api/v1/topics/DT001/"
+        result = self.request("patch", url, {"req_GPA": 3.25, "studentQuota": 4})
+        self.assertEqual(result.status_code, 200, result.data)
+        self.assertEqual((result.data["req_GPA"], result.data["studentQuota"]), (3.25, 4))
+        self.request("patch", url, {"name": "Retain limits"})
+        obj = Topic.objects.get()
+        self.assertEqual((obj.req_GPA, obj.studentQuota), (3.25, 4))
+        self.assertEqual(Topic._meta.get_field("req_GPA").db_column, "req_GPA")
+        self.assertEqual(Topic._meta.get_field("studentQuota").db_column, "studentQuota")
+        for field, values in (("req_GPA", [-1, 4.01, None, True, "3"]),
+                              ("studentQuota", [0, -1, 1.5, 2147483648, 10**100, None, True, "2"])):
+            for value in values:
+                with self.subTest(field=field, value=value):
+                    self.assertEqual(self.request("patch", url, {field: value}).status_code, 400)
+        from .serializers import TopicRequestDTO
+        for value in (float("inf"), float("nan")):
+            self.assertFalse(TopicRequestDTO(data={"req_GPA": value}, partial=True).is_valid())
+        for role in (2, 3):
+            self.authenticate(role)
+            self.assertEqual(self.request("patch", url, {"studentQuota": 10}).status_code, 403)
 
     def test_duplicate_and_immutable_id(self):
         self.create()
@@ -582,12 +606,12 @@ class TopicNameClientTests(SimpleTestCase):
     @patch.object(clients.academic_names_client, "display_names", return_value={
         "major_names": {"1": "IT"}, "advisor_names": {"GV1": "Nguyen An"}})
     def test_enrichment_deduplication_and_response_shape(self, names):
-        obj = SimpleNamespace(topic_id="T", name="SOA", description=None, file_url=None,
+        obj = SimpleNamespace(req_GPA=0, studentQuota=1, topic_id="T", name="SOA", description=None, file_url=None,
                               major_id="1", advisor_id="GV1", status=1,
                               created_at=None, updated_at=None, updated_by=None)
         response = topic_response([obj] * 200, "Bearer t", many=True)
         names.assert_called_once_with(["1"], ["GV1"], "Bearer t")
-        self.assertEqual(set(response[0]), {"topic_id", "name", "description", "file_url", "major_name", "status",
+        self.assertEqual(set(response[0]), {"req_GPA", "studentQuota", "topic_id", "name", "description", "file_url", "major_name", "status",
                                             "avisor_name", "created_at", "updated_at", "updated_by"})
         self.assertEqual(response[0]["avisor_name"], "Nguyen An")
         self.assertEqual(len(response), 200)
@@ -595,7 +619,7 @@ class TopicNameClientTests(SimpleTestCase):
     @patch.object(clients.academic_names_client, "display_names", return_value={
         "major_names": {"1": "IT"}, "advisor_names": {"GV1": None}})
     def test_identity_fallback_retains_real_major_without_fabricating_advisor(self, names):
-        obj = SimpleNamespace(topic_id="T", name="SOA", description=None, file_url=None,
+        obj = SimpleNamespace(req_GPA=0, studentQuota=1, topic_id="T", name="SOA", description=None, file_url=None,
                               major_id="1", advisor_id="GV1", status=1,
                               created_at=None, updated_at=None, updated_by=None)
         response = topic_response(obj, "Bearer t")
@@ -606,7 +630,7 @@ class TopicNameClientTests(SimpleTestCase):
     @patch.object(clients.academic_names_client, "display_names", side_effect=[
         clients.DependencyUnavailable(), {"major_names": {"1": "IT"}, "advisor_names": {"GV1": "Nguyen An"}}])
     def test_enrichment_recovers_on_next_lookup_after_dependency_recovers(self, names):
-        obj = SimpleNamespace(topic_id="T", name="SOA", description=None, file_url=None,
+        obj = SimpleNamespace(req_GPA=0, studentQuota=1, topic_id="T", name="SOA", description=None, file_url=None,
                               major_id="1", advisor_id="GV1", status=1,
                               created_at=None, updated_at=None, updated_by=None)
         failed = topic_response(obj, "Bearer t")

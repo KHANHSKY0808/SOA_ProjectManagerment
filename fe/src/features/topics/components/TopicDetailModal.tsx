@@ -18,6 +18,8 @@ export function TopicDetailModal({ state }: { state: TopicState }) {
     {state.detailLoading && <p role="status">Đang tải chi tiết đề tài…</p>}
     {state.detailError && <><p role="alert" className="academic-error">{state.detailError}</p><button type="button" onClick={state.retryDetail}>Tải lại chi tiết</button></>}
     {row && <dl className="topic-detail">
+      <dt>GPA yêu cầu</dt><dd>{row.req_GPA}</dd>
+      <dt>Chỉ tiêu sinh viên</dt><dd>{row.studentQuota}</dd>
       <dt>Mã đề tài</dt><dd>{row.topic_id}</dd>
       <dt>Tên đề tài</dt><dd>{row.name}</dd>
       <dt>Mô tả đề tài</dt><dd className="topic-detail-description">{row.description || '—'}</dd>

@@ -415,3 +415,7 @@ academic storage unavailable503. Identity lookup failure returns200 with null
 names so management can still display registration IDs. Consumers must preserve
 rows and indicate incomplete names; they must not treat name lookup failure as
 an empty roster. Registration ownership and filtering remain in regist-service.
+
+## GPA in registration context
+
+`GET /api/v1/registration-context/` now returns `{"student_id":"SV001","department_id":"F1","gpa":3.2}`. Authentication remains locally validated Bearer JWT, integer student role 3, with identity taken from JWT. This endpoint reads only academic-owned Students/Majors/Faculties; the GPA is not accepted from the caller and not logged. Missing student/faculty returns 403, storage failure 503. Regist-service validates a finite 0?4 GPA and fails safely on missing/malformed values. Existing discovery, bounded client timeout and circuit behavior remain; no additional rate limiter or automatic write retry is introduced. Deploy this additive DTO before enabling the updated registration client. No Students schema change is needed.

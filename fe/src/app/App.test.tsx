@@ -418,7 +418,7 @@ describe('Login and role routes', () => {
   ])('restores topic deep link $path with role-appropriate controls', async ({ role, path }) => {
     sessionStorage.setItem(SESSION_TOKEN_KEY, 'saved-token')
     mock.onGet('/auth/me/').reply(200, responseForRole(role).user)
-    mock.onGet('/topics/api/v1/topics/').reply(200, [{ status: 1, topic_id: 'DT001', name: 'SOA', description: null, major_name: 'IT', avisor_name: 'An' }])
+    mock.onGet('/topics/api/v1/topics/').reply(200, [{ req_GPA: 0, studentQuota: 1, status: 1, topic_id: 'DT001', name: 'SOA', description: null, major_name: 'IT', avisor_name: 'An' }])
     renderApp(path)
     expect(await screen.findByRole('table', { name: 'Danh sách đề tài' })).toBeVisible()
     expect(screen.getByRole('heading', { name: 'Quản lý đề tài', level: 1 })).toBeVisible()

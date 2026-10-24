@@ -6,7 +6,7 @@ import { createTopic, deleteTopic, getTopic, getTopicDetail, listTopics, updateT
 import type { CreateTopic, Topic, TopicDetail, TopicUpdate, TopicStatus } from './topic-api'
 import { createTopicId } from './topic-id'
 
-export type TopicField = 'status' | 'name' | 'description' | 'advisor_id' | 'major_id'
+export type TopicField = 'status' | 'name' | 'description' | 'advisor_id' | 'major_id' | 'req_GPA' | 'studentQuota'
 export const numericMajor = (id: string) => /^[0-9]+$/.test(id)
 type DialogMode = 'create' | 'detail' | 'edit' | 'delete' | null
 const fields = ['name', 'description', 'advisor_id', 'major_id'] as const
@@ -101,7 +101,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
     try {
       const id = createTopicId()
       resetForm(); setMode('create'); setSelected(null)
-      setDraft({ topic_id: id, name: '', description: '', advisor_id: '', major_id: '', ...(canSetStatus ? { status: 1 as const } : {}) })
+      setDraft({ topic_id: id, name: '', description: '', advisor_id: '', major_id: '', req_GPA: 0, studentQuota: 1, ...(canSetStatus ? { status: 1 as const } : {}) })
       void loadOptions()
     } catch {
       setListError('Không thể sinh mã đề tài. Vui lòng thử lại hoặc cập nhật trình duyệt.')
@@ -118,7 +118,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
       if (editing) {
         if (typeof result.major_id !== 'string' || !result.major_id ||
             !(result.advisor_id === null || typeof result.advisor_id === 'string')) throw new Error('Missing management references')
-        const value: CreateTopic = { topic_id: result.topic_id, name: result.name, description: result.description ?? '',
+        const value: CreateTopic = { topic_id: result.topic_id, name: result.name, description: result.description ?? '', req_GPA: result.req_GPA, studentQuota: result.studentQuota,
           major_id: result.major_id, advisor_id: result.advisor_id ?? '', ...(canSetStatus && (result.status === 0 || result.status === 1 || result.status === 2 || result.status === 3) ? { status: result.status } : {}) }
         original.current = value; setDraft(value)
       }
@@ -146,7 +146,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
   }
   function change(key: TopicField, value: string) {
     if (locked.current || uncertain || (key === 'status' && !canSetStatus)) return
-    setDraft(previous => previous && { ...previous, [key]: key === 'status' ? (value === '' ? undefined : Number(value) as TopicStatus) : value })
+    setDraft(previous => previous && { ...previous, [key]: key === 'status' ? (value === '' ? undefined : Number(value) as TopicStatus) : key === 'req_GPA' || key === 'studentQuota' ? (value === '' ? NaN : Number(value)) : value })
     setErrors(previous => ({ ...previous, [key]: undefined }))
   }
   async function saved(message: string) {
@@ -159,6 +159,8 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
     const values = { ...draft, name: draft.name.trim() }
     const changed = (key: TopicField) => !editing || values[key] !== original.current?.[key]
     const invalid: Partial<Record<TopicField, string>> = {}
+    if (!Number.isFinite(values.req_GPA) || values.req_GPA < 0 || values.req_GPA > 4) invalid.req_GPA = 'GPA yêu cầu phải từ 0 đến 4.'
+    if (!Number.isSafeInteger(values.studentQuota) || values.studentQuota < 1 || values.studentQuota > 2147483647) invalid.studentQuota = 'Chỉ tiêu phải là số nguyên dương tối đa 2147483647.'
     if (!values.name) invalid.name = 'Vui lòng nhập tên đề tài.'
     if (changed('advisor_id') && !lecturers.some(row => row.lecturer_id === draft.advisor_id)) invalid.advisor_id = 'Vui lòng chọn giáo viên hướng dẫn.'
     if (changed('major_id') && (!majors.some(row => row.major_id === draft.major_id) || !numericMajor(draft.major_id))) invalid.major_id = 'Vui lòng chọn ngành có mã số hợp lệ.'
@@ -167,6 +169,8 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
     const first = Object.keys(invalid)[0] as TopicField | undefined
     if (first) return first
     const patch: TopicUpdate = {}
+    if (changed('req_GPA')) patch.req_GPA = values.req_GPA
+    if (changed('studentQuota')) patch.studentQuota = values.studentQuota
     for (const key of fields) if (changed(key)) patch[key] = key === 'description' ? values[key].trim() : values[key]
     if (canSetStatus && changed('status') && values.status !== undefined) patch.status = values.status
     if (editing && !Object.keys(patch).length) { close(); setNotice('Không có thay đổi.'); return }
@@ -193,7 +197,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
       if (failure.status === 400 && failure.details && typeof failure.details === 'object') {
         const details = failure.details as Record<string, unknown>
         const next: Partial<Record<TopicField, string>> = {}
-        for (const key of [...fields, 'status'] as const) if (key in details) next[key] = 'Giá trị không hợp lệ. Vui lòng kiểm tra lại.'
+        for (const key of [...fields, 'status', 'req_GPA', 'studentQuota'] as const) if (key in details) next[key] = 'Giá trị không hợp lệ. Vui lòng kiểm tra lại.'
         setErrors(next)
         return Object.keys(next)[0] as TopicField | undefined
       }

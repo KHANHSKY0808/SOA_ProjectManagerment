@@ -141,3 +141,20 @@ Admin có thể chuyển đề tài sang trạng thái 3 để đóng đăng ký
 - Auth hiện so sánh mật khẩu plaintext trong database; cơ chế này chưa phù hợp production. JWT vẫn được phát hành và kiểm tra.
 - `INTERNAL_SERVICE_TOKEN`, JWT key và Consul ACL token có mục đích riêng; không đưa secret vào frontend hoặc biến `VITE_*`.
 - Hướng dẫn trên dành cho local. Production cần HTTPS, cấu hình phục vụ SPA/proxy API và phương án lưu trữ phù hợp.
+
+
+## Điều kiện GPA và chỉ tiêu đề tài
+
+Topics có thêm `req_GPA` (GPA tối thiểu, 0–4, mặc định 0) và `studentQuota` (số nguyên dương, mặc định 1). Admin nhập/sửa trong quản lý đề tài. Sinh viên chỉ đăng ký mới khi GPA ≥ req_GPA và số sinh viên đang đăng ký < studentQuota, bên cạnh điều kiện khoa, trạng thái mở và một đăng ký hiện tại. Đủ chỉ tiêu thì chặn; đăng ký đã hủy không chiếm suất. Dữ liệu đăng ký cũ được giữ nguyên.
+
+BE lấy GPA từ academic-service và yêu cầu đề tài từ topic-service qua REST; regist-service tự đếm sinh viên trong dữ liệu mình sở hữu và kiểm tra chỉ tiêu trong transaction có khóa ghi SQLite. FE hiển thị yêu cầu/số chỗ và khóa nút theo eligibility do BE trả về. Không đổi service, cổng hoặc gateway prefix.
+
+**Cập nhật schema trước khi chạy mã mới:** dừng các tiến trình ghi database, chạy lệnh bên dưới tại thư mục gốc với một đường dẫn backup mới (không ghi đè). Utility kiểm tra integrity, giữ nguyên dữ liệu/các lỗi FK có sẵn và sao lưu nhất quán bằng SQLite backup API. Chạy lại schema tương thích là no-op; timeout khóa là 3 giây. Không chạy migrate cho bảng unmanaged.
+
+```powershell
+& .\services\topic-service\venv\Scripts\python.exe .\database\add_topic_requirements.py --db .\database\DB_ProjectManagerment.db --backup D:\backups\topics-before-requirements.db
+```
+
+Utility chỉ thêm hai cột Topics, không thay đổi Students/Registrations. Triển khai schema trước, sau đó phối hợp cập nhật topic/academic/regist và frontend. REST client từ chối dữ liệu thiếu/sai giới hạn với 503. Để rollback: dừng writers, dùng mã trước thay đổi; chỉ khôi phục backup nếu không có dữ liệu mới sẽ bị mất. Không lấy DB từ Git để rollback. Thay đổi GPA/chỉ tiêu trong lúc request đang tra REST không atomic xuyên service; đăng ký cũ không bị hủy khi giảm chỉ tiêu/tăng GPA yêu cầu.
+
+Quota storage bound: `studentQuota` is limited to 1–2147483647 (Django integer range); oversized values return validation errors.

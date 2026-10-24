@@ -24,7 +24,7 @@ class RegistrationLookupTests(SimpleTestCase):
         topics.assert_called_once_with(status=2, topic_id__gt="T000")
         self.assertEqual(len(result.data["results"]), 100)
         self.assertEqual(result.data["next_after"], "T099")
-        self.assertEqual(set(result.data["results"][0]), {"topic_id", "name", "major_id", "status"})
+        self.assertEqual(set(result.data["results"][0]), {"topic_id", "name", "major_id", "status", "req_GPA", "studentQuota"})
 
     @patch.object(Topic.objects, "filter")
     def test_detail_closed_missing_and_failure(self, topics):

@@ -9,8 +9,8 @@ const base = '/registrations/api/v1/'
 const records = base + 'registrations/'
 const available = base + 'available-topics/'
 const topics = [
-  { topic_id: 'T1', name: 'Quản lý đồ án', major_id: 'M1', status: 2 },
-  { topic_id: 'T2', name: 'Thư viện số', major_id: 'M2', status: 2 },
+  { topic_id: 'T1', name: 'Quản lý đồ án', major_id: 'M1', req_GPA: 0, studentQuota: 1, registered_count: 0, eligible: true, ineligibility_reason: null, status: 2 },
+  { topic_id: 'T2', name: 'Thư viện số', major_id: 'M2', req_GPA: 0, studentQuota: 1, registered_count: 0, eligible: true, ineligibility_reason: null, status: 2 },
 ]
 const record = { registration_id: 'R1', topic_id: 'T1', semester: null, status: 1,
   created_at: '2026-10-11T03:00:00Z', updated_at: '2026-10-11T03:00:00Z', point: null }
@@ -69,6 +69,33 @@ async function openRegister() {
   opener.focus(); fireEvent.click(opener)
   return screen.getByRole('form', { name: 'Đăng ký đề tài' })
 }
+
+it('shows server eligibility and disables low-GPA and full topics', async () => {
+  mock.onGet(available).reply(200, { results: [
+    { ...topics[0], req_GPA: 3.5, eligible: false, ineligibility_reason: 'gpa_requirement_not_met' },
+    { ...topics[1], registered_count: 1, eligible: false, ineligibility_reason: 'topic_quota_full' },
+  ], next_after: null })
+  renderPage(); await ready()
+  expect(screen.getByRole('button', { name: 'Đăng ký T1' })).toBeDisabled()
+  expect(screen.getByRole('button', { name: 'Đăng ký T2' })).toBeDisabled()
+  expect(screen.getByText('GPA của bạn chưa đạt yêu cầu.')).toBeVisible()
+  expect(screen.getByText('Đề tài đã đủ chỉ tiêu.')).toBeVisible()
+  expect(screen.getByText('1 / 1')).toBeVisible()
+  expect(mock.history.post).toHaveLength(0)
+})
+
+it.each(['topic_quota_full', 'gpa_requirement_not_met'])('refreshes eligibility after %s without retrying the write', async code => {
+  mock.onPost(records).reply(code === 'topic_quota_full' ? 409 : 400, { code, detail: 'Rejected' })
+  renderPage(); const form = await openRegister()
+  mock.onGet(available).reply(200, { results: [{ ...topics[0], eligible: false,
+    ineligibility_reason: code, ...(code === 'topic_quota_full' ? { registered_count: 1 } : { req_GPA: 4 }) }], next_after: null })
+  fireEvent.submit(form)
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Đăng ký T1' })).toBeDisabled())
+  expect(screen.queryByRole('button', { name: 'Kiểm tra kết quả' })).not.toBeInTheDocument()
+  expect(mock.history.post).toHaveLength(1)
+  expect(mock.history.get.filter(request => request.url === available)).toHaveLength(2)
+})
 
 describe('Student registration workflow', () => {
   it('loads independent lists, shows eligible topics and searches only on submit', async () => {

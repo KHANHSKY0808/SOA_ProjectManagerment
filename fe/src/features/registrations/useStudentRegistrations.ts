@@ -107,7 +107,7 @@ export function useStudentRegistrations(logout: () => void) {
   const canCancel = (registration: Registration) => canAct && isCurrent(registration) && topicStatusReady &&
     registration.topic_id !== null && Object.hasOwn(topicStatuses, registration.topic_id) && topicStatuses[registration.topic_id] !== 3
   function openRegister(topic: AvailableTopic) {
-    if (!canAct || current.length || locked.current) return
+    if (!canAct || current.length || locked.current || !topic.eligible) return
     setSemester(''); setActionError(''); setNotice(''); setDialog({ kind: 'register', topic })
   }
   function openCancel(registration: Registration) {
@@ -118,7 +118,7 @@ export function useStudentRegistrations(logout: () => void) {
 
   async function submit() {
     if (!dialog || !canAct || locked.current) return
-    if (dialog.kind === 'register' && current.length) return
+    if (dialog.kind === 'register' && (current.length || !dialog.topic.eligible)) return
     if (dialog.kind === 'cancel' && !canCancel(dialog.registration)) return
     const action: Pending = dialog.kind === 'register'
       ? { kind: 'register', input: { topic_id: dialog.topic.topic_id, ...(semester.trim() ? { semester: semester.trim() } : {}) } }
@@ -144,11 +144,16 @@ export function useStudentRegistrations(logout: () => void) {
         setNotice('Đã hủy đăng ký đề tài.')
       }
       setDialog(null)
-      await refreshHistory()
+      await Promise.all([refreshHistory(), loadTopics()])
     } catch (cause) {
       if (controller.signal.aborted) return
       const failure = normalizeApiError(cause)
       setActionError(message(failure))
+      if (action.kind === 'register' && failure.details && typeof failure.details === 'object' &&
+          'code' in failure.details && ['gpa_requirement_not_met', 'topic_quota_full'].includes(String(failure.details.code))) {
+        setDialog(null)
+        void loadTopics()
+      }
       if (action.kind === 'cancel' && failure.status === 409 && failure.details && typeof failure.details === 'object' &&
           'code' in failure.details && failure.details.code === 'topic_registration_closed') {
         setDialog(null)

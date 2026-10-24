@@ -40,9 +40,9 @@ class RegistrationAPITests(TransactionTestCase):
         Registration.objects.all().delete()
         self.client = APIClient()
         self.authenticate()
-        self.context = self.mock(clients.academic_client, "context", {"student_id": "SV1", "department_id": "F1"})
+        self.context = self.mock(clients.academic_client, "context", {"student_id": "SV1", "department_id": "F1", "gpa": 3.2})
         self.departments = self.mock(clients.academic_client, "departments", {"M2": "F1"})
-        self.topic = self.mock(clients.topic_client, "topic", {"topic_id": "T1", "name": "SOA", "major_id": "M2", "status": 2})
+        self.topic = self.mock(clients.topic_client, "topic", {"topic_id": "T1", "name": "SOA", "req_GPA": 0, "studentQuota": 1, "major_id": "M2", "status": 2})
         self.page = self.mock(clients.topic_client, "page", {"results": [], "next_after": None})
         self.mock(clients, "fetch_json", side_effect=AssertionError("Live network forbidden"))
 
@@ -84,6 +84,60 @@ class RegistrationAPITests(TransactionTestCase):
         self.assertEqual(self.client.get(URL + "?status=active").data, [])
         self.assertEqual(self.create(topic_id="T2").status_code, 201)
         self.assertEqual(Registration.objects.count(), 2)
+
+    def test_gpa_boundary_and_idempotent_retry_after_requirement_change(self):
+        self.topic.return_value["req_GPA"] = 3.21
+        denied = self.create()
+        self.assertEqual((denied.status_code, denied.data["code"]), (400, "gpa_requirement_not_met"))
+        self.assertFalse(Registration.objects.exists())
+        self.topic.return_value["req_GPA"] = 3.2
+        self.assertEqual(self.create().status_code, 201)
+        self.context.return_value["gpa"] = 0
+        self.assertEqual(self.create().status_code, 200)
+        self.assertEqual(Registration.objects.count(), 1)
+
+    def test_quota_counts_distinct_active_students_and_cancel_releases_seat(self):
+        for index, status in enumerate((1, None, -1)):
+            Registration.objects.create(registration_id=str(index), student_id="SV2", topic_id="T1", status=status)
+        # Three legacy records for one student occupy one seat.
+        result = self.create()
+        self.assertEqual((result.status_code, result.data["code"]), (409, "topic_quota_full"))
+        Registration.objects.filter(student_id="SV2").update(status=0)
+        self.assertEqual(self.create().status_code, 201)
+        self.assertEqual(self.client.delete(URL + Registration.objects.get(student_id="SV1").pk + "/").status_code, 204)
+        self.assertEqual(self.create().status_code, 201)
+
+    def test_available_eligibility_and_capacity_are_computed_on_server(self):
+        self.page.return_value = {"results": [self.topic.return_value], "next_after": None}
+        def available():
+            return self.client.get("/api/v1/available-topics/").data["results"][0]
+        row = available()
+        self.assertEqual((row["eligible"], row["registered_count"], row["ineligibility_reason"]), (True, 0, None))
+        self.topic.return_value["req_GPA"] = 4
+        self.assertEqual(available()["ineligibility_reason"], "gpa_requirement_not_met")
+        self.topic.return_value["req_GPA"] = 0
+        Registration.objects.create(registration_id="other", student_id="SV2", topic_id="T1", status=None)
+        row = available()
+        self.assertEqual((row["eligible"], row["registered_count"], row["ineligibility_reason"]), (False, 1, "topic_quota_full"))
+
+    def test_concurrent_students_cannot_take_same_last_seat(self):
+        barrier = threading.Barrier(2)
+        def attempt(identity):
+            connections.close_all()
+            try:
+                barrier.wait(timeout=5)
+                return 201 if services.register(identity, {"topic_id": "T1"}, "Bearer test", "quota-race")[1] else 200
+            except services.TopicQuotaFull:
+                return 409
+            except OperationalError:
+                return 503
+            finally:
+                connections.close_all()
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(attempt, ["SV1", "SV2"]))
+        self.assertEqual(results.count(201), 1, results)
+        self.assertTrue(all(value in (201, 409, 503) for value in results), results)
+        self.assertEqual(services.topic_student_counts(["T1"]), {"T1": 1})
 
     def test_semester_and_repeated_cancel_preserve_history(self):
         result = self.create(semester="2026-1")
@@ -154,11 +208,11 @@ class RegistrationAPITests(TransactionTestCase):
         self.assertFalse(Registration.objects.exists())
 
     def test_available_topics_are_filtered_and_keep_cursor(self):
-        rows = [{"topic_id": f"T{i}", "name": "SOA", "major_id": f"M{i}", "status": 2} for i in range(3)]
+        rows = [{"topic_id": f"T{i}", "name": "SOA", "req_GPA": 0, "studentQuota": 1, "major_id": f"M{i}", "status": 2} for i in range(3)]
         self.page.return_value = {"results": rows, "next_after": "T2"}
         self.departments.return_value = {"M0": "F1", "M1": "F2", "M2": None}
         result = self.client.get("/api/v1/available-topics/?after=T0")
-        self.assertEqual(result.data, {"results": [rows[0]], "next_after": "T2"})
+        self.assertEqual(result.data, {"results": [{**rows[0], "registered_count": 0, "eligible": True, "ineligibility_reason": None}], "next_after": "T2"})
         self.page.assert_called_once_with("T0", f"Bearer {self.token}", result["X-Request-ID"])
         self.page.return_value = {"results": [], "next_after": None}
         self.departments.reset_mock()
@@ -246,7 +300,7 @@ class RegistrationAPITests(TransactionTestCase):
                 return 503  # Shared-cache test SQLite may immediately reject lock contention.
             finally:
                 connections.close_all()
-        self.topic.side_effect = lambda topic_id, *args: {"topic_id": topic_id, "major_id": "M2", "name": "SOA", "status": 2}
+        self.topic.side_effect = lambda topic_id, *args: {"topic_id": topic_id, "major_id": "M2", "name": "SOA", "req_GPA": 0, "studentQuota": 1, "status": 2}
         with ThreadPoolExecutor(max_workers=2) as pool:
             results = list(pool.map(attempt, ["T1", "T2"]))
         self.assertEqual(results.count(201), 1, results)

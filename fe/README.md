@@ -396,3 +396,12 @@ Khi lỗi mạng/timeout/5xx hoặc409, popup yêu cầu **Kiểm tra kết qu�
 ### Điểm đăng ký
 
 Sinh viên xem điểm của mình (hoặc “Chưa chấm”) trong đăng ký hiện tại và lịch sử. Admin có thể chấm/sửa điểm của mọi đăng ký còn hiệu lực trong danh sách sinh viên của từng đề tài, kể cả đề tài chưa có giảng viên hướng dẫn. Giảng viên chỉ chấm/sửa điểm thuộc đề tài mình hướng dẫn. Nút chấm/sửa điểm chỉ xuất hiện khi chi tiết đề tài có trạng thái 3; backend kiểm tra lại trạng thái khi nhận PUT và trả 409 `topic_not_closed` nếu đề tài chưa đóng. Điểm từ 0–10, tối đa hai chữ số thập phân. UI gửi một PUT cho mỗi lần xác nhận; nếu kết quả chưa rõ, dùng **Kiểm tra điểm** để đọc đúng giá trị đã lưu trước khi thử lại. Sinh viên tải lại trang để xem điểm vừa được chấm.
+
+
+## GPA và chỉ tiêu đề tài
+
+Quản lý đề tài có hai ô `GPA yêu cầu` (0–4, mặc định 0) và `Chỉ tiêu sinh viên` (số nguyên dương, mặc định 1); hiển thị trong bảng và chi tiết. Giao diện đăng ký hiển thị GPA yêu cầu cùng số đã đăng ký/chỉ tiêu. Nút đăng ký bị khóa và giải thích khi BE trả `eligible=false`; FE không tự quyết định nghiệp vụ dựa trên GPA do người dùng gửi.
+
+API available-topics bổ sung `req_GPA`, `studentQuota`, `registered_count`, `eligible`, `ineligibility_reason`. Parser từ chối dữ liệu thiếu/sai trường. Khi gửi đăng ký mà BE báo `gpa_requirement_not_met` hoặc `topic_quota_full`, FE hiển thị thông báo tiếng Việt và tải lại eligibility, không tự gửi lại POST. Danh sách chỗ cũng được tải lại sau đăng ký/hủy thành công. Các quy tắc khoa, trạng thái đề tài và một đăng ký hiện tại vẫn được giữ.
+
+Quota storage bound: `studentQuota` is limited to 1–2147483647 (Django integer range); oversized values return validation errors.

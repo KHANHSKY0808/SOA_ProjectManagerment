@@ -57,10 +57,11 @@ export function StudentRegistrationPage() {
       </form>
       {state.topicsLoading && <p role="status">Đang tải đề tài…</p>}
       {state.topicsError && <p role="alert" className="academic-error">{state.topicsError}</p>}
-      {state.topicsReady && <div className="academic-table"><table aria-label="Đề tài mở đăng ký"><thead><tr><th>Mã đề tài</th><th>Tên đề tài</th><th>Thao tác</th></tr></thead>
-        <tbody>{rows.map(row => <tr key={row.topic_id}><td className="registration-code">{row.topic_id}</td><td>{row.name}</td><td>
-          <button type="button" className="academic-primary" disabled={disabled || state.current.length > 0} aria-label={`Đăng ký ${row.topic_id}`} onClick={() => state.openRegister(row)}>Đăng ký</button>
-        </td></tr>)}{!rows.length && <tr><td colSpan={3}>{search ? 'Không có đề tài phù hợp trong các trang đã tải.' : state.nextAfter !== null
+      {state.topicsReady && <div className="academic-table"><table aria-label="Đề tài mở đăng ký"><thead><tr><th>Mã đề tài</th><th>Tên đề tài</th><th>GPA yêu cầu</th><th>Đã đăng ký / Chỉ tiêu</th><th>Thao tác</th></tr></thead>
+        <tbody>{rows.map(row => <tr key={row.topic_id}><td className="registration-code">{row.topic_id}</td><td>{row.name}</td><td>{row.req_GPA}</td><td>{row.registered_count} / {row.studentQuota}</td><td>
+          <button type="button" className="academic-primary" disabled={disabled || state.current.length > 0 || !row.eligible} aria-describedby={!row.eligible ? `eligibility-${row.topic_id}` : undefined} aria-label={`Đăng ký ${row.topic_id}`} onClick={() => state.openRegister(row)}>Đăng ký</button>
+          {!row.eligible && <p id={`eligibility-${row.topic_id}`} className="academic-hint">{row.ineligibility_reason === 'gpa_requirement_not_met' ? 'GPA của bạn chưa đạt yêu cầu.' : 'Đề tài đã đủ chỉ tiêu.'}</p>}
+        </td></tr>)}{!rows.length && <tr><td colSpan={5}>{search ? 'Không có đề tài phù hợp trong các trang đã tải.' : state.nextAfter !== null
           ? 'Trang này chưa có đề tài thuộc khoa của bạn. Hãy tải thêm để xem tiếp.' : 'Chưa có đề tài mở đăng ký thuộc khoa của bạn.'}</td></tr>}</tbody></table></div>}
       {state.nextAfter !== null && <div className="registration-pagination"><p className="academic-hint">Tải thêm để xem các đề tài ở trang tiếp theo.</p><button type="button" disabled={state.topicsLoading || state.busy || !!state.dialog} onClick={() => void state.loadMore()}>Tải thêm đề tài</button></div>}
       {state.current.length > 0 && <p className="academic-hint">Bạn chỉ có thể chọn đề tài khác sau khi hủy đăng ký hiện tại, nếu đề tài chưa đóng đăng ký.</p>}

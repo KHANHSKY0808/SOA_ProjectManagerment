@@ -55,6 +55,11 @@ class AvailableTopicDTO(serializers.Serializer):
     name = serializers.CharField()
     major_id = serializers.CharField()
     status = serializers.IntegerField()
+    req_GPA = serializers.FloatField()
+    studentQuota = serializers.IntegerField()
+    registered_count = serializers.IntegerField()
+    eligible = serializers.BooleanField()
+    ineligibility_reason = serializers.CharField(allow_null=True)
 
 
 class AvailableResponseDTO(serializers.Serializer):

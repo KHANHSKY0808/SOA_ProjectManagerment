@@ -4,13 +4,17 @@ import { apiClient, setAccessToken } from '../../services/api-client'
 import { createTopic, deleteTopic, getTopic, getTopicDetail, listTopics, updateTopic } from './topic-api'
 
 const base = '/topics/api/v1/topics/'
-const row = { status: null, topic_id: 'guid-1', name: 'SOA', description: null, major_name: null, avisor_name: 'An' }
+const row = { req_GPA: 0, studentQuota: 1, status: null, topic_id: 'guid-1', name: 'SOA', description: null, major_name: null, avisor_name: 'An' }
 const detail = { ...row, major_id: '2', advisor_id: 'GV1', file_url: null, status: 0,
   created_at: null, updated_at: null, updated_by: null }
 let mock: MockAdapter
 beforeEach(() => { mock = new MockAdapter(apiClient, { onNoMatch: 'throwException' }); setAccessToken('test-token') })
 afterEach(() => { mock.restore(); setAccessToken(null) })
 describe('Topic Gateway API', () => {
+  it.each([{ req_GPA: undefined }, { req_GPA: 5 }, { req_GPA: '3' }, { studentQuota: 0 }, { studentQuota: 1.5 }])('rejects invalid limits %#', async override => {
+    mock.onGet(base).reply(200, [{ ...row, ...override }])
+    await expect(listTopics(new AbortController().signal)).rejects.toThrow()
+  })
   it('loads published names and forwards the JWT and abort signal', async () => {
     mock.onGet(base).reply(200, [row])
     const signal = new AbortController().signal
@@ -19,7 +23,7 @@ describe('Topic Gateway API', () => {
     expect(mock.history.get[0].signal).toBe(signal)
   })
   it('posts only the provided create DTO', async () => {
-    const input = { topic_id: 'guid-1', name: 'SOA', description: '', advisor_id: 'GV1', major_id: '2' }
+    const input = { req_GPA: 0, studentQuota: 1, topic_id: 'guid-1', name: 'SOA', description: '', advisor_id: 'GV1', major_id: '2' }
     mock.onPost(base).reply(201, row)
     await createTopic(input, new AbortController().signal)
     expect(JSON.parse(mock.history.post[0].data)).toEqual(input)

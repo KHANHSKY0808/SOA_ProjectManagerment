@@ -5760,7 +5760,7 @@
           "Student registrations"
         ],
         "summary": "Register for a topic",
-        "description": "Student role 3. Topic must be open (status 2) and belong to the student faculty. Only one current registration. Exact repeated topic/semester returns existing registration (200); new registration returns 201. Do not blindly retry uncertain writes.",
+        "description": "Student role 3. Topic must be open (status 2) and belong to the student faculty. Only one current registration. Exact repeated topic/semester returns existing registration (200); new registration returns 201. Do not blindly retry uncertain writes. New registrations also require gpa >= req_GPA and active distinct student count < studentQuota. GPA rejection: 400 gpa_requirement_not_met; full quota: 409 topic_quota_full. Capacity count/check/insert share a local writer transaction; external GPA and topic lookups are not atomic with concurrent policy edits. Equivalent existing registrations remain idempotent after GPA/quota changes.",
         "responses": {
           "201": {
             "description": "Success",
@@ -5773,7 +5773,7 @@
             }
           },
           "400": {
-            "description": "Invalid request or field validation failed",
+            "description": "Invalid request or field validation failed Includes gpa_requirement_not_met.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5813,7 +5813,7 @@
             }
           },
           "409": {
-            "description": "Business conflict or changed references",
+            "description": "Business conflict or changed references Includes topic_quota_full.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5949,7 +5949,7 @@
           "Student registrations"
         ],
         "summary": "Topics available to my faculty",
-        "description": "Student role 3. Filters each upstream page by authenticated student faculty. A page can be empty while next_after is non-null; continue paging.",
+        "description": "Student role 3. Filters each upstream page by authenticated student faculty. A page can be empty while next_after is non-null; continue paging. Includes requirements, registered_count and server eligibility/reason for each topic; ineligible topics remain visible. Counts exclude cancelled rows, include legacy active statuses and deduplicate students.",
         "responses": {
           "200": {
             "description": "Success",
@@ -7309,6 +7309,10 @@
           },
           "department_id": {
             "type": "string"
+          },
+          "gpa": {
+            "type": "number",
+            "description": "Authenticated student GPA from academic-owned Students."
           }
         },
         "x-dto-source": {
@@ -7317,7 +7321,8 @@
         },
         "required": [
           "student_id",
-          "department_id"
+          "department_id",
+          "gpa"
         ]
       },
       "AcademicMajorBatchDTO": {
@@ -7635,6 +7640,35 @@
           },
           "status": {
             "type": "integer"
+          },
+          "req_GPA": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 4,
+            "description": "Minimum student GPA on the 0-4 scale. Default 0 on create; omitted update retains existing value."
+          },
+          "studentQuota": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Maximum active distinct students across semesters. Default 1 on create; cancelled registrations free seats.",
+            "maximum": 2147483647
+          },
+          "registered_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "eligible": {
+            "type": "boolean",
+            "description": "Server-computed GPA and capacity eligibility; existing faculty and one-current-registration rules still apply."
+          },
+          "ineligibility_reason": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "gpa_requirement_not_met",
+              "topic_quota_full",
+              null
+            ]
           }
         },
         "x-dto-source": {
@@ -7645,7 +7679,12 @@
           "topic_id",
           "name",
           "major_id",
-          "status"
+          "status",
+          "req_GPA",
+          "studentQuota",
+          "registered_count",
+          "eligible",
+          "ineligibility_reason"
         ]
       },
       "RegistAvailableResponseDTO": {
@@ -7834,6 +7873,18 @@
             "type": "string",
             "maxLength": 255,
             "nullable": true
+          },
+          "req_GPA": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 4,
+            "description": "Minimum student GPA on the 0-4 scale. Default 0 on create; omitted update retains existing value."
+          },
+          "studentQuota": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Maximum active distinct students across semesters. Default 1 on create; cancelled registrations free seats.",
+            "maximum": 2147483647
           }
         },
         "x-dto-source": {
@@ -7852,7 +7903,9 @@
           "description": "Independent REST services",
           "major_id": "1",
           "advisor_id": "GV001",
-          "status": 1
+          "status": 1,
+          "req_GPA": 3,
+          "studentQuota": 2
         }
       },
       "TopicTopicResponseDTO": {
@@ -7897,6 +7950,18 @@
           "updated_by": {
             "type": "string",
             "nullable": true
+          },
+          "req_GPA": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 4,
+            "description": "Minimum student GPA on the 0-4 scale. Default 0 on create; omitted update retains existing value."
+          },
+          "studentQuota": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Maximum active distinct students across semesters. Default 1 on create; cancelled registrations free seats.",
+            "maximum": 2147483647
           }
         },
         "x-dto-source": {
@@ -7913,7 +7978,9 @@
           "avisor_name",
           "created_at",
           "updated_at",
-          "updated_by"
+          "updated_by",
+          "req_GPA",
+          "studentQuota"
         ]
       },
       "TopicTopicManagementDetailDTO": {
@@ -7965,6 +8032,18 @@
           "advisor_id": {
             "type": "string",
             "nullable": true
+          },
+          "req_GPA": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 4,
+            "description": "Minimum student GPA on the 0-4 scale. Default 0 on create; omitted update retains existing value."
+          },
+          "studentQuota": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Maximum active distinct students across semesters. Default 1 on create; cancelled registrations free seats.",
+            "maximum": 2147483647
           }
         },
         "x-dto-source": {
@@ -7983,7 +8062,9 @@
           "updated_at",
           "updated_by",
           "major_id",
-          "advisor_id"
+          "advisor_id",
+          "req_GPA",
+          "studentQuota"
         ]
       },
       "TopicTopicReferenceDTO": {
@@ -8001,6 +8082,18 @@
           "status": {
             "type": "integer",
             "nullable": true
+          },
+          "req_GPA": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 4,
+            "description": "Minimum student GPA on the 0-4 scale. Default 0 on create; omitted update retains existing value."
+          },
+          "studentQuota": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Maximum active distinct students across semesters. Default 1 on create; cancelled registrations free seats.",
+            "maximum": 2147483647
           }
         },
         "x-dto-source": {
@@ -8011,7 +8104,9 @@
           "topic_id",
           "name",
           "major_id",
-          "status"
+          "status",
+          "req_GPA",
+          "studentQuota"
         ]
       },
       "Error": {
@@ -8293,6 +8388,18 @@
             "type": "string",
             "maxLength": 255,
             "nullable": true
+          },
+          "req_GPA": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 4,
+            "description": "Minimum student GPA on the 0-4 scale. Default 0 on create; omitted update retains existing value."
+          },
+          "studentQuota": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Maximum active distinct students across semesters. Default 1 on create; cancelled registrations free seats.",
+            "maximum": 2147483647
           }
         },
         "additionalProperties": false,
