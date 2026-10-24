@@ -8,7 +8,7 @@ Run on port `8004` after setting the same `JWT_SIGNING_KEY` as auth-service.
 
 - `GET /health/` is public.
 - `GET /api/topics/` requires a valid JWT.
-- Topic writes require integer JWT `role: 1` (admin). Role 2 lecturers can read only topics assigned to them and grade their students through regist-service.
+- Topic updates/deletes require integer JWT `role: 1` (admin); role 2 may POST pending topics assigned to themselves. Role 2 lecturers can read only topics assigned to them and grade their students through regist-service.
 
 
 ## Gateway service registry integration
@@ -73,7 +73,7 @@ Registrations. This service queries and mutates only Topics.
 
 The existing `/api/topics/` and `/api/topics/{id}/` routes remain aliases.
 Gateway examples: `/topics/api/v1/topics/` and `/topics/api/topics/`.
-GET requires a valid bearer access JWT. Lecturer role 2 sees only assigned topics, based on JWT `user_id` matching `advisor_id`; details outside that scope return 404. All writes require integer `role: 1` (admin). Lecturers, students, and unknown/string/boolean roles cannot write.
+GET requires a valid bearer access JWT. Lecturer role 2 sees only assigned topics, based on JWT `user_id` matching `advisor_id`; details outside that scope return 404. POST permits integer role 1 or 2; lecturer creation forces status 0 and advisor_id equal to JWT user_id before REST reference validation. Only role 1 may PUT/PATCH/DELETE. Students and unknown/string/boolean roles cannot write.
 JWTs are validated locally and must include a nonempty string `user_id`.
 Health remains public even if a request contains an invalid Authorization header.
 
@@ -113,7 +113,7 @@ is described below.
 | --- | --- |
 | 400 | Invalid DTO, changed topic ID, or invalid academic reference; `{"major_id":"Referenced academic record does not exist."}` |
 | 401 | Missing, invalid, expired access token or invalid user identity |
-| 403 | Authenticated caller lacks integer role 1 for a write |
+| 403 | Caller lacks role 1/2 for POST, or role 1 for PUT/PATCH/DELETE |
 | 404 | Topic does not exist; `{"detail":"Topic does not exist."}` |
 | 405 | Unsupported method, including POST on detail routes |
 | 409 | Duplicate ID or database constraint conflict before registration cleanup |
@@ -289,7 +289,7 @@ recovering transport/configuration must not manufacture names from IDs.
 
 ## Management detail and lecturer permissions
 
-Both existing/v1 aliases allow only authenticated integer role 1 (admin) to POST/PUT/PATCH/DELETE topics. Lecturer role 2 can list and read only topics whose `advisor_id` equals the JWT `user_id`; other advisors' and unassigned topics are excluded. Detail requests outside that scope return 404. Lecturer writes return 403 before mutation or registration cleanup. Query parameters cannot override authenticated ownership. JWTs are validated locally; the server determines the actor from user_id and never trusts a submitted audit field. Academic authorization is unchanged.
+Both existing/v1 aliases allow authenticated integer role 1 (admin) to POST/PUT/PATCH/DELETE topics. Integer role 2 may also POST, forcing status 0 and advisor_id equal to JWT user_id. Lecturer role 2 can list and read only topics whose `advisor_id` equals the JWT `user_id`; other advisors' and unassigned topics are excluded. Detail requests outside that scope return 404. Lecturer PUT/PATCH/DELETE return 403 before mutation or registration cleanup. Query parameters cannot override authenticated ownership. JWTs are validated locally; the server determines the actor from user_id and never trusts a submitted audit field. Academic authorization is unchanged.
 
 `GET /api/v1/topics/{id}/` (also `/api/topics/{id}/`) adds these fields for authorized roles 1/2, alongside all existing display/audit fields:
 
@@ -327,8 +327,7 @@ is installed; deployment rate limits can be enforced at Gateway.
 ## Topic approval and opening registration
 
 JWT role 1 (admin) creates topics with status 1 by default and may explicitly
-submit status 0, 1, 2 or 3 on POST/PUT/PATCH. Role 2 (lecturer) cannot create or
-change topics, including status (403 before request validation).
+submit status 0, 1, 2 or 3 on POST/PUT/PATCH. Role 2 (lecturer) may create topics: status is always 0 and advisor_id is JWT user_id, even when omitted or submitted with different valid values. These server-assigned references are validated via academic REST: invalid references return 400 and dependency outages return 503 without writing. Lecturers cannot PUT/PATCH/DELETE or approve topics (403 before request validation).
 Malformed or out-of-range status returns 400 for administrators. Omission on PUT or
 PATCH preserves the stored status. Other topic management permissions remain unchanged.
 
@@ -358,7 +357,7 @@ Automated tests use disposable databases and mocked HTTP for orchestration, auth
 
 ## GPA requirement and student quota
 
-`Topics.req_GPA` maps to the unmanaged float field of the same name; `Topics.studentQuota` maps to its unmanaged integer field. Public topic CRUD, management detail and `/api/v1/registration-topics/` list/detail DTOs now include both numeric JSON fields. Admin-only create/update accepts `{"req_GPA":3.25,"studentQuota":2}` alongside existing fields. GPA must be finite, 0?4; quota must be a positive integer. Nulls, booleans, numeric strings and fractional quotas return 400. Omitted create fields default to 0/1; omitted PUT/PATCH fields retain their stored values. Existing authorization and status rules remain unchanged.
+`Topics.req_GPA` maps to the unmanaged float field of the same name; `Topics.studentQuota` maps to its unmanaged integer field. Public topic CRUD, management detail and `/api/v1/registration-topics/` list/detail DTOs now include both numeric JSON fields. Admin create/update and lecturer create accept `{"req_GPA":3.25,"studentQuota":2}` alongside existing fields. GPA must be finite, 0?4; quota must be a positive integer. Nulls, booleans, numeric strings and fractional quotas return 400. Omitted create fields default to 0/1; omitted PUT/PATCH fields retain their stored values. Existing authorization and status rules remain unchanged.
 
 Example reference: `{"topic_id":"T1","name":"SOA","major_id":"M1","status":2,"req_GPA":3.25,"studentQuota":2}`. This service owns only Topics and never counts Registrations directly. Registration enforces capacity using its own data. Use `database/add_topic_requirements.py` from the root README to back up and add schema columns before this code starts; do not migrate unmanaged tables. Existing rows default to 0/1 and existing registrations remain valid. Policy edits after registration REST lookup are not atomic across services.
 

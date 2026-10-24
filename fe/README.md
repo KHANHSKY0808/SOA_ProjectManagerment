@@ -348,9 +348,12 @@ chứng trực quan trên thiết bị thực.
 
 ### Quyền chỉnh trạng thái đề tài
 
-Admin có select trạng thái trong form tạo/sửa: Chờ duyệt (0), Đã duyệt (1),
-Mở đăng ký (2), Đóng đăng ký (3); mặc định tạo là 1. Giảng viên không có select này và frontend
-không gửi status: backend tạo ở 0 và chặn thao tác đổi trạng thái qua API.
+Admin sửa/duyệt đề tài với đủ trạng thái: Chờ duyệt (0), Đã duyệt (1),
+Mở đăng ký (2), Đóng đăng ký (3). Form tạo của Admin giữ lựa chọn 2/3, mặc định 2.
+Giảng viên có nút Tạo đề tài; form ẩn GVHD và trạng thái, gửi advisor_id theo
+user_id hiện tại và status 0. Backend luôn gán lại hai giá trị này theo JWT.
+Giảng viên không có nút sửa/xóa và không được duyệt đề tài qua API.
+Khi tạo gặp timeout, dùng Kiểm tra kết quả trước khi gửi lại, giữ nguyên mã đề tài.
 Luồng sinh viên chỉ nhận đề tài status 2 từ API available-topics. Đề tài cũ
 status 1 cần admin chủ động mở đăng ký; không tự chuyển dữ liệu hiện có.
 

@@ -652,14 +652,21 @@ describe('Topic status permissions', () => {
     expect(screen.getByRole('option', { name: 'Mở đăng ký' })).toBeInTheDocument()
     expect(screen.getByRole('option', { name: 'Đóng đăng ký' })).toBeInTheDocument()
   })
-  it('displays legacy status as disabled option when editing an existing topic with status 0 or 1', async () => {
+  it.each([1, 2, 3])('admin approves a pending topic with status %s', async status => {
     mock.onGet(base + 'DT001/').reply(200, { ...detail, status: 0 })
     renderPage(1); await screen.findByRole('table')
     fireEvent.click(screen.getByRole('button', { name: 'Sửa DT001' }))
-    await screen.findByRole('form', { name: 'Sửa đề tài' })
-    const legacyOption = await screen.findByRole('option', { name: 'Chờ duyệt (hiện tại)' })
-    expect(legacyOption).toBeDisabled()
+    const form = await screen.findByRole('form', { name: 'Sửa đề tài' })
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Lưu thay đổi' })).toBeEnabled())
+    for (const label of ['Chờ duyệt', 'Đã duyệt', 'Mở đăng ký', 'Đóng đăng ký']) {
+      expect(screen.getByRole('option', { name: label })).toBeEnabled()
+    }
     expect(screen.getByLabelText('Trạng thái')).toHaveValue('0')
+    fireEvent.change(screen.getByLabelText('Trạng thái'), { target: { value: String(status) } })
+    mock.onPatch(base + 'DT001/').reply(200, { ...detail, status })
+    fireEvent.submit(form)
+    await screen.findByText('Đã cập nhật đề tài.')
+    expect(JSON.parse(mock.history.patch[0].data)).toEqual({ status })
   })
   it.each([2, 3])('admin selects status %s when creating', async status => {
     renderPage(1); const form = await openForm(); fillForm()
@@ -682,13 +689,40 @@ describe('Topic status permissions', () => {
     await screen.findByText('Đã cập nhật đề tài.')
     expect(JSON.parse(mock.history.patch[0].data)).toEqual({ status })
   })
-  it('lecturer can view assigned topics without topic mutation controls', async () => {
+  it('lecturer can view assigned topics and create, but cannot edit or delete', async () => {
     renderPage(2, 'GV001'); await screen.findByRole('table')
     expect(screen.getByRole('button', { name: 'Xem chi tiết DT001' })).toBeVisible()
-    expect(screen.queryByRole('button', { name: 'Tạo đề tài' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Tạo đề tài' })).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Sửa DT001' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Xóa DT001' })).not.toBeInTheDocument()
     expect(mock.history.post).toHaveLength(0)
+    expect(mock.history.patch).toHaveLength(0)
+    expect(mock.history.delete).toHaveLength(0)
+  })
+  it.each(['success', 'timeout'] as const)('lecturer creates a pending topic as their own advisor (%s)', async result => {
+    // Lecturer creation does not require choosing from the advisor list.
+    mock.onGet('/academic/api/v1/lecturers/').reply(200, [])
+    renderPage(2, 'GV001')
+    const form = await openForm()
+    expect(screen.queryByLabelText('Giáo viên hướng dẫn')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Trạng thái')).not.toBeInTheDocument()
+    fireEvent.submit(form)
+    expect(await screen.findByText('Vui lòng nhập tên đề tài.')).toBeVisible()
+    expect(mock.history.post).toHaveLength(0)
+    fireEvent.change(screen.getByLabelText('Tên đề tài'), { target: { value: 'Đề tài giảng viên' } })
+    fireEvent.change(screen.getByLabelText('Ngành', { exact: true }), { target: { value: '2' } })
+    const created = { ...rows[0], topic_id: guid, status: 0 }
+    if (result === 'timeout') mock.onPost(base).timeout()
+    else mock.onPost(base).reply(201, created)
+    fireEvent.submit(form)
+    if (result === 'timeout') {
+      const check = await screen.findByRole('button', { name: 'Kiểm tra kết quả' })
+      mock.onGet(base + guid + '/').reply(200, created)
+      fireEvent.click(check)
+    }
+    await screen.findByText('Đã tạo đề tài.')
+    expect(mock.history.post).toHaveLength(1)
+    expect(JSON.parse(mock.history.post[0].data)).toMatchObject({ advisor_id: 'GV001', status: 0, major_id: '2' })
     expect(mock.history.patch).toHaveLength(0)
     expect(mock.history.delete).toHaveLength(0)
   })

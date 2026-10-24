@@ -15,7 +15,8 @@ const ambiguousWrite = (cause: unknown) => {
   return failure.kind === 'network' || failure.kind === 'timeout' || failure.kind === 'unknown' || (failure.status ?? 0) >= 500
 }
 
-export function useTopics(canManage: boolean, logout: () => void, canSetStatus = false) {
+export function useTopics(canManage: boolean, logout: () => void, canSetStatus = false, canCreate = canManage, userRole?: number, currentUserId?: string) {
+  const isLecturer = userRole === 2
   const [rows, setRows] = useState<Topic[]>([])
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState('')
@@ -97,11 +98,11 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
     setDetail(null); setDetailError(''); setDraft(null); original.current = null
   }
   function open() {
-    if (!canManage || locked.current || mode) return
+    if (!canCreate || locked.current || mode) return
     try {
       const id = createTopicId()
       resetForm(); setMode('create'); setSelected(null)
-      setDraft({ topic_id: id, name: '', description: '', advisor_id: '', major_id: '', req_GPA: 0, studentQuota: 1, ...(canSetStatus ? { status: 2 as const } : {}) })
+      setDraft({ topic_id: id, name: '', description: '', advisor_id: isLecturer ? (currentUserId || '') : '', major_id: '', req_GPA: 0, studentQuota: 1, ...(canSetStatus ? { status: 2 as const } : isLecturer ? { status: 0 as const } : {}) })
       void loadOptions()
     } catch {
       setListError('Không thể sinh mã đề tài. Vui lòng thử lại hoặc cập nhật trình duyệt.')
@@ -145,7 +146,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
     if (!locked.current) dismiss()
   }
   function change(key: TopicField, value: string) {
-    if (locked.current || uncertain || (key === 'status' && !canSetStatus)) return
+    if (locked.current || uncertain || (key === 'status' && !canSetStatus) || (key === 'advisor_id' && isLecturer)) return
     setDraft(previous => previous && { ...previous, [key]: key === 'status' ? (value === '' ? undefined : Number(value) as TopicStatus) : key === 'req_GPA' || key === 'studentQuota' ? (value === '' ? NaN : Number(value)) : value })
     setErrors(previous => ({ ...previous, [key]: undefined }))
   }
@@ -154,17 +155,20 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
     await reload()
   }
   async function save(): Promise<TopicField | undefined> {
-    if (!canManage || !draft || locked.current || !optionsReady || uncertain || (mode !== 'create' && mode !== 'edit')) return
+    if (!canCreate || !draft || locked.current || !optionsReady || uncertain || (mode !== 'create' && mode !== 'edit')) return
+
     const editing = mode === 'edit'
-    const values = { ...draft, name: draft.name.trim() }
+    if (editing && !canManage) return
+
+    const values = { ...draft, name: draft.name.trim(), ...(isLecturer ? { advisor_id: currentUserId || draft.advisor_id, status: 0 as const } : {}) }
     const changed = (key: TopicField) => !editing || values[key] !== original.current?.[key]
     const invalid: Partial<Record<TopicField, string>> = {}
     if (!Number.isFinite(values.req_GPA) || values.req_GPA < 0 || values.req_GPA > 4) invalid.req_GPA = 'GPA yêu cầu phải từ 0 đến 4.'
     if (!Number.isSafeInteger(values.studentQuota) || values.studentQuota < 1 || values.studentQuota > 2147483647) invalid.studentQuota = 'Chỉ tiêu phải là số nguyên dương tối đa 2147483647.'
     if (!values.name) invalid.name = 'Vui lòng nhập tên đề tài.'
-    if (changed('advisor_id') && !lecturers.some(row => row.lecturer_id === draft.advisor_id)) invalid.advisor_id = 'Vui lòng chọn giáo viên hướng dẫn.'
+    if (!isLecturer && changed('advisor_id') && !lecturers.some(row => row.lecturer_id === draft.advisor_id)) invalid.advisor_id = 'Vui lòng chọn giáo viên hướng dẫn.'
     if (changed('major_id') && (!majors.some(row => row.major_id === draft.major_id) || !numericMajor(draft.major_id))) invalid.major_id = 'Vui lòng chọn ngành có mã số hợp lệ.'
-    if (canSetStatus && (!editing || changed('status')) && ![2, 3].includes(values.status as number)) invalid.status = 'Vui lòng chọn trạng thái hợp lệ.'
+    if (canSetStatus && (!editing || changed('status')) && ![0, 1, 2, 3].includes(values.status as number)) invalid.status = 'Vui lòng chọn trạng thái hợp lệ.'
     setErrors(invalid)
     const first = Object.keys(invalid)[0] as TopicField | undefined
     if (first) return first
@@ -182,7 +186,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
       if (editing) await updateTopic(draft.topic_id, patch, controller.signal)
       else {
         const { status, ...input } = values
-        await createTopic(canSetStatus ? { ...input, status } : input, controller.signal)
+        await createTopic(canSetStatus || isLecturer ? { ...input, status } : input, controller.signal)
       }
       if (!controller.signal.aborted) {
         await saved(editing ? 'Đã cập nhật đề tài.' : 'Đã tạo đề tài.')
@@ -226,7 +230,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
   }
   async function checkResult() {
     const id = draft?.topic_id ?? selected?.topic_id
-    if (!canManage || !id || !uncertain || locked.current) return
+    if (!(canManage || (canCreate && mode === 'create')) || !id || !uncertain || locked.current) return
     locked.current = true; setBusy(true); setFormError('')
     const controller = new AbortController()
     mutation.current = controller
@@ -260,7 +264,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
   const visibleRows = rows.filter(row => [row.topic_id, row.name].some(value => value.toLocaleLowerCase('vi').includes(normalized)))
   return { rows: visibleRows, total: rows.length, loading, listError, query, setQuery,
     search: () => setAppliedQuery(query.trim()), reload, mode, selected, detail, detailLoading, detailError, retryDetail,
-    canSetStatus, draft, majors, lecturers, optionsReady, optionsLoading, optionsError, loadOptions, formError, errors, busy,
+    canSetStatus, isLecturer, draft, majors, lecturers, optionsReady, optionsLoading, optionsError, loadOptions, formError, errors, busy,
     uncertain, notice, open, show, close, change, save, remove, checkResult }
 }
 export type TopicState = ReturnType<typeof useTopics>

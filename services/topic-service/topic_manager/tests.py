@@ -186,7 +186,7 @@ class TopicPersistenceTests(TransactionTestCase):
                     self.assertEqual(Topic.objects.get().status, initial)
                 Topic.objects.all().delete()
             for status in (0, 1, 2, 3):
-                self.authenticate(2)
+                self.authenticate(3)
                 self.assertEqual(self.request("post", collection, {**self.data, "status": status}).status_code, 403)
                 self.assertFalse(Topic.objects.exists())
                 self.authenticate(1)
@@ -256,7 +256,6 @@ class TopicPersistenceTests(TransactionTestCase):
             self.assertEqual(self.client.get(collection + "OTHER/").status_code, 404)
             self.assertEqual(self.client.get(collection + "ASSIGNED-OTHER/").status_code, 404)
             for method, url, payload in (
-                ("post", collection, {**self.data, "topic_id": "NEW"}),
                 ("put", collection + "DT001/", self.data),
                 ("patch", collection + "DT001/", {"name": "Forbidden"}),
                 ("delete", collection + "DT001/", None),
@@ -278,9 +277,56 @@ class TopicPersistenceTests(TransactionTestCase):
     def test_service_layer_rejects_lecturer_save_before_reference_calls(self):
         from rest_framework.exceptions import PermissionDenied
         with self.assertRaises(PermissionDenied):
-            services.save_topic(self.data, "GV001", "Bearer token", role=2)
+            services.save_topic(self.data, "GV001", "Bearer token", pk="DT001", role=2)
         self.academic.assert_not_called()
         self.assertFalse(Topic.objects.exists())
+
+    def test_lecturer_can_create_topic_with_pending_status_and_self_as_advisor(self):
+        with connection.cursor() as cursor:
+            cursor.execute("INSERT INTO Users VALUES ('GV001')")
+        for prefix in ("/api/", "/api/v1/"):
+            for status in (None, 0, 1, 2, 3):
+                with self.subTest(prefix=prefix, status=status):
+                    self.authenticate(2, "GV001")
+                    payload = {**self.data, "advisor_id": "OTHER"}
+                    if status is None:
+                        payload.pop("advisor_id")
+                    else:
+                        payload["status"] = status
+                    response = self.request("post", prefix + "topics/", payload)
+                    self.assertEqual(response.status_code, 201, response.data)
+                    created = Topic.objects.get(pk="DT001")
+                    self.assertEqual((created.status, created.advisor_id, created.updated_by), (0, "GV001", "GV001"))
+                    self.assertEqual(response.data["status"], 0)
+                    self.academic.assert_called_with([
+                        ("major_id", "majors", "major_id", "1"),
+                        ("advisor_id", "lecturers", "lecturer_id", "GV001"),
+                    ], f"Bearer {self.token}")
+                    url = prefix + "topics/DT001/"
+                    self.academic.reset_mock()
+                    for method, data in (("put", {**self.data, "status": 1}),
+                                         ("patch", {"status": 2}), ("delete", None)):
+                        self.assertEqual(self.request(method, url, data).status_code, 403)
+                    self.academic.assert_not_called()
+                    self.cleanup.assert_not_called()
+                    created.refresh_from_db()
+                    self.assertEqual(created.status, 0)
+                    self.authenticate(1)
+                    approved = self.request("patch", url, {"status": 1})
+                    self.assertEqual(approved.status_code, 200, approved.data)
+                    created.refresh_from_db()
+                    self.assertEqual(created.status, 1)
+                    Topic.objects.all().delete()
+
+    def test_lecturer_creation_reference_failures_do_not_write(self):
+        self.authenticate(2, "GV001")
+        for error, expected in ((ValidationError({"advisor_id": "Unknown lecturer"}), 400),
+                                (clients.DependencyUnavailable(), 503)):
+            with self.subTest(status=expected):
+                self.academic.side_effect = error
+                response = self.request("post", "/api/v1/topics/", self.data)
+                self.assertEqual(response.status_code, expected)
+                self.assertFalse(Topic.objects.exists())
 
     def test_management_detail_retains_ids_during_name_outage_and_nullable_advisor(self):
         self.create()

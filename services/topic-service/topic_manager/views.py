@@ -17,12 +17,15 @@ LOG = logging.getLogger(__name__)
 
 
 class TopicManagementPermission(BasePermission):
-    message = "Only administrators may modify topics."
+    message = "Only administrators may update or delete topics; lecturers may also create topics."
 
     def has_permission(self, request, view):
-        return bool(request.user and request.user.is_authenticated and (
-            request.method in SAFE_METHODS or (
-                request.auth is not None and type(request.auth.get("role")) is int and request.auth.get("role") == 1)))
+        if not (request.user and request.user.is_authenticated and request.auth is not None):
+            return False
+        if request.method in SAFE_METHODS:
+            return True
+        role = request.auth.get("role")
+        return type(role) is int and (role == 1 or (role == 2 and request.method == "POST"))
 
 
 class HealthView(GenericAPIView):
