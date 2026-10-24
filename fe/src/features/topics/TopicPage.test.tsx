@@ -102,7 +102,7 @@ describe('Topic list and creation', () => {
     expect(await screen.findByText('Đã tạo đề tài.')).toBeVisible()
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(await screen.findByText(guid)).toBeVisible()
-    expect(JSON.parse(mock.history.post[0].data)).toEqual({ req_GPA: 0, studentQuota: 1, topic_id: guid, name: 'Đề tài mới', description: 'Mô tả SOA', advisor_id: 'GV001', major_id: '2', ...(role === 1 ? { status: 1 } : {}) })
+    expect(JSON.parse(mock.history.post[0].data)).toEqual({ req_GPA: 0, studentQuota: 1, topic_id: guid, name: 'Đề tài mới', description: 'Mô tả SOA', advisor_id: 'GV001', major_id: '2', ...(role === 1 ? { status: 2 } : {}) })
     expect(mock.history.post[0].headers?.Authorization).toBe('Bearer test-token')
     expect(crypto.randomUUID).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('button', { name: 'Tạo đề tài' })).toHaveFocus()
@@ -644,17 +644,34 @@ describe('Topic detail, edit and delete', () => {
 
 
 describe('Topic status permissions', () => {
-  it.each([0, 1, 2, 3])('admin selects status %s when creating', async status => {
+  it('admin form does not include pending (0) or approved (1) statuses when creating', async () => {
+    renderPage(1); await openForm()
+    expect(screen.getByLabelText('Trạng thái')).toHaveValue('2')
+    expect(screen.queryByRole('option', { name: 'Chờ duyệt' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Đã duyệt' })).not.toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Mở đăng ký' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Đóng đăng ký' })).toBeInTheDocument()
+  })
+  it('displays legacy status as disabled option when editing an existing topic with status 0 or 1', async () => {
+    mock.onGet(base + 'DT001/').reply(200, { ...detail, status: 0 })
+    renderPage(1); await screen.findByRole('table')
+    fireEvent.click(screen.getByRole('button', { name: 'Sửa DT001' }))
+    await screen.findByRole('form', { name: 'Sửa đề tài' })
+    const legacyOption = await screen.findByRole('option', { name: 'Chờ duyệt (hiện tại)' })
+    expect(legacyOption).toBeDisabled()
+    expect(screen.getByLabelText('Trạng thái')).toHaveValue('0')
+  })
+  it.each([2, 3])('admin selects status %s when creating', async status => {
     renderPage(1); const form = await openForm(); fillForm()
-    expect(screen.getByLabelText('Trạng thái')).toHaveValue('1')
+    expect(screen.getByLabelText('Trạng thái')).toHaveValue('2')
     fireEvent.change(screen.getByLabelText('Trạng thái'), { target: { value: String(status) } })
     mock.onPost(base).reply(201, {})
     fireEvent.submit(form)
     await screen.findByText('Đã tạo đề tài.')
     expect(JSON.parse(mock.history.post[0].data).status).toBe(status)
   })
-  it.each([0, 1, 2, 3])('admin patches only changed status %s', async status => {
-    mock.onGet(base + 'DT001/').reply(200, { ...detail, status: (status + 1) % 3 })
+  it.each([2, 3])('admin patches only changed status %s', async status => {
+    mock.onGet(base + 'DT001/').reply(200, { ...detail, status: status === 2 ? 3 : 2 })
     renderPage(1); await screen.findByRole('table')
     fireEvent.click(screen.getByRole('button', { name: 'Sửa DT001' }))
     const form = await screen.findByRole('form', { name: 'Sửa đề tài' })

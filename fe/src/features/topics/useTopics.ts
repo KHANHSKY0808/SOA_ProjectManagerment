@@ -101,7 +101,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
     try {
       const id = createTopicId()
       resetForm(); setMode('create'); setSelected(null)
-      setDraft({ topic_id: id, name: '', description: '', advisor_id: '', major_id: '', req_GPA: 0, studentQuota: 1, ...(canSetStatus ? { status: 1 as const } : {}) })
+      setDraft({ topic_id: id, name: '', description: '', advisor_id: '', major_id: '', req_GPA: 0, studentQuota: 1, ...(canSetStatus ? { status: 2 as const } : {}) })
       void loadOptions()
     } catch {
       setListError('Không thể sinh mã đề tài. Vui lòng thử lại hoặc cập nhật trình duyệt.')
@@ -164,7 +164,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
     if (!values.name) invalid.name = 'Vui lòng nhập tên đề tài.'
     if (changed('advisor_id') && !lecturers.some(row => row.lecturer_id === draft.advisor_id)) invalid.advisor_id = 'Vui lòng chọn giáo viên hướng dẫn.'
     if (changed('major_id') && (!majors.some(row => row.major_id === draft.major_id) || !numericMajor(draft.major_id))) invalid.major_id = 'Vui lòng chọn ngành có mã số hợp lệ.'
-    if (canSetStatus && (!editing || changed('status')) && ![0, 1, 2, 3].includes(values.status as number)) invalid.status = 'Vui lòng chọn trạng thái hợp lệ.'
+    if (canSetStatus && (!editing || changed('status')) && ![2, 3].includes(values.status as number)) invalid.status = 'Vui lòng chọn trạng thái hợp lệ.'
     setErrors(invalid)
     const first = Object.keys(invalid)[0] as TopicField | undefined
     if (first) return first
