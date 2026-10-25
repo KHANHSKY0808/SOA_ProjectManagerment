@@ -1,0 +1,577 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Update a Topic",
+    "output": ".archify/sequence-update-topic-20261024/update-topic.html",
+    "quality_profile": "showcase",
+    "language": "en",
+    "repository": {
+      "url": "https://github.com/YangKlee/SOA_ProjectManagerment",
+      "revision": "0527ab58cd5e19bec2cea96891097588ea120bba",
+      "provider": "github"
+    },
+    "provenance": {
+      "created_at": "2026-10-24T10:37:23.587730+00:00",
+      "source": "current local working tree",
+      "base_revision": "0527ab58cd5e19bec2cea96891097588ea120bba",
+      "uncommitted_sources": false,
+      "renderer": "local SVG authoring with unchanged bundled Archify viewer",
+      "archify_certification": "not-run"
+    }
+  },
+  "layout": {
+    "width": 1640,
+    "height": 2572,
+    "participant_x": {
+      "actor": 160.0,
+      "gateway": 490.0,
+      "topic": 820.0,
+      "academic": 1150.0,
+      "topic_db": 1480.0
+    }
+  },
+  "participants": [
+    {
+      "id": "actor",
+      "label": "Admin / React UI",
+      "type": "frontend",
+      "sublabel": "Role 1",
+      "sources": [
+        {
+          "path": "fe/src/features/topics/useTopics.ts",
+          "line": 156,
+          "label": "Topic creation and update forms"
+        }
+      ]
+    },
+    {
+      "id": "gateway",
+      "label": "API Gateway",
+      "type": "cloud",
+      "sublabel": "Nginx :8000",
+      "sources": [
+        {
+          "path": "api-gateway/discovery.py",
+          "line": 164,
+          "label": "Gateway route generation and header forwarding"
+        }
+      ]
+    },
+    {
+      "id": "topic",
+      "label": "topic-service",
+      "type": "backend",
+      "sublabel": "Django REST :8004",
+      "sources": [
+        {
+          "path": "services/topic-service/topic_manager/views.py",
+          "line": 81,
+          "label": "Role-filtered management detail"
+        },
+        {
+          "path": "services/topic-service/topic_manager/services.py",
+          "line": 36,
+          "label": "Topic save transaction and reference validation"
+        }
+      ]
+    },
+    {
+      "id": "academic",
+      "label": "academic-service",
+      "type": "backend",
+      "sublabel": "Django REST :8002",
+      "sources": [
+        {
+          "path": "services/topic-service/topic_manager/clients.py",
+          "line": 82,
+          "label": "Academic reference and name contracts"
+        }
+      ]
+    },
+    {
+      "id": "topic_db",
+      "label": "Topics / SQLite",
+      "type": "database",
+      "sublabel": "Owned by topic-service",
+      "sources": [
+        {
+          "path": "services/topic-service/topic_manager/models.py",
+          "line": 4,
+          "label": "Topics table owned by topic-service"
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 849,
+      "label": "1. Load the edit form"
+    },
+    {
+      "from": 877,
+      "to": 1761,
+      "label": "2. Submit changed fields and validate references"
+    },
+    {
+      "from": 1789,
+      "to": 2098,
+      "label": "3. UPDATE only - never recreate a concurrently deleted row"
+    },
+    {
+      "from": 2126,
+      "to": 2527,
+      "label": "4. Enrich the committed response and return"
+    }
+  ],
+  "messages": [
+    {
+      "from": "actor",
+      "to": "gateway",
+      "label": "GET /topics/api/v1/topics/{topic_id}/",
+      "variant": "default",
+      "id": "update-topic-01",
+      "lines": [
+        "GET /topics/api/v1/topics/{topic_id}/"
+      ],
+      "y": 226,
+      "phase": 0
+    },
+    {
+      "from": "gateway",
+      "to": "topic",
+      "label": "GET /api/v1/topics/{topic_id}/",
+      "variant": "default",
+      "id": "update-topic-02",
+      "lines": [
+        "GET /api/v1/topics/{topic_id}/"
+      ],
+      "y": 298,
+      "phase": 0
+    },
+    {
+      "from": "topic",
+      "to": "topic_db",
+      "label": "SELECT topic by TopicId",
+      "variant": "default",
+      "id": "update-topic-03",
+      "lines": [
+        "SELECT topic by TopicId"
+      ],
+      "y": 370,
+      "phase": 0
+    },
+    {
+      "from": "topic_db",
+      "to": "topic",
+      "label": "Topic row / missing -> 404",
+      "variant": "return",
+      "id": "update-topic-04",
+      "lines": [
+        "Topic row / missing -> 404"
+      ],
+      "y": 442,
+      "phase": 0
+    },
+    {
+      "from": "topic",
+      "to": "academic",
+      "label": "POST /api/v1/topic-display-names/",
+      "variant": "default",
+      "id": "update-topic-05",
+      "lines": [
+        "POST /api/v1/topic-display-names/"
+      ],
+      "y": 514,
+      "phase": 0
+    },
+    {
+      "from": "academic",
+      "to": "topic",
+      "label": "200 display names / lookup failure",
+      "variant": "return",
+      "id": "update-topic-06",
+      "lines": [
+        "200 display names / lookup failure"
+      ],
+      "y": 586,
+      "phase": 0
+    },
+    {
+      "from": "topic",
+      "to": "topic",
+      "label": "[On display lookup failure] names=null; keep reading",
+      "variant": "emphasis",
+      "id": "update-topic-07",
+      "lines": [
+        "[On display lookup failure] names=null; keep reading"
+      ],
+      "y": 658,
+      "phase": 0
+    },
+    {
+      "from": "topic",
+      "to": "gateway",
+      "label": "200 management detail including reference IDs",
+      "variant": "return",
+      "id": "update-topic-08",
+      "lines": [
+        "200 management detail including reference IDs"
+      ],
+      "y": 750,
+      "phase": 0
+    },
+    {
+      "from": "gateway",
+      "to": "actor",
+      "label": "Populate form, req_GPA and studentQuota",
+      "variant": "return",
+      "id": "update-topic-09",
+      "lines": [
+        "Populate form, req_GPA and studentQuota"
+      ],
+      "y": 822,
+      "phase": 0
+    },
+    {
+      "from": "actor",
+      "to": "gateway",
+      "label": "PATCH /topics/api/v1/topics/{topic_id}/",
+      "variant": "emphasis",
+      "id": "update-topic-10",
+      "lines": [
+        "PATCH /topics/api/v1/topics/{topic_id}/"
+      ],
+      "y": 943,
+      "phase": 1
+    },
+    {
+      "from": "gateway",
+      "to": "topic",
+      "label": "PATCH /api/v1/topics/{topic_id}/",
+      "variant": "default",
+      "id": "update-topic-11",
+      "lines": [
+        "PATCH /api/v1/topics/{topic_id}/"
+      ],
+      "y": 1015,
+      "phase": 1
+    },
+    {
+      "from": "topic",
+      "to": "topic",
+      "label": "Admin + valid DTO + immutable ID; else 401/403/400",
+      "variant": "emphasis",
+      "id": "update-topic-12",
+      "lines": [
+        "Admin + valid DTO + immutable ID; else 401/403/400"
+      ],
+      "y": 1087,
+      "phase": 1
+    },
+    {
+      "from": "topic",
+      "to": "topic_db",
+      "label": "SELECT existing topic",
+      "variant": "default",
+      "id": "update-topic-13",
+      "lines": [
+        "SELECT existing topic"
+      ],
+      "y": 1179,
+      "phase": 1
+    },
+    {
+      "from": "topic_db",
+      "to": "topic",
+      "label": "Existing row / missing -> 404",
+      "variant": "return",
+      "id": "update-topic-14",
+      "lines": [
+        "Existing row / missing -> 404"
+      ],
+      "y": 1251,
+      "phase": 1
+    },
+    {
+      "from": "topic",
+      "to": "academic",
+      "label": "[If changed] GET /api/majors/{major_id}/",
+      "variant": "default",
+      "id": "update-topic-15",
+      "lines": [
+        "[If changed] GET /api/majors/{major_id}/"
+      ],
+      "y": 1323,
+      "phase": 1
+    },
+    {
+      "from": "academic",
+      "to": "topic",
+      "label": "200 major / 404 missing / lookup failure",
+      "variant": "return",
+      "id": "update-topic-16",
+      "lines": [
+        "200 major / 404 missing / lookup failure"
+      ],
+      "y": 1395,
+      "phase": 1
+    },
+    {
+      "from": "topic",
+      "to": "topic",
+      "label": "Missing reference -> 400; lookup failure -> 503; stop",
+      "variant": "emphasis",
+      "id": "update-topic-17",
+      "lines": [
+        "Missing reference -> 400; lookup failure -> 503; stop"
+      ],
+      "y": 1467,
+      "phase": 1
+    },
+    {
+      "from": "topic",
+      "to": "academic",
+      "label": "[If nonempty and changed] GET /api/lecturers/{advisor_id}/",
+      "variant": "default",
+      "id": "update-topic-18",
+      "lines": [
+        "[If nonempty and changed] GET /api/lecturers/",
+        "{advisor_id}/"
+      ],
+      "y": 1575,
+      "phase": 1
+    },
+    {
+      "from": "academic",
+      "to": "topic",
+      "label": "200 advisor / 404 missing / lookup failure",
+      "variant": "return",
+      "id": "update-topic-19",
+      "lines": [
+        "200 advisor / 404 missing / lookup failure"
+      ],
+      "y": 1647,
+      "phase": 1
+    },
+    {
+      "from": "topic",
+      "to": "topic",
+      "label": "Missing reference -> 400; lookup failure -> 503; stop",
+      "variant": "emphasis",
+      "id": "update-topic-20",
+      "lines": [
+        "Missing reference -> 400; lookup failure -> 503; stop"
+      ],
+      "y": 1719,
+      "phase": 1
+    },
+    {
+      "from": "topic",
+      "to": "topic_db",
+      "label": "BEGIN; UPDATE changed fields + audit by TopicId",
+      "variant": "emphasis",
+      "id": "update-topic-21",
+      "lines": [
+        "BEGIN; UPDATE changed fields + audit by TopicId"
+      ],
+      "y": 1855,
+      "phase": 2
+    },
+    {
+      "from": "topic_db",
+      "to": "topic",
+      "label": "Zero updated rows -> 404; conflicts -> 409",
+      "variant": "return",
+      "id": "update-topic-22",
+      "lines": [
+        "Zero updated rows -> 404; conflicts -> 409"
+      ],
+      "y": 1927,
+      "phase": 2
+    },
+    {
+      "from": "topic",
+      "to": "topic_db",
+      "label": "SELECT updated row; COMMIT",
+      "variant": "default",
+      "id": "update-topic-23",
+      "lines": [
+        "SELECT updated row; COMMIT"
+      ],
+      "y": 1999,
+      "phase": 2
+    },
+    {
+      "from": "topic_db",
+      "to": "topic",
+      "label": "Updated topic; omitted fields retained / storage 503",
+      "variant": "return",
+      "id": "update-topic-24",
+      "lines": [
+        "Updated topic; omitted fields retained / storage 503"
+      ],
+      "y": 2071,
+      "phase": 2
+    },
+    {
+      "from": "topic",
+      "to": "academic",
+      "label": "POST /api/v1/topic-display-names/",
+      "variant": "default",
+      "id": "update-topic-25",
+      "lines": [
+        "POST /api/v1/topic-display-names/"
+      ],
+      "y": 2192,
+      "phase": 3
+    },
+    {
+      "from": "academic",
+      "to": "topic",
+      "label": "200 display names / lookup failure",
+      "variant": "return",
+      "id": "update-topic-26",
+      "lines": [
+        "200 display names / lookup failure"
+      ],
+      "y": 2264,
+      "phase": 3
+    },
+    {
+      "from": "topic",
+      "to": "topic",
+      "label": "[On display lookup failure] keep saved topic; names=null",
+      "variant": "emphasis",
+      "id": "update-topic-27",
+      "lines": [
+        "[On display lookup failure] keep saved topic; names=null"
+      ],
+      "y": 2336,
+      "phase": 3
+    },
+    {
+      "from": "topic",
+      "to": "gateway",
+      "label": "200 OK - updated TopicResponseDTO",
+      "variant": "return",
+      "id": "update-topic-28",
+      "lines": [
+        "200 OK - updated TopicResponseDTO"
+      ],
+      "y": 2428,
+      "phase": 3
+    },
+    {
+      "from": "gateway",
+      "to": "actor",
+      "label": "200 -> close edit form and reload list",
+      "variant": "return",
+      "id": "update-topic-29",
+      "lines": [
+        "200 -> close edit form and reload list"
+      ],
+      "y": 2500,
+      "phase": 3
+    }
+  ],
+  "activations": [
+    {
+      "participant": "actor",
+      "from": 223,
+      "to": 828,
+      "type": "frontend"
+    },
+    {
+      "participant": "gateway",
+      "from": 223,
+      "to": 828,
+      "type": "cloud"
+    },
+    {
+      "participant": "topic",
+      "from": 295,
+      "to": 756,
+      "type": "backend"
+    },
+    {
+      "participant": "academic",
+      "from": 511,
+      "to": 592,
+      "type": "backend"
+    },
+    {
+      "participant": "topic_db",
+      "from": 367,
+      "to": 448,
+      "type": "database"
+    },
+    {
+      "participant": "actor",
+      "from": 940,
+      "to": 949,
+      "type": "frontend"
+    },
+    {
+      "participant": "gateway",
+      "from": 940,
+      "to": 1021,
+      "type": "cloud"
+    },
+    {
+      "participant": "topic",
+      "from": 1012,
+      "to": 1743,
+      "type": "backend"
+    },
+    {
+      "participant": "academic",
+      "from": 1320,
+      "to": 1653,
+      "type": "backend"
+    },
+    {
+      "participant": "topic_db",
+      "from": 1176,
+      "to": 1257,
+      "type": "database"
+    },
+    {
+      "participant": "topic",
+      "from": 1852,
+      "to": 2077,
+      "type": "backend"
+    },
+    {
+      "participant": "topic_db",
+      "from": 1852,
+      "to": 2077,
+      "type": "database"
+    },
+    {
+      "participant": "actor",
+      "from": 2497,
+      "to": 2506,
+      "type": "frontend"
+    },
+    {
+      "participant": "gateway",
+      "from": 2425,
+      "to": 2506,
+      "type": "cloud"
+    },
+    {
+      "participant": "topic",
+      "from": 2189,
+      "to": 2434,
+      "type": "backend"
+    },
+    {
+      "participant": "academic",
+      "from": 2189,
+      "to": 2270,
+      "type": "backend"
+    }
+  ]
+}

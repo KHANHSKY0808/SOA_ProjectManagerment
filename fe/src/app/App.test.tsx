@@ -313,7 +313,6 @@ describe('Login and role routes', () => {
     { role: 1, path: '/admin/profile', title: 'Thông tin cá nhân' },
     { role: 2, path: '/lecture/profile', title: 'Thông tin cá nhân' },
     { role: 3, path: '/student/profile', title: 'Thông tin cá nhân' },
-    { role: 1, path: '/admin/registrations', title: 'Quản lý đăng ký' },
   ])('opens the existing placeholder at $path', async ({ role, path, title }) => {
     sessionStorage.setItem(SESSION_TOKEN_KEY, 'saved-token')
     mock.onGet('/auth/me/').reply(200, responseForRole(role).user)
@@ -321,6 +320,22 @@ describe('Login and role routes', () => {
     expect(await screen.findByRole('heading', { name: title, level: 1 })).toBeVisible()
     expect(screen.getByText('Đang phát triển')).toBeVisible()
     expect(screen.getByTestId('path').textContent).toBe(path)
+  })
+
+  it('opens admin registration management directly and from the menu', async () => {
+    sessionStorage.setItem(SESSION_TOKEN_KEY, 'saved-token')
+    mock.onGet('/auth/me/').reply(200, responseForRole(1).user)
+    mock.onGet('/topics/api/v1/topics/').reply(200, [])
+    renderApp('/admin/registrations')
+    expect(await screen.findByRole('heading', { name: 'Quản lý đăng ký', level: 1 })).toBeVisible()
+    expect(await screen.findByText('Chưa có đề tài để quản lý đăng ký.')).toBeVisible()
+    expect(screen.queryByText('Đang phát triển')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('link', { name: 'Quản lý đề tài' }))
+    await screen.findByRole('heading', { name: 'Quản lý đề tài', level: 1 })
+    fireEvent.click(screen.getByRole('link', { name: 'Quản lý đăng ký' }))
+    expect(await screen.findByText('Chưa có đề tài để quản lý đăng ký.')).toBeVisible()
+    expect(screen.getByTestId('path').textContent).toBe('/admin/registrations')
+    expect(mock.history.get.find(request => request.url === '/topics/api/v1/topics/')?.headers?.Authorization).toBe('Bearer saved-token')
   })
 
   it.each([2, 3])('blocks role %s from deep admin URLs without calling academic APIs', async (role) => {
@@ -418,16 +433,17 @@ describe('Login and role routes', () => {
   ])('restores topic deep link $path with role-appropriate controls', async ({ role, path }) => {
     sessionStorage.setItem(SESSION_TOKEN_KEY, 'saved-token')
     mock.onGet('/auth/me/').reply(200, responseForRole(role).user)
-    mock.onGet('/topics/api/v1/topics/').reply(200, [{ status: 1, topic_id: 'DT001', name: 'SOA', description: null, major_name: 'IT', avisor_name: 'An' }])
+    mock.onGet('/topics/api/v1/topics/').reply(200, [{ req_GPA: 0, studentQuota: 1, status: 1, topic_id: 'DT001', name: 'SOA', description: null, major_name: 'IT', avisor_name: 'An' }])
     renderApp(path)
     expect(await screen.findByRole('table', { name: 'Danh sách đề tài' })).toBeVisible()
     expect(screen.getByRole('heading', { name: 'Quản lý đề tài', level: 1 })).toBeVisible()
     expect(screen.getByRole('link', { name: 'Quản lý đề tài' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByTestId('path').textContent).toBe(path)
-    expect(screen.getByRole('button', { name: 'Tạo đề tài' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Xem chi tiết DT001' })).toBeEnabled()
-    expect(screen.getByRole('button', { name: 'Sửa DT001' })).toBeEnabled()
-    expect(screen.getByRole('button', { name: 'Xóa DT001' })).toBeEnabled()
+    for (const name of ['Tạo đề tài', 'Sửa DT001', 'Xóa DT001']) {
+      if (role === 1 || (role === 2 && name === 'Tạo đề tài')) expect(screen.getByRole('button', { name })).toBeEnabled()
+      else expect(screen.queryByRole('button', { name })).not.toBeInTheDocument()
+    }
     expect(mock.history.get.find(request => request.url === '/topics/api/v1/topics/')?.headers?.Authorization).toBe('Bearer saved-token')
   })
 

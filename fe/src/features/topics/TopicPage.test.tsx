@@ -9,8 +9,8 @@ import { TopicPage } from './TopicPage'
 const base = '/topics/api/v1/topics/'
 const guid = '68317f4b-7445-45bf-8cbb-0c3ba05c5a50'
 const rows = [
-  { status: 1, topic_id: 'DT001', name: 'Quản lý đồ án', description: 'SOA', avisor_name: 'An Nguyễn', major_name: 'Phần mềm' },
-  { status: null, topic_id: 'DT002', name: 'Hệ thống thư viện', description: null, avisor_name: null, major_name: null },
+  { req_GPA: 0, studentQuota: 1, status: 1, topic_id: 'DT001', name: 'Quản lý đồ án', description: 'SOA', avisor_name: 'An Nguyễn', major_name: 'Phần mềm' },
+  { req_GPA: 0, studentQuota: 1, status: null, topic_id: 'DT002', name: 'Hệ thống thư viện', description: null, avisor_name: null, major_name: null },
 ]
 const lecturer = { lecturer_id: 'GV001', department_id: '1', user: { first_name: 'An', last_name: 'Nguyễn' } }
 const logout = vi.fn()
@@ -28,8 +28,8 @@ beforeEach(() => {
   mock.onGet('/academic/api/v1/lecturers/').reply(200, [lecturer, { lecturer_id: 'GV002', department_id: null, user: null }])
 })
 afterEach(() => { mock.restore(); setAccessToken(null); vi.restoreAllMocks(); vi.unstubAllGlobals() })
-function renderPage(role: Role = 1) {
-  return render(<AuthContext.Provider value={{ user: { user_id: 'test-user', first_name: null, last_name: null, role }, logout, login: vi.fn(), status: 'ready', restoreError: '', retryRestore: vi.fn() }}><TopicPage /></AuthContext.Provider>)
+function renderPage(role: Role = 1, userId = 'test-user') {
+  return render(<AuthContext.Provider value={{ user: { user_id: userId, first_name: null, last_name: null, role }, logout, login: vi.fn(), status: 'ready', restoreError: '', retryRestore: vi.fn() }}><TopicPage /></AuthContext.Provider>)
 }
 async function openForm() {
   const opener = screen.getByRole('button', { name: 'Tạo đề tài' })
@@ -44,11 +44,28 @@ function fillForm() {
   fireEvent.change(screen.getByLabelText('Ngành', { exact: true }), { target: { value: '2' } })
 }
 
+it('submits GPA and quota and rejects invalid limits before writing', async () => {
+  mock.onPost(base).reply(201, rows[0])
+  renderPage(); await screen.findByRole('table', { name: 'Danh sách đề tài' })
+  const form = await openForm(); fillForm()
+  fireEvent.change(screen.getByLabelText('GPA yêu cầu'), { target: { value: '4.1' } })
+  fireEvent.change(screen.getByLabelText('Chỉ tiêu sinh viên'), { target: { value: '1.5' } })
+  fireEvent.submit(form)
+  expect(await screen.findByText('GPA yêu cầu phải từ 0 đến 4.')).toBeVisible()
+  expect(screen.getByText('Chỉ tiêu phải là số nguyên dương tối đa 2147483647.')).toBeVisible()
+  expect(mock.history.post).toHaveLength(0)
+  fireEvent.change(screen.getByLabelText('GPA yêu cầu'), { target: { value: '3.25' } })
+  fireEvent.change(screen.getByLabelText('Chỉ tiêu sinh viên'), { target: { value: '5' } })
+  fireEvent.submit(form)
+  await waitFor(() => expect(mock.history.post).toHaveLength(1))
+  expect(JSON.parse(mock.history.post[0].data)).toMatchObject({ req_GPA: 3.25, studentQuota: 5 })
+})
+
 describe('Topic list and creation', () => {
   it('shows four business columns, topic actions and nullable names', async () => {
     renderPage()
     const table = await screen.findByRole('table', { name: 'Danh sách đề tài' })
-    expect(within(table).getAllByRole('columnheader').map(cell => cell.textContent)).toEqual(['Mã đề tài', 'Tên đề tài', 'Giáo viên hướng dẫn', 'Tên ngành', 'Trạng thái', 'Thao tác'])
+    expect(within(table).getAllByRole('columnheader').map(cell => cell.textContent)).toEqual(['Mã đề tài', 'Tên đề tài', 'Giáo viên hướng dẫn', 'Tên ngành', 'GPA yêu cầu', 'Chỉ tiêu', 'Trạng thái', 'Thao tác'])
     expect(within(table).getByText('An Nguyễn')).toBeVisible()
     expect(within(table).getByText('Phần mềm')).toBeVisible()
     expect(within(table).getAllByText('—')).toHaveLength(2)
@@ -70,7 +87,7 @@ describe('Topic list and creation', () => {
     expect(screen.getByText('Không có đề tài phù hợp.')).toBeVisible()
     expect(mock.history.get).toHaveLength(1)
   })
-  it.each([1, 2] as const)('creates a GUID topic with selected reference IDs and refreshes the list for role %s', async role => {
+  it.each([1] as const)('creates a GUID topic with selected reference IDs and refreshes the list for role %s', async role => {
     renderPage(role); await screen.findByRole('table')
     const form = await openForm()
     expect(screen.getByLabelText('Tên đề tài')).toHaveFocus()
@@ -85,7 +102,7 @@ describe('Topic list and creation', () => {
     expect(await screen.findByText('Đã tạo đề tài.')).toBeVisible()
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(await screen.findByText(guid)).toBeVisible()
-    expect(JSON.parse(mock.history.post[0].data)).toEqual({ topic_id: guid, name: 'Đề tài mới', description: 'Mô tả SOA', advisor_id: 'GV001', major_id: '2', ...(role === 1 ? { status: 1 } : {}) })
+    expect(JSON.parse(mock.history.post[0].data)).toEqual({ req_GPA: 0, studentQuota: 1, topic_id: guid, name: 'Đề tài mới', description: 'Mô tả SOA', advisor_id: 'GV001', major_id: '2', ...(role === 1 ? { status: 2 } : {}) })
     expect(mock.history.post[0].headers?.Authorization).toBe('Bearer test-token')
     expect(crypto.randomUUID).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('button', { name: 'Tạo đề tài' })).toHaveFocus()
@@ -292,9 +309,9 @@ describe('Topic list and creation', () => {
   })
 })
 
-const detail = { ...rows[0], major_id: '2', advisor_id: 'GV001', file_url: '/files/topic.pdf', status: 1,
+const detail = { ...rows[0], major_id: '2', advisor_id: 'GV001' as string | null, file_url: '/files/topic.pdf', status: 1 as number | null,
   created_at: '2026-10-10T08:00:00Z', updated_at: null, updated_by: 'admin' }
-async function openEdit(role: Role = 2, searchQuery = '') {
+async function openEdit(role: Role = 1, searchQuery = '') {
   mock.onGet(base + 'DT001/').reply(200, detail)
   renderPage(role); await screen.findByRole('table')
   if (searchQuery) {
@@ -306,7 +323,7 @@ async function openEdit(role: Role = 2, searchQuery = '') {
   await waitFor(() => expect(screen.getByRole('button', { name: 'Lưu thay đổi' })).toBeEnabled())
   return form
 }
-async function openDelete(role: Role = 2) {
+async function openDelete(role: Role = 1) {
   renderPage(role); await screen.findByRole('table')
   const opener = screen.getByRole('button', { name: 'Xóa DT001' })
   opener.focus(); fireEvent.click(opener)
@@ -354,7 +371,7 @@ describe('Topic detail, edit and delete', () => {
     expect(logout).not.toHaveBeenCalled()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
-  it.each([1, 2] as const)('prefills IDs and patches only changed fields for role %s, preserving search', async role => {
+  it.each([1] as const)('prefills IDs and patches only changed fields for role %s, preserving search', async role => {
     const form = await openEdit(role, 'DT001')
     expect(screen.getByLabelText('Tên đề tài')).toHaveValue(detail.name)
     expect(screen.getByLabelText('Tên đề tài')).toHaveFocus()
@@ -382,7 +399,7 @@ describe('Topic detail, edit and delete', () => {
     mock.onGet(base + 'DT001/').reply(200, { ...detail, major_id: 'LEGACY', advisor_id: null, major_name: null, avisor_name: null })
     mock.onGet('/academic/api/majors/').reply(200, [])
     mock.onGet('/academic/api/v1/lecturers/').reply(200, [])
-    renderPage(2); await screen.findByRole('table')
+    renderPage(1); await screen.findByRole('table')
     fireEvent.click(screen.getByRole('button', { name: 'Sửa DT001' }))
     const form = await screen.findByRole('form', { name: 'Sửa đề tài' })
     await waitFor(() => expect(screen.getByRole('button', { name: 'Lưu thay đổi' })).toBeEnabled())
@@ -474,7 +491,7 @@ describe('Topic detail, edit and delete', () => {
   })
   it('fails safely when management detail lacks reference IDs', async () => {
     mock.onGet(base + 'DT001/').reply(200, { ...detail, major_id: undefined, advisor_id: undefined })
-    renderPage(2); await screen.findByRole('table')
+    renderPage(1); await screen.findByRole('table')
     fireEvent.click(screen.getByRole('button', { name: 'Sửa DT001' }))
     expect(await screen.findByRole('alert')).toBeVisible()
     expect(screen.queryByRole('form', { name: 'Sửa đề tài' })).not.toBeInTheDocument()
@@ -487,7 +504,7 @@ describe('Topic detail, edit and delete', () => {
     expect(mock.history.delete).toHaveLength(0)
     expect(screen.getByRole('button', { name: 'Xóa DT001' })).toHaveFocus()
   })
-  it.each([1, 2] as const)('deletes only after confirmation for role %s and refreshes the list', async role => {
+  it.each([1] as const)('deletes only after confirmation for role %s and refreshes the list', async role => {
     const dialog = await openDelete(role)
     expect(dialog).toHaveTextContent('kể cả lịch sử đăng ký đã hủy')
     expect(mock.history.delete).toHaveLength(0)
@@ -606,7 +623,7 @@ describe('Topic detail, edit and delete', () => {
   it.each(['edit', 'delete'] as const)('aborts pending %s on unmount without acting on a late 401', async action => {
     let complete!: (response: [number, unknown]) => void
     mock.onGet(base + 'DT001/').reply(200, detail)
-    const view = renderPage(2); await screen.findByRole('table')
+    const view = renderPage(1); await screen.findByRole('table')
     fireEvent.click(screen.getByRole('button', { name: action === 'edit' ? 'Sửa DT001' : 'Xóa DT001' }))
     const handler = action === 'edit' ? mock.onPatch(base + 'DT001/') : mock.onDelete(base + 'DT001/')
     handler.reply(() => new Promise<[number, unknown]>(resolve => { complete = resolve }))
@@ -627,17 +644,130 @@ describe('Topic detail, edit and delete', () => {
 
 
 describe('Topic status permissions', () => {
-  it.each([0, 1, 2])('admin selects status %s when creating', async status => {
+  it.each([0, 1])('preserves status %s when admin only edits content', async status => {
+    mock.onGet(base + 'DT001/').reply(200, { ...detail, status })
+    renderPage(1); await screen.findByRole('table')
+    fireEvent.click(screen.getByRole('button', { name: 'Sửa DT001' }))
+    const form = await screen.findByRole('form', { name: 'Sửa đề tài' })
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Lưu thay đổi' })).toBeEnabled())
+    expect(screen.queryByRole('option', { name: 'Chờ duyệt' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Đã duyệt' })).not.toBeInTheDocument()
+    if (status === 0) {
+      expect(screen.queryByLabelText('Trạng thái')).not.toBeInTheDocument()
+      expect(screen.getByText(/dùng nút Duyệt trên danh sách/)).toBeVisible()
+    } else {
+      expect(screen.getByLabelText('Trạng thái')).toHaveValue('')
+      expect(screen.getByRole('option', { name: 'Mở đăng ký' })).toBeEnabled()
+      expect(screen.getByRole('option', { name: 'Đóng đăng ký' })).toBeEnabled()
+    }
+    fireEvent.change(screen.getByLabelText('Tên đề tài'), { target: { value: 'Nội dung sửa' } })
+    mock.onPatch(base + 'DT001/').reply(200, {})
+    fireEvent.submit(form)
+    await screen.findByText('Đã cập nhật đề tài.')
+    expect(JSON.parse(mock.history.patch[0].data)).toEqual({ name: 'Nội dung sửa' })
+  })
+  it.each([2, 3])('opens or closes an approved topic with status %s', async status => {
+    const form = await openEdit(1)
+    fireEvent.change(screen.getByLabelText('Trạng thái'), { target: { value: String(status) } })
+    mock.onPatch(base + 'DT001/').reply(200, {})
+    fireEvent.submit(form)
+    await screen.findByText('Đã cập nhật đề tài.')
+    expect(JSON.parse(mock.history.patch[0].data)).toEqual({ status })
+  })
+  it('approves a pending topic directly from the list, preventing duplicate writes', async () => {
+    mock.onGet(base).reply(200, [{ ...rows[0], status: 0 }, rows[1]])
+    let complete!: (result: [number, unknown]) => void
+    mock.onPatch(base + 'DT001/').reply(() => new Promise(resolve => { complete = resolve }))
+    renderPage(1)
+    const approve = await screen.findByRole('button', { name: 'Duyệt DT001' })
+    fireEvent.click(approve); fireEvent.click(approve)
+    await waitFor(() => expect(mock.history.patch).toHaveLength(1))
+    expect(approve).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Sửa DT001' })).toBeDisabled()
+    expect(JSON.parse(mock.history.patch[0].data)).toEqual({ status: 1 })
+    mock.onGet(base).reply(200, rows)
+    await act(async () => complete([200, {}]))
+    expect(await screen.findByText('Đã duyệt đề tài.')).toBeVisible()
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Duyệt DT001' })).not.toBeInTheDocument())
+    expect(screen.getByText('Đã duyệt')).toBeVisible()
+  })
+  it.each([1, 2, 3, null])('does not show approval for status %s', async status => {
+    mock.onGet(base).reply(200, [{ ...rows[0], status }])
+    renderPage(1); await screen.findByRole('table')
+    expect(screen.queryByRole('button', { name: 'Duyệt DT001' })).not.toBeInTheDocument()
+  })
+  it.each([2, 3] as const)('does not expose approval to role %s', async role => {
+    mock.onGet(base).reply(200, [{ ...rows[0], status: 0 }])
+    renderPage(role); await screen.findByRole('table')
+    expect(screen.queryByRole('button', { name: 'Duyệt DT001' })).not.toBeInTheDocument()
+    expect(mock.history.patch).toHaveLength(0)
+  })
+  it.each([401, 403, 404])('handles approval HTTP %s without retrying', async status => {
+    mock.onGet(base).reply(200, [{ ...rows[0], status: 0 }])
+    mock.onPatch(base + 'DT001/').reply(status, { detail: 'private details' })
+    renderPage(1)
+    fireEvent.click(await screen.findByRole('button', { name: 'Duyệt DT001' }))
+    if (status === 401) await waitFor(() => expect(logout).toHaveBeenCalledOnce())
+    else {
+      expect(await screen.findByRole('alert')).toBeVisible()
+      expect(screen.queryByText('private details')).not.toBeInTheDocument()
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Duyệt DT001' })).toBeEnabled())
+    }
+    expect(mock.history.patch).toHaveLength(1)
+    expect(screen.queryByRole('button', { name: 'Kiểm tra kết quả duyệt' })).not.toBeInTheDocument()
+  })
+  it.each([0, 1, 2, 3])('reconciles uncertain approval with current status %s', async status => {
+    mock.onGet(base).reply(200, [{ ...rows[0], status: 0 }])
+    mock.onPatch(base + 'DT001/').timeout()
+    renderPage(1)
+    fireEvent.click(await screen.findByRole('button', { name: 'Duyệt DT001' }))
+    const check = await screen.findByRole('button', { name: 'Kiểm tra kết quả duyệt' })
+    expect(screen.getByRole('button', { name: 'Duyệt DT001' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Tạo đề tài' })).toBeDisabled()
+    mock.onGet(base + 'DT001/').reply(200, { ...rows[0], status })
+    mock.onGet(base).reply(200, [{ ...rows[0], status }])
+    fireEvent.click(check)
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Kiểm tra kết quả duyệt' })).not.toBeInTheDocument())
+    expect(mock.history.patch).toHaveLength(1)
+    if (status === 0) expect(await screen.findByRole('button', { name: 'Duyệt DT001' })).toBeEnabled()
+    else expect(screen.queryByRole('button', { name: 'Duyệt DT001' })).not.toBeInTheDocument()
+  })
+  it('keeps approval locked after a failed reconciliation and handles a deleted topic', async () => {
+    mock.onGet(base).reply(200, [{ ...rows[0], status: 0 }])
+    mock.onPatch(base + 'DT001/').networkError()
+    renderPage(1)
+    fireEvent.click(await screen.findByRole('button', { name: 'Duyệt DT001' }))
+    const check = await screen.findByRole('button', { name: 'Kiểm tra kết quả duyệt' })
+    mock.onGet(base + 'DT001/').reply(503)
+    fireEvent.click(check)
+    await screen.findByText(/Chưa kiểm tra được kết quả duyệt/)
+    expect(screen.getByRole('button', { name: 'Duyệt DT001' })).toBeDisabled()
+    mock.onGet(base + 'DT001/').reply(404)
+    mock.onGet(base).reply(200, [])
+    fireEvent.click(screen.getByRole('button', { name: 'Kiểm tra kết quả duyệt' }))
+    await screen.findByText('Đề tài không còn tồn tại.')
+    await screen.findByText('Không có đề tài phù hợp.')
+    expect(mock.history.patch).toHaveLength(1)
+  })
+  it('admin form does not include pending (0) or approved (1) statuses when creating', async () => {
+    renderPage(1); await openForm()
+    expect(screen.getByLabelText('Trạng thái')).toHaveValue('2')
+    expect(screen.queryByRole('option', { name: 'Chờ duyệt' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Đã duyệt' })).not.toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Mở đăng ký' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Đóng đăng ký' })).toBeInTheDocument()
+  })
+  it.each([2, 3])('admin selects status %s when creating', async status => {
     renderPage(1); const form = await openForm(); fillForm()
-    expect(screen.getByLabelText('Trạng thái')).toHaveValue('1')
+    expect(screen.getByLabelText('Trạng thái')).toHaveValue('2')
     fireEvent.change(screen.getByLabelText('Trạng thái'), { target: { value: String(status) } })
     mock.onPost(base).reply(201, {})
     fireEvent.submit(form)
     await screen.findByText('Đã tạo đề tài.')
     expect(JSON.parse(mock.history.post[0].data).status).toBe(status)
   })
-  it.each([0, 1, 2])('admin patches only changed status %s', async status => {
-    mock.onGet(base + 'DT001/').reply(200, { ...detail, status: (status + 1) % 3 })
+  it.each([2, 3])('admin patches only changed status %s', async status => {
+    mock.onGet(base + 'DT001/').reply(200, { ...detail, status: status === 2 ? 3 : 2 })
     renderPage(1); await screen.findByRole('table')
     fireEvent.click(screen.getByRole('button', { name: 'Sửa DT001' }))
     const form = await screen.findByRole('form', { name: 'Sửa đề tài' })
@@ -648,18 +778,59 @@ describe('Topic status permissions', () => {
     await screen.findByText('Đã cập nhật đề tài.')
     expect(JSON.parse(mock.history.patch[0].data)).toEqual({ status })
   })
-  it('lecturer cannot edit status and does not send it', async () => {
-    const form = await openEdit(2)
-    expect(screen.queryByLabelText('Trạng thái')).not.toBeInTheDocument()
-    fireEvent.change(screen.getByLabelText('Tên đề tài'), { target: { value: 'Revision' } })
-    mock.onPatch(base + 'DT001/').reply(200, {})
-    fireEvent.submit(form)
-    await screen.findByText('Đã cập nhật đề tài.')
-    expect(JSON.parse(mock.history.patch[0].data)).toEqual({ name: 'Revision' })
+  it('lecturer can view assigned topics and create, but cannot edit or delete', async () => {
+    renderPage(2, 'GV001'); await screen.findByRole('table')
+    expect(screen.getByRole('button', { name: 'Xem chi tiết DT001' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Tạo đề tài' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Sửa DT001' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Xóa DT001' })).not.toBeInTheDocument()
+    expect(mock.history.post).toHaveLength(0)
+    expect(mock.history.patch).toHaveLength(0)
+    expect(mock.history.delete).toHaveLength(0)
   })
-  it('lecturer creation omits the status control', async () => {
-    renderPage(2); await openForm()
+  it.each(['success', 'timeout'] as const)('lecturer creates a pending topic as their own advisor (%s)', async result => {
+    // Composite lecturer profiles are admin-only and must not be requested here.
+    mock.onGet('/academic/api/v1/lecturers/').reply(403)
+    renderPage(2, 'GV001')
+    const form = await openForm()
+    expect(mock.history.get.some(request => request.url === '/academic/api/v1/lecturers/')).toBe(false)
+    expect(screen.queryByLabelText('Giáo viên hướng dẫn')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Trạng thái')).not.toBeInTheDocument()
+    fireEvent.submit(form)
+    expect(await screen.findByText('Vui lòng nhập tên đề tài.')).toBeVisible()
+    expect(mock.history.post).toHaveLength(0)
+    fireEvent.change(screen.getByLabelText('Tên đề tài'), { target: { value: 'Đề tài giảng viên' } })
+    fireEvent.change(screen.getByLabelText('Ngành', { exact: true }), { target: { value: '2' } })
+    const created = { ...rows[0], topic_id: guid, status: 0 }
+    if (result === 'timeout') mock.onPost(base).timeout()
+    else mock.onPost(base).reply(201, created)
+    fireEvent.submit(form)
+    if (result === 'timeout') {
+      const check = await screen.findByRole('button', { name: 'Kiểm tra kết quả' })
+      mock.onGet(base + guid + '/').reply(200, created)
+      fireEvent.click(check)
+    }
+    await screen.findByText('Đã tạo đề tài.')
+    expect(mock.history.post).toHaveLength(1)
+    expect(JSON.parse(mock.history.post[0].data)).toMatchObject({ advisor_id: 'GV001', status: 0, major_id: '2' })
+    expect(mock.history.patch).toHaveLength(0)
+    expect(mock.history.delete).toHaveLength(0)
+  })
+  it.each([401, 503])('handles lecturer major loading HTTP %s without requesting admin profiles', async status => {
+    mock.onGet('/academic/api/majors/').reply(status)
+    mock.onGet('/academic/api/v1/lecturers/').reply(403)
+    renderPage(2, 'GV001')
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo đề tài' }))
+    if (status === 401) await waitFor(() => expect(logout).toHaveBeenCalledOnce())
+    else {
+      expect(await screen.findByRole('alert')).toHaveTextContent('Dịch vụ tạm thời không khả dụng.')
+      expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Tạo đề tài' })).toBeDisabled()
+      mock.onGet('/academic/api/majors/').reply(200, [{ major_id: '2', name: 'Phần mềm', department_id: '1' }])
+      fireEvent.click(screen.getByRole('button', { name: 'Tải lại lựa chọn' }))
+      await waitFor(() => expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Tạo đề tài' })).toBeEnabled())
+    }
+    expect(mock.history.get.some(request => request.url === '/academic/api/v1/lecturers/')).toBe(false)
+    expect(mock.history.post).toHaveLength(0)
   })
   it('reconciles a timed-out status edit without retrying the write', async () => {
     const form = await openEdit(1)
@@ -672,7 +843,7 @@ describe('Topic status permissions', () => {
     await screen.findByText('Đã xác nhận dữ liệu cập nhật.')
     expect(mock.history.patch).toHaveLength(1)
   })
-  it.each([[0, 'Chờ duyệt'], [1, 'Đã duyệt'], [2, 'Mở đăng ký'], [null, 'Chưa xác định'], [9, 'Chưa xác định']])('displays status %s safely', async (status, label) => {
+  it.each([[0, 'Chờ duyệt'], [1, 'Đã duyệt'], [2, 'Mở đăng ký'], [3, 'Đóng đăng ký'], [null, 'Chưa xác định'], [9, 'Chưa xác định']])('displays status %s safely', async (status, label) => {
     mock.onGet(base + 'DT001/').reply(200, { ...detail, status })
     renderPage(); await screen.findByRole('table')
     fireEvent.click(screen.getByRole('button', { name: 'Xem chi tiết DT001' }))
@@ -683,22 +854,108 @@ describe('Topic status permissions', () => {
 
 describe('Topic roster detail', () => {
   const rosterUrl = '/registrations/api/v1/topics/DT001/registrations/'
-  const student = { registration_id: 'R001', student_id: 'S1', student_name: 'Nguyễn An', semester: '2026-1', status: 1, created_at: '2026-10-11T01:00:00Z' }
-  async function openRoster(role: Role = 1) {
-    mock.onGet(base + 'DT001/').reply(200, detail)
-    const view = renderPage(role); await screen.findByRole('table')
+  const student = { registration_id: 'R001', student_id: 'S1', student_name: 'Nguyễn An', semester: '2026-1', status: 1, created_at: '2026-10-11T01:00:00Z', point: null }
+  async function openRoster(role: Role = 1, userId = 'test-user', topicDetail = detail) {
+    mock.onGet(base + 'DT001/').reply(200, topicDetail)
+    const view = renderPage(role, userId); await screen.findByRole('table')
     fireEvent.click(screen.getByRole('button', { name: 'Xem chi tiết DT001' }))
     await within(screen.getByRole('dialog')).findByText(detail.name)
     return view
   }
   it.each([1, 2] as const)('shows registered students for manager role %s', async role => {
     mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
-    await openRoster(role)
+    await openRoster(role, role === 2 ? 'GV001' : 'admin')
     const table = await screen.findByRole('table', { name: 'Danh sách sinh viên đăng ký' })
     expect(within(table).getByText('S1')).toBeVisible()
     expect(within(table).getByText('Nguyễn An')).toBeVisible()
     expect(within(table).getByText('2026-1')).toBeVisible()
     expect(mock.history.get.find(request => request.url === rosterUrl)?.headers?.Authorization).toBe('Bearer test-token')
+  })
+  it.each([0, 1, 2, null])('hides grading until topic status 3 (status %s)', async status => {
+    mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
+    await openRoster(1, 'admin', { ...detail, status })
+    await screen.findByText('Nguyễn An')
+    expect(screen.queryByRole('button', { name: 'Chấm điểm S1' })).not.toBeInTheDocument()
+  })
+  it.each(['GV001', null])('lets admin revise any current score when advisor is %s', async advisorId => {
+    mock.onGet(rosterUrl).reply(200, { results: [{ ...student, point: '8.50' }], next_after: null, names_unavailable: false })
+    await openRoster(1, 'admin', { ...detail, advisor_id: advisorId, status: 3 })
+    const table = await screen.findByRole('table', { name: 'Danh sách sinh viên đăng ký' })
+    expect(within(table).getByText('8.50')).toBeVisible()
+    expect(within(table).getByRole('columnheader', { name: 'Điểm' })).toBeVisible()
+    fireEvent.click(within(table).getByRole('button', { name: 'Chấm điểm S1' }))
+    expect(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' })).toHaveValue(8.5)
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' }), { target: { value: '9.25' } })
+    mock.onPut(rosterUrl + 'R001/point/').reply(200, { registration_id: 'R001', topic_id: 'DT001', point: '9.25', updated_at: '2026-10-14T01:00:00Z' })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu điểm' }))
+    expect(await within(table).findByText('9.25')).toBeVisible()
+    expect(JSON.parse(mock.history.put[0].data)).toEqual({ point: '9.25' })
+    expect(mock.history.put).toHaveLength(1)
+  })
+  it('keeps the admin draft after a forbidden grading response', async () => {
+    mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
+    await openRoster(1, 'admin', { ...detail, status: 3 })
+    fireEvent.click(await screen.findByRole('button', { name: 'Chấm điểm S1' }))
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' }), { target: { value: '7.5' } })
+    mock.onPut(rosterUrl + 'R001/point/').reply(403, { detail: 'private' })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu điểm' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Bạn không có quyền chấm điểm')
+    expect(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' })).toHaveValue(7.5)
+    expect(screen.queryByText('private')).not.toBeInTheDocument()
+    expect(mock.history.put).toHaveLength(1)
+  })
+  it('refreshes topic detail and hides grading after topic_not_closed', async () => {
+    mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
+    await openRoster(1, 'admin', { ...detail, status: 3 })
+    fireEvent.click(await screen.findByRole('button', { name: 'Chấm điểm S1' }))
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' }), { target: { value: '7.5' } })
+    mock.onPut(rosterUrl + 'R001/point/').reply(() => {
+      mock.onGet(base + 'DT001/').reply(200, { ...detail, status: 2 })
+      return [409, { code: 'topic_not_closed' }]
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu điểm' }))
+    expect(await screen.findByText('Đề tài chưa đóng đăng ký nên không thể chấm điểm. Đang cập nhật trạng thái đề tài.')).toBeVisible()
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Chấm điểm S1' })).not.toBeInTheDocument())
+    expect(mock.history.put).toHaveLength(1)
+  })
+  it('lets only the assigned lecturer grade and refreshes the shown score', async () => {
+    mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
+    await openRoster(2, 'GV001', { ...detail, status: 3 })
+    fireEvent.click(await screen.findByRole('button', { name: 'Chấm điểm S1' }))
+    expect(screen.queryByRole('button', { name: 'Hủy đăng ký S1' })).not.toBeInTheDocument()
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' }), { target: { value: '8.5' } })
+    const pointPath = rosterUrl + 'R001/point/'
+    mock.onPut(pointPath).reply(200, { registration_id: 'R001', topic_id: 'DT001', point: '8.50', updated_at: '2026-10-14T01:00:00Z' })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu điểm' }))
+    expect(await screen.findByText('Đã lưu điểm đăng ký.')).toBeVisible()
+    expect(screen.getByText('8.50')).toBeVisible()
+    expect(JSON.parse(mock.history.put[0].data)).toEqual({ point: '8.5' })
+    expect(mock.history.put[0].headers?.Authorization).toBe('Bearer test-token')
+    fireEvent.click(screen.getByRole('button', { name: 'Chấm điểm S1' }))
+    expect(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' })).toHaveValue(8.5)
+  })
+  it('hides grading from another lecturer', async () => {
+    mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
+    await openRoster(2, 'GV002')
+    await waitFor(() => expect(screen.queryByText('Đang tải chi tiết đề tài…')).not.toBeInTheDocument())
+    expect(screen.queryByRole('region', { name: 'Sinh viên đăng ký đề tài' })).not.toBeInTheDocument()
+    expect(mock.history.get.some(request => request.url === rosterUrl)).toBe(false)
+    expect(screen.queryByRole('button', { name: 'Chấm điểm S1' })).not.toBeInTheDocument()
+  })
+  it('checks the exact point after an uncertain save without retrying PUT', async () => {
+    mock.onGet(rosterUrl).reply(200, { results: [student], next_after: null, names_unavailable: false })
+    await openRoster(2, 'GV001', { ...detail, status: 3 })
+    fireEvent.click(await screen.findByRole('button', { name: 'Chấm điểm S1' }))
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Điểm (0–10)' }), { target: { value: '8.5' } })
+    mock.onPut(rosterUrl + 'R001/point/').timeout()
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu điểm' }))
+    expect(await screen.findByRole('button', { name: 'Kiểm tra điểm' })).toBeVisible()
+    expect(mock.history.put).toHaveLength(1)
+    mock.onGet(rosterUrl + 'R001/').reply(200, { registration_id: 'R001', topic_id: 'DT001', status: 1, point: '8.50' })
+    fireEvent.click(screen.getByRole('button', { name: 'Kiểm tra điểm' }))
+    expect(await screen.findByText('Đã lưu điểm đăng ký.')).toBeVisible()
+    expect(screen.getByText('8.50')).toBeVisible()
+    expect(mock.history.put).toHaveLength(1)
   })
   it('does not request or show roster for student role', async () => {
     await openRoster(3)
@@ -759,7 +1016,7 @@ describe('Topic roster detail', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Hủy đăng ký S1' }))
     return screen.getByRole('group', { name: 'Xác nhận hủy đăng ký' })
   }
-  it.each([1, 2] as const)('cancels selected student for role %s after confirmation', async role => {
+  it.each([1] as const)('cancels selected student for role %s after confirmation', async role => {
     const confirmation = await chooseCancellation(role)
     expect(within(confirmation).getByText(/Nguyễn An.*S1/)).toBeVisible()
     expect(mock.history.delete).toHaveLength(0)
@@ -801,7 +1058,7 @@ describe('Topic roster detail', () => {
     const check = await screen.findByRole('button', { name: 'Kiểm tra kết quả hủy' })
     expect(screen.queryByRole('button', { name: 'Xác nhận hủy đăng ký' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Quay lại' })).toBeDisabled()
-    mock.onGet(rosterUrl + 'R001/').reply(200, { registration_id: 'R001', topic_id: 'DT001', status: 0 })
+    mock.onGet(rosterUrl + 'R001/').reply(200, { registration_id: 'R001', topic_id: 'DT001', status: 0, point: null })
     fireEvent.click(check)
     expect(await screen.findByText('Đã xác nhận hủy đăng ký.')).toBeVisible()
     expect(mock.history.delete).toHaveLength(1)
@@ -811,7 +1068,7 @@ describe('Topic roster detail', () => {
     await chooseCancellation()
     mock.onDelete(rosterUrl + 'R001/').timeout()
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận hủy đăng ký' }))
-    mock.onGet(rosterUrl + 'R001/').reply(200, { registration_id: 'R001', topic_id: 'DT001', status: 1 })
+    mock.onGet(rosterUrl + 'R001/').reply(200, { registration_id: 'R001', topic_id: 'DT001', status: 1, point: null })
     fireEvent.click(await screen.findByRole('button', { name: 'Kiểm tra kết quả hủy' }))
     expect(await screen.findByText(/Đăng ký vẫn còn hiệu lực/)).toBeVisible()
     expect(screen.getByRole('button', { name: 'Xác nhận hủy đăng ký' })).toBeEnabled()

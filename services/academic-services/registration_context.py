@@ -28,6 +28,7 @@ class AcademicUnavailable(APIException):
 class ContextDTO(serializers.Serializer):
     student_id = serializers.CharField()
     department_id = serializers.CharField()
+    gpa = serializers.FloatField()
 
 
 class MajorBatchDTO(serializers.Serializer):
@@ -52,7 +53,7 @@ class RegistrationContextView(ReferenceView):
                       if student else None)
         if not department or not Department.objects.filter(pk=department).exists():
             raise PermissionDenied("Student has no valid faculty.")
-        return Response(ContextDTO({"student_id": student.pk, "department_id": department}).data)
+        return Response(ContextDTO({"student_id": student.pk, "department_id": department, "gpa": student.gpa}).data)
 
 
 class MajorDepartmentsView(ReferenceView):

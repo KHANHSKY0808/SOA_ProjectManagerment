@@ -1,4 +1,4 @@
-﻿# Quản lý đồ án tốt nghiệp — SOA
+# Quản lý đồ án tốt nghiệp — SOA
 
 ## Yêu cầu môi trường (Requirements)
 
@@ -6,6 +6,25 @@
 - Docker Desktop và Consul đang chạy tại `http://localhost:8500`.
 - Có database sẵn: `database/DB_ProjectManagerment.db`.
 - Các cổng `5173`, `8000–8004`, `8500` còn trống.
+
+## Swagger / tài liệu API
+
+Sau khi build và chạy API Gateway, mở **http://localhost:8000/swagger/**.
+OpenAPI JSON nằm tại **http://localhost:8000/openapi.json**. Tài liệu bao gồm
+API auth, academic, đăng ký, đề tài và health qua các prefix gateway hiện có.
+Swagger UI và tài liệu được đóng gói cùng gateway, không cần CDN hoặc các
+backend đang hoạt động để mở trang tài liệu.
+
+Để thử API, gọi `POST /auth/login/`, sao chép `access`, bấm **Authorize** và
+dán token (không thêm chữ `Bearer`). Các quyền admin/giảng viên/sinh viên vẫn
+do service kiểm tra. Token không được lưu qua reload; các thao tác tạo, sửa,
+xóa chỉ được gửi khi bấm **Try it out → Execute**.
+
+Nếu gateway đã chạy từ image cũ, cần build/recreate riêng gateway để hiển thị
+Swagger: từ `api-gateway`, chạy `docker compose up -d --build api-gateway`.
+Không cần cài thêm package hoặc khởi động lại các Django service cho thay đổi này.
+OpenAPI là file tĩnh: cập nhật cùng thay đổi API và chạy kiểm thử contract;
+xem [hướng dẫn bảo trì và kiểm thử](api-gateway/README.md#swagger-and-openapi).
 
 ## Cách chạy dự án
 
@@ -29,6 +48,7 @@ foreach ($service in $services) {
 Sửa `.env` của cả bốn backend trước khi chạy:
 
 - Đặt cùng một `JWT_SIGNING_KEY` để phát hành và kiểm tra JWT.
+- Access token do auth-service cấp khi đăng nhập hoặc refresh có thời hạn 30 phút. Khởi động lại auth-service để áp dụng; token đã cấp giữ thời điểm hết hạn cũ, thời hạn refresh token không đổi.
 - Đặt cùng một `INTERNAL_SERVICE_TOKEN` không rỗng cho các lời gọi nội bộ; dùng giá trị riêng, khác JWT key.
 - Đặt `CONSUL_AUTO_REGISTER=true`, `CONSUL_URL=http://localhost:8500`.
 - Giữ đúng tên service, port và instance ID riêng trong `.env.example`. Với Docker Desktop, dùng `CONSUL_SERVICE_ADDRESS=host.docker.internal`, health URL tương ứng và cho phép host này trong `ALLOWED_HOSTS`.
@@ -36,6 +56,24 @@ Sửa `.env` của cả bốn backend trước khi chạy:
 Tự tạo các secret thay cho giá trị mẫu; không commit `.env`. Database được ánh xạ theo schema có sẵn, **không chạy migrations để tạo lại bảng nghiệp vụ**.
 
 ### 2. Chạy backend và Gateway
+
+**Chạy nhanh trên Windows:** sau khi chuẩn bị venv/requirements cho bốn backend,
+`.env`, database và chạy `npm ci` trong `fe`, mở terminal ở thư mục gốc:
+
+```powershell
+.\start-services.bat
+# Chỉ kiểm tra điều kiện và xem lệnh, không mở server:
+.\start-services.bat --dry-run
+```
+
+BAT mở 5 cửa sổ riêng: Auth `8001`, Academic `8002`, Registration `8003`,
+Topic `8004` và frontend `5173`. Có thể gọi BAT bằng đường dẫn tuyệt đối từ
+thư mục khác. Script kiểm tra toàn bộ interpreter/manage.py, Node/npm và Vite
+trước khi mở tiến trình; không cài dependencies, sửa `.env` hay chạy migrations.
+Xem log mỗi cửa sổ để biết service đã sẵn sàng hoặc gặp lỗi. Dừng bằng `Ctrl+C`
+trong từng cửa sổ rồi đóng cửa sổ; dừng cửa sổ launcher không dừng các server.
+Không chạy lại khi các cổng đã bị chiếm. Consul và Gateway cần khởi động riêng
+theo hướng dẫn bên dưới; log-service chưa được khởi động bằng BAT.
 
 Khởi động Docker Desktop và container Consul hiện có. Mở **bốn terminal**, mỗi terminal chạy một dòng dưới đây từ thư mục gốc:
 
@@ -94,6 +132,25 @@ Regist-service gọi academic/topic để kiểm tra sinh viên và đề tài. 
 
 Bốn backend dùng chung file SQLite `database/DB_ProjectManagerment.db`, nhưng mỗi service chỉ truy cập bảng mình sở hữu; tham chiếu liên service dùng ID và REST. Các model database-first dùng `managed = False`. SQLite dùng chung phù hợp cho đồ án, có giới hạn tranh chấp khi ghi đồng thời.
 
+### Chấm điểm đăng ký
+
+Schema `Registrations` có cột `Point` nullable (`NUMERIC`); `NULL` nghĩa là chưa chấm. Khi nâng cấp một database cũ, dừng các service ghi rồi chạy `py database/add_registration_point.py --db database/DB_ProjectManagerment.db --backup D:/backups/registration-before-point.db` từ thư mục gốc. Chọn đường dẫn backup chưa tồn tại và nằm ngoài repository. Script tạo backup nhất quán trước khi thêm cột; không chạy Django migration cho bảng này. Triển khai schema trước khi chạy backend mới. Nếu cần rollback, dừng mọi writer, sao lưu trạng thái hiện tại rồi khôi phục backup; điểm ghi sau thời điểm backup cần được xuất và đối soát riêng.
+
+Admin chấm/sửa điểm cho mọi đăng ký còn hiệu lực. Giảng viên được tạo đề tài Chờ duyệt (0), GVHD tự gán theo user_id trong JWT; giao diện ẩn lựa chọn GVHD. Chỉ Admin duyệt đề tài bằng nút Duyệt trên danh sách khi trạng thái là 0, chuyển sang Đã duyệt (1). Form sửa không có lựa chọn 0/1; sau khi duyệt có thể chọn Mở đăng ký (2) hoặc Đóng đăng ký (3). Sửa nội dung không tự đổi trạng thái. Giảng viên xem đề tài được phân hướng dẫn, danh sách sinh viên và chấm/sửa điểm; không được sửa, xóa, tự duyệt đề tài hay hủy/xóa đăng ký sinh viên. Quyền được kiểm tra tại API và giao diện dựa trên JWT, không dùng ID do người gọi tự khai báo. Chỉ chấm điểm khi đề tài ở trạng thái 3 (Đóng đăng ký); API trả 409 `topic_not_closed` ở trạng thái khác. Điểm theo thang 0–10 (tối đa hai chữ số thập phân) và được thao tác trong chi tiết đề tài. Sinh viên xem điểm đăng ký của chính mình ở mục hiện tại và lịch sử. API thuộc `regist-service`, tra đề tài qua REST từ `topic-service` và kiểm tra giảng viên hướng dẫn đối với role 2; xem [hợp đồng API](services/regist-service/README.md).
+
+Admin có thể chuyển đề tài sang trạng thái 3 để đóng đăng ký. Đề tài này không xuất hiện trong danh sách đề tài mở (chỉ trạng thái 2); sinh viên đã đăng ký không thể tự hủy. Regist-service xác minh trạng thái đề tài qua REST và trả 409 `topic_registration_closed` nếu sinh viên hủy khi đề tài đã đóng. Trang sinh viên cũng khóa nút hủy sau khi tra cứu trạng thái; backend luôn kiểm tra lại lúc xử lý yêu cầu.
+
+## Quản lý đăng ký dành cho Admin
+
+Tại `/admin/registrations`, chọn đề tài bằng selectbox mã/tên để xem thông tin đề tài
+và sinh viên đang đăng ký. Bảng gồm mã đăng ký, mã sinh viên, họ tên, học kỳ,
+ngày đăng ký, trạng thái và điểm, hỗ trợ tải thêm khi có nhiều sinh viên.
+Admin có thể hủy đăng ký sau xác nhận hoặc chấm/sửa điểm (0–10, tối đa hai chữ số
+thập phân) khi đề tài đã đóng đăng ký (trạng thái 3). Nếu kết quả ghi chưa rõ do
+lỗi mạng, dùng chức năng kiểm tra kết quả trước khi thao tác tiếp.
+Trang tái sử dụng API hiện có của topic-service và regist-service qua Gateway;
+không đổi schema, cổng hoặc hợp đồng REST.
+
 ## Các service
 
 | Thành phần | Port / Gateway route | Trách nhiệm và tài liệu |
@@ -113,3 +170,20 @@ Bốn backend dùng chung file SQLite `database/DB_ProjectManagerment.db`, nhưn
 - Auth hiện so sánh mật khẩu plaintext trong database; cơ chế này chưa phù hợp production. JWT vẫn được phát hành và kiểm tra.
 - `INTERNAL_SERVICE_TOKEN`, JWT key và Consul ACL token có mục đích riêng; không đưa secret vào frontend hoặc biến `VITE_*`.
 - Hướng dẫn trên dành cho local. Production cần HTTPS, cấu hình phục vụ SPA/proxy API và phương án lưu trữ phù hợp.
+
+
+## Điều kiện GPA và chỉ tiêu đề tài
+
+Topics có thêm `req_GPA` (GPA tối thiểu, 0–4, mặc định 0) và `studentQuota` (số nguyên dương, mặc định 1). Admin nhập/sửa trong quản lý đề tài. Sinh viên chỉ đăng ký mới khi GPA ≥ req_GPA và số sinh viên đang đăng ký < studentQuota, bên cạnh điều kiện khoa, trạng thái mở và một đăng ký hiện tại. Đủ chỉ tiêu thì chặn; đăng ký đã hủy không chiếm suất. Dữ liệu đăng ký cũ được giữ nguyên.
+
+BE lấy GPA từ academic-service và yêu cầu đề tài từ topic-service qua REST; regist-service tự đếm sinh viên trong dữ liệu mình sở hữu và kiểm tra chỉ tiêu trong transaction có khóa ghi SQLite. FE hiển thị yêu cầu/số chỗ và khóa nút theo eligibility do BE trả về. Không đổi service, cổng hoặc gateway prefix.
+
+**Cập nhật schema trước khi chạy mã mới:** dừng các tiến trình ghi database, chạy lệnh bên dưới tại thư mục gốc với một đường dẫn backup mới (không ghi đè). Utility kiểm tra integrity, giữ nguyên dữ liệu/các lỗi FK có sẵn và sao lưu nhất quán bằng SQLite backup API. Chạy lại schema tương thích là no-op; timeout khóa là 3 giây. Không chạy migrate cho bảng unmanaged.
+
+```powershell
+& .\services\topic-service\venv\Scripts\python.exe .\database\add_topic_requirements.py --db .\database\DB_ProjectManagerment.db --backup D:\backups\topics-before-requirements.db
+```
+
+Utility chỉ thêm hai cột Topics, không thay đổi Students/Registrations. Triển khai schema trước, sau đó phối hợp cập nhật topic/academic/regist và frontend. REST client từ chối dữ liệu thiếu/sai giới hạn với 503. Để rollback: dừng writers, dùng mã trước thay đổi; chỉ khôi phục backup nếu không có dữ liệu mới sẽ bị mất. Không lấy DB từ Git để rollback. Thay đổi GPA/chỉ tiêu trong lúc request đang tra REST không atomic xuyên service; đăng ký cũ không bị hủy khi giảm chỉ tiêu/tăng GPA yêu cầu.
+
+Quota storage bound: `studentQuota` is limited to 1–2147483647 (Django integer range); oversized values return validation errors.

@@ -5,7 +5,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied
 from . import clients
 
 CONFIG = {"DISCOVERY_ENABLED": False, "BASE_URL": "http://academic.test:8002", "TIMEOUT_SECONDS": 3}
-TOPIC = {"topic_id": "T1", "major_id": "M1", "name": "SOA", "status": 2}
+TOPIC = {"topic_id": "T1", "major_id": "M1", "name": "SOA", "req_GPA": 0, "studentQuota": 1, "status": 2}
 
 
 @override_settings(ACADEMIC_CLIENT=CONFIG, TOPIC_CLIENT={**CONFIG, "BASE_URL": "http://topic.test:8004"})
@@ -59,7 +59,7 @@ class ReferenceClientTests(SimpleTestCase):
 
     @patch.object(clients, "fetch_json")
     def test_static_contracts_and_deduplicated_batches(self, fetch):
-        fetch.return_value = {"student_id": "SV1", "department_id": "F1"}
+        fetch.return_value = {"student_id": "SV1", "department_id": "F1", "gpa": 3.2}
         self.academic.context("SV1", "Bearer test", "request-1")
         fetch.assert_called_once_with("http://academic.test:8002/api/v1/registration-context/",
                                       {"Authorization": "Bearer test", "X-Request-ID": "request-1"}, 3, None)
@@ -71,12 +71,26 @@ class ReferenceClientTests(SimpleTestCase):
         fetch.return_value = {"results": [TOPIC], "next_after": None}
         self.assertEqual(self.topic.page("", "Bearer t", "id")["results"], [TOPIC])
 
+    @patch.object(clients, "fetch_json")
+    def test_management_topic_ownership_contract(self, fetch):
+        fetch.return_value = {"topic_id": "T #", "advisor_id": "GV1", "status": 3}
+        self.assertEqual(self.topic.management_topic("T #", "Bearer t", "rid"), fetch.return_value)
+        fetch.assert_called_once_with("http://topic.test:8004/api/v1/topics/T%20%23/",
+                                      {"Authorization": "Bearer t", "X-Request-ID": "rid"}, 3, None)
+        for payload in ({}, {"topic_id": "T #"}, {"topic_id": "other", "advisor_id": "GV1", "status": 3},
+                        {"topic_id": "T #", "advisor_id": 1, "status": 3},
+                        {"topic_id": "T #", "advisor_id": "GV1"},
+                        {"topic_id": "T #", "advisor_id": "GV1", "status": True}):
+            fetch.return_value = payload
+            with self.assertRaises(clients.DependencyUnavailable):
+                clients.TopicClient("topic-service", "TOPIC_CLIENT").management_topic("T #", "Bearer t", "rid")
+
     @override_settings(ACADEMIC_CLIENT={**CONFIG, "DISCOVERY_ENABLED": True},
                        CONSUL={"URL": "http://registry:8500", "TOKEN": "acl"})
     @patch.object(clients, "fetch_json")
     def test_discovery_healthy_instance_and_separate_credentials(self, fetch):
         fetch.side_effect = [[{"Service": {"Service": "academic-service", "Address": "::1", "Port": 8002},
-                               "Checks": [{"Status": "passing"}]}], {"student_id": "SV1", "department_id": "F1"}]
+                               "Checks": [{"Status": "passing"}]}], {"student_id": "SV1", "department_id": "F1", "gpa": 3.2}]
         self.academic.context("SV1", "Bearer user", "id")
         self.assertEqual(fetch.call_args_list[0].args, ("http://registry:8500/v1/health/service/academic-service?passing=true",
                                                       {"X-Consul-Token": "acl"}, 3))
@@ -120,6 +134,22 @@ class ReferenceClientTests(SimpleTestCase):
             fetch.return_value = {"departments": values}
             with self.assertRaises(clients.DependencyUnavailable):
                 clients.AcademicClient("academic-service", "ACADEMIC_CLIENT").departments(["M1"], "t", "id")
+
+    @patch.object(clients, "fetch_json")
+    def test_missing_and_invalid_requirements_fail_closed(self, fetch):
+        for value in (None, True, "3", -1, 4.1, float("nan"), float("inf")):
+            fetch.return_value = {"student_id": "SV1", "department_id": "F1", "gpa": value}
+            with self.assertRaises(clients.DependencyUnavailable):
+                clients.AcademicClient("academic-service", "ACADEMIC_CLIENT").context("SV1", "t", "id")
+        for field, values in (("req_GPA", [None, True, "3", -1, 5, float("nan")]),
+                              ("studentQuota", [None, True, "1", 0, -1, 1.5])):
+            for value in values:
+                fetch.return_value = {**TOPIC, field: value}
+                with self.assertRaises(clients.DependencyUnavailable):
+                    clients.TopicClient("topic-service", "TOPIC_CLIENT").topic("T1", "t", "id")
+            fetch.return_value = {key: value for key, value in TOPIC.items() if key != field}
+            with self.assertRaises(clients.DependencyUnavailable):
+                clients.TopicClient("topic-service", "TOPIC_CLIENT").topic("T1", "t", "id")
 
     @patch.object(clients, "fetch_json")
     def test_page_order_closed_status_and_cursor_validation(self, fetch):

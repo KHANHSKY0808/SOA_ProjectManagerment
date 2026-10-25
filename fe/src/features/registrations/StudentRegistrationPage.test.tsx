@@ -9,11 +9,11 @@ const base = '/registrations/api/v1/'
 const records = base + 'registrations/'
 const available = base + 'available-topics/'
 const topics = [
-  { topic_id: 'T1', name: 'Quản lý đồ án', major_id: 'M1', status: 2 },
-  { topic_id: 'T2', name: 'Thư viện số', major_id: 'M2', status: 2 },
+  { topic_id: 'T1', name: 'Quản lý đồ án', major_id: 'M1', req_GPA: 0, studentQuota: 1, registered_count: 0, eligible: true, ineligibility_reason: null, status: 2 },
+  { topic_id: 'T2', name: 'Thư viện số', major_id: 'M2', req_GPA: 0, studentQuota: 1, registered_count: 0, eligible: true, ineligibility_reason: null, status: 2 },
 ]
 const record = { registration_id: 'R1', topic_id: 'T1', semester: null, status: 1,
-  created_at: '2026-10-11T03:00:00Z', updated_at: '2026-10-11T03:00:00Z' }
+  created_at: '2026-10-11T03:00:00Z', updated_at: '2026-10-11T03:00:00Z', point: null }
 const logout = vi.fn()
 let mock: MockAdapter
 beforeEach(() => {
@@ -21,12 +21,44 @@ beforeEach(() => {
   mock = new MockAdapter(apiClient, { onNoMatch: 'throwException' })
   mock.onGet(records).reply(200, [])
   mock.onGet(available).reply(200, { results: topics, next_after: null })
+  mock.onGet('/topics/api/v1/registration-topics/T1/').reply(200, { topic_id: 'T1', status: 2 })
+  mock.onGet('/topics/api/v1/registration-topics/T2/').reply(200, { topic_id: 'T2', status: 2 })
 })
 afterEach(() => { mock.restore(); setAccessToken(null) })
 function renderPage() {
   return render(<AuthContext.Provider value={{ user: { user_id: 'SV1', first_name: 'An', last_name: null, role: 3 },
     logout, login: vi.fn(), status: 'ready', restoreError: '', retryRestore: vi.fn() }}><StudentRegistrationPage /></AuthContext.Provider>)
 }
+
+it('shows the student score in current registration and history', async () => {
+  mock.onGet(records).reply(200, [{ ...record, point: '9.25' }])
+  renderPage()
+  const current = await screen.findByRole('region', { name: 'Đăng ký hiện tại' })
+  expect(within(current).getByText(/Điểm: 9\.25/)).toBeVisible()
+  const history = screen.getByRole('table', { name: 'Lịch sử đăng ký' })
+  expect(within(history).getByRole('columnheader', { name: 'Điểm' })).toBeVisible()
+  expect(within(history).getByText('9.25')).toBeVisible()
+})
+it('disables cancellation when the registered topic is closed', async () => {
+  mock.onGet(records).reply(200, [record])
+  mock.onGet('/topics/api/v1/registration-topics/T1/').reply(200, { topic_id: 'T1', status: 3 })
+  renderPage()
+  expect(await screen.findByText('Đề tài đã đóng đăng ký; không thể hủy đăng ký.')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'Hủy đăng ký T1' }))
+  expect(screen.getByRole('button', { name: 'Hủy đăng ký T1' })).toBeDisabled()
+  expect(mock.history.delete).toHaveLength(0)
+})
+it('keeps cancellation disabled when topic status lookup fails and retries the read', async () => {
+  mock.onGet(records).reply(200, [record])
+  mock.onGet('/topics/api/v1/registration-topics/T1/').reply(503, {})
+  renderPage()
+  expect(await screen.findByText(/Tải lại để kiểm tra quyền hủy đăng ký/)).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Hủy đăng ký T1' })).toBeDisabled()
+  mock.onGet('/topics/api/v1/registration-topics/T1/').reply(200, { topic_id: 'T1', status: 2 })
+  fireEvent.click(screen.getByRole('button', { name: 'Tải lại' }))
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Hủy đăng ký T1' })).toBeEnabled())
+  expect(mock.history.delete).toHaveLength(0)
+})
 async function ready() {
   await screen.findByRole('table', { name: 'Đề tài mở đăng ký' })
   await waitFor(() => expect(screen.queryByText('Đang tải đăng ký…')).not.toBeInTheDocument())
@@ -37,6 +69,33 @@ async function openRegister() {
   opener.focus(); fireEvent.click(opener)
   return screen.getByRole('form', { name: 'Đăng ký đề tài' })
 }
+
+it('shows server eligibility and disables low-GPA and full topics', async () => {
+  mock.onGet(available).reply(200, { results: [
+    { ...topics[0], req_GPA: 3.5, eligible: false, ineligibility_reason: 'gpa_requirement_not_met' },
+    { ...topics[1], registered_count: 1, eligible: false, ineligibility_reason: 'topic_quota_full' },
+  ], next_after: null })
+  renderPage(); await ready()
+  expect(screen.getByRole('button', { name: 'Đăng ký T1' })).toBeDisabled()
+  expect(screen.getByRole('button', { name: 'Đăng ký T2' })).toBeDisabled()
+  expect(screen.getByText('GPA của bạn chưa đạt yêu cầu.')).toBeVisible()
+  expect(screen.getByText('Đề tài đã đủ chỉ tiêu.')).toBeVisible()
+  expect(screen.getByText('1 / 1')).toBeVisible()
+  expect(mock.history.post).toHaveLength(0)
+})
+
+it.each(['topic_quota_full', 'gpa_requirement_not_met'])('refreshes eligibility after %s without retrying the write', async code => {
+  mock.onPost(records).reply(code === 'topic_quota_full' ? 409 : 400, { code, detail: 'Rejected' })
+  renderPage(); const form = await openRegister()
+  mock.onGet(available).reply(200, { results: [{ ...topics[0], eligible: false,
+    ineligibility_reason: code, ...(code === 'topic_quota_full' ? { registered_count: 1 } : { req_GPA: 4 }) }], next_after: null })
+  fireEvent.submit(form)
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Đăng ký T1' })).toBeDisabled())
+  expect(screen.queryByRole('button', { name: 'Kiểm tra kết quả' })).not.toBeInTheDocument()
+  expect(mock.history.post).toHaveLength(1)
+  expect(mock.history.get.filter(request => request.url === available)).toHaveLength(2)
+})
 
 describe('Student registration workflow', () => {
   it('loads independent lists, shows eligible topics and searches only on submit', async () => {
@@ -210,6 +269,22 @@ describe('Student registration workflow', () => {
     fireEvent.click(check)
     expect(await screen.findByText('Đăng ký này không còn hiệu lực.')).toBeVisible()
     expect(screen.getByRole('button', { name: 'Đăng ký T2' })).toBeEnabled()
+    expect(mock.history.delete).toHaveLength(1)
+  })
+
+  it('handles a topic closed between status lookup and cancellation without retrying DELETE', async () => {
+    mock.onGet(records).reply(200, [record])
+    mock.onDelete(records + 'R1/').reply(() => {
+      mock.onGet('/topics/api/v1/registration-topics/T1/').reply(200, { topic_id: 'T1', status: 3 })
+      return [409, { code: 'topic_registration_closed' }]
+    })
+    renderPage(); await ready()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Hủy đăng ký T1' })).toBeEnabled())
+    fireEvent.click(screen.getByRole('button', { name: 'Hủy đăng ký T1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận hủy' }))
+    expect(await screen.findByText('Đề tài đã đóng đăng ký; không thể hủy đăng ký.')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Hủy đăng ký T1' })).toBeDisabled()
+    expect(screen.queryByRole('region', { name: 'Kiểm tra thao tác' })).not.toBeInTheDocument()
     expect(mock.history.delete).toHaveLength(1)
   })
 

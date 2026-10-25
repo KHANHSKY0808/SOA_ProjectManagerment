@@ -1,0 +1,376 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Đăng ký đề tài · GPA & chỉ tiêu",
+    "output": ".archify/sequence-student-registration-20261014-220854/student-registration.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/YangKlee/SOA_ProjectManagerment",
+      "revision": "0527ab58cd5e19bec2cea96891097588ea120bba",
+      "provider": "github"
+    },
+    "provenance": {
+      "updated_at": "2026-10-24T10:24:56.849887+00:00",
+      "source": "current local working tree",
+      "base_revision": "0527ab58cd5e19bec2cea96891097588ea120bba",
+      "uncommitted_sources": true,
+      "renderer": "manual SVG update; bundled Archify 3.1.0 viewer preserved",
+      "archify_cli_available": false,
+      "presentation": "Explanatory notes, secondary message annotations and side cards removed; concise guards retained as service self-messages."
+    }
+  },
+  "participants": [
+    {
+      "id": "student",
+      "type": "frontend",
+      "label": "Sinh viên",
+      "sublabel": "React / Vite :5173",
+      "sources": [
+        {
+          "path": "fe/src/features/registrations/useStudentRegistrations.ts",
+          "line": 10,
+          "label": "Eligibility UI and registration requests"
+        }
+      ]
+    },
+    {
+      "id": "gateway",
+      "type": "cloud",
+      "label": "API Gateway",
+      "sublabel": "Nginx :8000",
+      "sources": [
+        {
+          "path": "api-gateway/nginx.conf",
+          "line": 24,
+          "label": "Gateway JWT/header forwarding"
+        }
+      ]
+    },
+    {
+      "id": "regist",
+      "type": "backend",
+      "label": "regist-service",
+      "sublabel": "Django REST :8003",
+      "sources": [
+        {
+          "path": "services/regist-service/RegistTopic/services.py",
+          "line": 71,
+          "label": "GPA, capacity and transaction rules"
+        }
+      ]
+    },
+    {
+      "id": "academic",
+      "type": "backend",
+      "label": "academic-service",
+      "sublabel": "Django REST :8002",
+      "sources": [
+        {
+          "path": "services/academic-services/registration_context.py",
+          "line": 49,
+          "label": "Authenticated student GPA/faculty DTO"
+        }
+      ]
+    },
+    {
+      "id": "topic",
+      "type": "backend",
+      "label": "topic-service",
+      "sublabel": "Django REST :8004",
+      "sources": [
+        {
+          "path": "services/topic-service/topic_manager/registration_lookup.py",
+          "line": 35,
+          "label": "Topic requirements reference DTO"
+        }
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "SQLite DB",
+      "sublabel": "Chỉ bảng Registrations",
+      "sources": [
+        {
+          "path": "services/regist-service/RegistTopic/models.py",
+          "line": 3,
+          "label": "Registration-owned unmanaged mapping"
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 430,
+      "label": "1. Xem đề tài và điều kiện đăng ký"
+    },
+    {
+      "from": 450,
+      "to": 610,
+      "label": "2. Gửi đăng ký · JWT / role=3"
+    },
+    {
+      "from": 640,
+      "to": 1110,
+      "label": "3. Tra cứu REST và kiểm tra khoa/trạng thái"
+    },
+    {
+      "from": 1130,
+      "to": 1870,
+      "label": "4. Transaction · khóa ghi, kiểm tra GPA/chỉ tiêu, insert"
+    },
+    {
+      "from": 1880,
+      "to": 2050,
+      "label": "5. Trả kết quả"
+    }
+  ],
+  "messages": [
+    {
+      "id": "available_request",
+      "from": "student",
+      "to": "gateway",
+      "y": 210,
+      "label": "GET /registrations/api/v1/available-topics/",
+      "variant": "emphasis"
+    },
+    {
+      "id": "available_forward",
+      "from": "gateway",
+      "to": "regist",
+      "y": 270,
+      "label": "GET /api/v1/available-topics/",
+      "variant": "default"
+    },
+    {
+      "id": "available_result",
+      "from": "regist",
+      "to": "gateway",
+      "y": 330,
+      "label": "200 · requirements + count + eligibility",
+      "variant": "return"
+    },
+    {
+      "id": "available_ui",
+      "from": "gateway",
+      "to": "student",
+      "y": 390,
+      "label": "200 · hiển thị điều kiện và số chỗ",
+      "variant": "return"
+    },
+    {
+      "id": "submit",
+      "from": "student",
+      "to": "gateway",
+      "y": 510,
+      "label": "POST /registrations/api/v1/registrations/",
+      "variant": "emphasis"
+    },
+    {
+      "id": "submit_forward",
+      "from": "gateway",
+      "to": "regist",
+      "y": 570,
+      "label": "POST /api/v1/registrations/",
+      "variant": "emphasis"
+    },
+    {
+      "id": "context",
+      "from": "regist",
+      "to": "academic",
+      "y": 700,
+      "label": "GET /api/v1/registration-context/",
+      "variant": "default"
+    },
+    {
+      "id": "context_result",
+      "from": "academic",
+      "to": "regist",
+      "y": 760,
+      "label": "200 · student_id, department_id, gpa",
+      "variant": "return"
+    },
+    {
+      "id": "topic",
+      "from": "regist",
+      "to": "topic",
+      "y": 820,
+      "label": "GET /api/v1/registration-topics/{topic_id}/",
+      "variant": "default"
+    },
+    {
+      "id": "topic_result",
+      "from": "topic",
+      "to": "regist",
+      "y": 880,
+      "label": "200 · major_id, status, req_GPA, studentQuota",
+      "variant": "return"
+    },
+    {
+      "id": "departments",
+      "from": "regist",
+      "to": "academic",
+      "y": 940,
+      "label": "POST /api/v1/major-departments/",
+      "variant": "default"
+    },
+    {
+      "id": "departments_result",
+      "from": "academic",
+      "to": "regist",
+      "y": 1000,
+      "label": "200 · ánh xạ ngành → khoa",
+      "variant": "return"
+    },
+    {
+      "id": "status_faculty_guard",
+      "from": "regist",
+      "to": "regist",
+      "label": "status=2 + cùng khoa; sai → 400",
+      "variant": "emphasis",
+      "y": 1070
+    },
+    {
+      "id": "lock",
+      "from": "regist",
+      "to": "db",
+      "y": 1190,
+      "label": "BEGIN + acquire_write_lock()",
+      "variant": "emphasis"
+    },
+    {
+      "id": "existing",
+      "from": "regist",
+      "to": "db",
+      "y": 1250,
+      "label": "SELECT đăng ký hiện tại của sinh viên",
+      "variant": "default"
+    },
+    {
+      "id": "existing_result",
+      "from": "db",
+      "to": "regist",
+      "y": 1310,
+      "label": "Danh sách đăng ký hiện tại",
+      "variant": "return"
+    },
+    {
+      "id": "idempotency_guard",
+      "from": "regist",
+      "to": "regist",
+      "label": "Cùng đề tài/học kỳ → 200; khác → 409",
+      "variant": "emphasis",
+      "y": 1380
+    },
+    {
+      "id": "gpa_guard",
+      "from": "regist",
+      "to": "regist",
+      "label": "gpa >= req_GPA; sai → 400 gpa_requirement_not_met",
+      "variant": "emphasis",
+      "y": 1460
+    },
+    {
+      "id": "count",
+      "from": "regist",
+      "to": "db",
+      "y": 1540,
+      "label": "COUNT(DISTINCT StudentId) theo TopicId",
+      "variant": "default"
+    },
+    {
+      "id": "count_result",
+      "from": "db",
+      "to": "regist",
+      "y": 1600,
+      "label": "registered_count",
+      "variant": "return"
+    },
+    {
+      "id": "quota_guard",
+      "from": "regist",
+      "to": "regist",
+      "label": "count < studentQuota; đầy → 409 topic_quota_full",
+      "variant": "emphasis",
+      "y": 1680
+    },
+    {
+      "id": "insert",
+      "from": "regist",
+      "to": "db",
+      "y": 1760,
+      "label": "INSERT INTO Registrations",
+      "variant": "emphasis"
+    },
+    {
+      "id": "commit",
+      "from": "db",
+      "to": "regist",
+      "y": 1820,
+      "label": "COMMIT · bản ghi mới",
+      "variant": "return"
+    },
+    {
+      "id": "response",
+      "from": "regist",
+      "to": "gateway",
+      "y": 1940,
+      "label": "201 mới / 200 lặp / 4xx hoặc 503",
+      "variant": "return"
+    },
+    {
+      "id": "response_ui",
+      "from": "gateway",
+      "to": "student",
+      "y": 2000,
+      "label": "Forward response · Registration DTO hoặc lỗi",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "student",
+      "from": 200,
+      "to": 2010,
+      "type": "frontend"
+    },
+    {
+      "participant": "gateway",
+      "from": 210,
+      "to": 2010,
+      "type": "cloud"
+    },
+    {
+      "participant": "regist",
+      "from": 270,
+      "to": 1950,
+      "type": "backend"
+    },
+    {
+      "participant": "academic",
+      "from": 700,
+      "to": 770,
+      "type": "backend"
+    },
+    {
+      "participant": "academic",
+      "from": 940,
+      "to": 1010,
+      "type": "backend"
+    },
+    {
+      "participant": "topic",
+      "from": 820,
+      "to": 890,
+      "type": "backend"
+    },
+    {
+      "participant": "db",
+      "from": 1190,
+      "to": 1830,
+      "type": "database"
+    }
+  ]
+}

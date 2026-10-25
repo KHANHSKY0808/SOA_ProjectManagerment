@@ -24,7 +24,7 @@ class RegistrationLookupTests(SimpleTestCase):
         topics.assert_called_once_with(status=2, topic_id__gt="T000")
         self.assertEqual(len(result.data["results"]), 100)
         self.assertEqual(result.data["next_after"], "T099")
-        self.assertEqual(set(result.data["results"][0]), {"topic_id", "name", "major_id", "status"})
+        self.assertEqual(set(result.data["results"][0]), {"topic_id", "name", "major_id", "status", "req_GPA", "studentQuota"})
 
     @patch.object(Topic.objects, "filter")
     def test_detail_closed_missing_and_failure(self, topics):
@@ -32,6 +32,8 @@ class RegistrationLookupTests(SimpleTestCase):
         result = self.client.get("/api/v1/registration-topics/DT001/")
         self.assertEqual(result.data["status"], 0)
         topics.assert_called_once_with(pk="DT001")
+        topics.return_value.first.return_value.status = 3
+        self.assertEqual(self.client.get("/api/v1/registration-topics/DT001/").data["status"], 3)
         topics.return_value.first.return_value = None
         self.assertEqual(self.client.get("/api/v1/registration-topics/missing/").status_code, 404)
         topics.side_effect = OperationalError("private")

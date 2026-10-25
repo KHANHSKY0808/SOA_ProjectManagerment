@@ -3,6 +3,7 @@ import re
 import uuid
 
 from django.db import OperationalError
+from django.shortcuts import get_object_or_404
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny, BasePermission, SAFE_METHODS
 from rest_framework.response import Response
@@ -16,12 +17,15 @@ LOG = logging.getLogger(__name__)
 
 
 class TopicManagementPermission(BasePermission):
-    message = "Only users with role 1 or 2 may modify topics."
+    message = "Only administrators may update or delete topics; lecturers may also create topics."
 
     def has_permission(self, request, view):
-        return bool(request.user and request.user.is_authenticated and (
-            request.method in SAFE_METHODS or (
-                request.auth is not None and type(request.auth.get("role")) is int and request.auth.get("role") in (1, 2))))
+        if not (request.user and request.user.is_authenticated and request.auth is not None):
+            return False
+        if request.method in SAFE_METHODS:
+            return True
+        role = request.auth.get("role")
+        return type(role) is int and (role == 1 or (role == 2 and request.method == "POST"))
 
 
 class HealthView(GenericAPIView):
@@ -52,6 +56,13 @@ class TopicAPIView(GenericAPIView):
             exc = services.StorageUnavailable()
         return super().handle_exception(exc)
 
+    def visible_topics(self, request):
+        topics = Topic.objects.order_by("topic_id")
+        role = request.auth.get("role")
+        if type(role) is int and role == 2:
+            topics = topics.filter(advisor_id=request.auth["user_id"])
+        return topics
+
     def save(self, request, pk=None, partial=False):
         dto = self.get_serializer(data=request.data, partial=partial)
         dto.is_valid(raise_exception=True)
@@ -63,7 +74,7 @@ class TopicAPIView(GenericAPIView):
 
 class TopicListCreateView(TopicAPIView):
     def get(self, request):
-        return Response(topic_response(Topic.objects.order_by("topic_id"),
+        return Response(topic_response(self.visible_topics(request),
                                        request.headers.get("Authorization", ""), many=True))
 
     def post(self, request):
@@ -73,7 +84,7 @@ class TopicListCreateView(TopicAPIView):
 class TopicDetailView(TopicAPIView):
     def get(self, request, pk):
         role = request.auth.get("role")
-        return Response(topic_response(services.get_topic(pk), request.headers.get("Authorization", ""),
+        return Response(topic_response(get_object_or_404(self.visible_topics(request), pk=pk), request.headers.get("Authorization", ""),
                                        management=type(role) is int and role in (1, 2)))
 
     def put(self, request, pk):

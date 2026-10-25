@@ -58,8 +58,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Discovery unit tests
+      - name: Install documentation validation tooling
+        run: python -m pip install -r api-gateway/tests/requirements-docs.txt
+      - name: Discovery and OpenAPI unit tests
         run: python -m unittest discover -s api-gateway/tests -p 'test_*.py'
+      - name: Topic requirements schema utility tests
+        run: python -m unittest discover -s database -p 'test_topic_requirements.py'
       - name: Build gateway and check Compose
         working-directory: api-gateway
         run: |

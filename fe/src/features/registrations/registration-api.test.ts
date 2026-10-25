@@ -1,23 +1,49 @@
 import MockAdapter from 'axios-mock-adapter'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { apiClient, setAccessToken } from '../../services/api-client'
-import { cancelRegistration, isCurrent, listAvailableTopics, listRegistrations, registerTopic } from './registration-api'
+import { cancelRegistration, getRegistrationTopicStatus, isCurrent, listAvailableTopics, listRegistrations, registerTopic } from './registration-api'
 
 const base = '/registrations/api/v1/'
 const row = { registration_id: 'R1', topic_id: 'T1', semester: null, status: 1,
-  created_at: '2026-10-11T03:00:00Z', updated_at: null }
-const topic = { topic_id: 'T1', major_id: 'M1', name: 'SOA', status: 2 }
+  created_at: '2026-10-11T03:00:00Z', updated_at: null, point: null }
+const topic = { topic_id: 'T1', major_id: 'M1', name: 'SOA', req_GPA: 0, studentQuota: 1, registered_count: 0, eligible: true, ineligibility_reason: null, status: 2 }
 const signal = new AbortController().signal
 let mock: MockAdapter
 beforeEach(() => { mock = new MockAdapter(apiClient, { onNoMatch: 'throwException' }); setAccessToken('student-token') })
 afterEach(() => { mock.restore(); setAccessToken(null) })
 
 describe('Student registration Gateway contract', () => {
+  it.each([
+    { req_GPA: undefined }, { req_GPA: 5 }, { studentQuota: 0 }, { studentQuota: 1.5 },
+    { registered_count: -1 }, { eligible: undefined }, { eligible: true, ineligibility_reason: 'topic_quota_full' },
+    { eligible: true, registered_count: 1 },
+  ])('rejects invalid or missing eligibility fields %#', async override => {
+    mock.onGet(base + 'available-topics/').reply(200, { results: [{ ...topic, ...override }], next_after: null })
+    await expect(listAvailableTopics('', signal)).rejects.toThrow()
+  })
+  it('reads topic status through the student reference endpoint with JWT and signal', async () => {
+    mock.onGet('/topics/api/v1/registration-topics/T%20%23%3F/').reply(200, { topic_id: 'T #?', status: 3 })
+    expect(await getRegistrationTopicStatus('T #?', signal)).toBe(3)
+    expect(mock.history.get[0].headers?.Authorization).toBe('Bearer student-token')
+    expect(mock.history.get[0].signal).toBe(signal)
+  })
+  it.each([{ topic_id: 'T2', status: 3 }, { topic_id: 'T1' }, { topic_id: 'T1', status: '3' }])('rejects invalid topic status %#', async data => {
+    mock.onGet('/topics/api/v1/registration-topics/T1/').reply(200, data)
+    await expect(getRegistrationTopicStatus('T1', signal)).rejects.toThrow()
+  })
   it('loads own history and strips unrequested fields, forwarding JWT and signal', async () => {
     mock.onGet(base + 'registrations/').reply(200, [{ ...row, student_id: 'private', notes: 'private' }])
     expect(await listRegistrations(signal)).toEqual([row])
     expect(mock.history.get[0].headers?.Authorization).toBe('Bearer student-token')
     expect(mock.history.get[0].signal).toBe(signal)
+  })
+  it('accepts a graded registration and rejects malformed points', async () => {
+    mock.onGet(base + 'registrations/').reply(200, [{ ...row, point: '8.50' }])
+    expect((await listRegistrations(signal))[0].point).toBe('8.50')
+    for (const point of ['11.00', '-1.00', '8.123', 8.5, 'NaN']) {
+      mock.onGet(base + 'registrations/').reply(200, [{ ...row, point }])
+      await expect(listRegistrations(signal)).rejects.toThrow()
+    }
   })
   it.each([null, {}, [null], [{ ...row, status: '1' }], [{ ...row, created_at: 'invalid' }], [row, row],
     [{ ...row, updated_at: undefined }], [{ ...row, registration_id: '' }]])('rejects invalid history %#', async data => {

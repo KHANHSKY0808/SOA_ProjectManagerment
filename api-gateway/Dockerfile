@@ -2,6 +2,7 @@ FROM nginx:1.27-alpine
 RUN apk add --no-cache python3
 WORKDIR /opt/gateway
 COPY discovery.py entrypoint.sh ./
+COPY docs ./docs
 COPY nginx.conf /etc/nginx/nginx.conf
 RUN sed -i 's/\r$//' entrypoint.sh && chmod +x entrypoint.sh
 STOPSIGNAL SIGTERM

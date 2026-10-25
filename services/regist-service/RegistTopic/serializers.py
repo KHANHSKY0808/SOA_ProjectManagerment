@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from decimal import Decimal
 
 
 class RegistrationRequestDTO(serializers.Serializer):
@@ -20,6 +21,25 @@ class RegistrationResponseDTO(serializers.Serializer):
     status = serializers.IntegerField(allow_null=True)
     created_at = serializers.DateTimeField(allow_null=True)
     updated_at = serializers.DateTimeField(allow_null=True)
+    point = serializers.DecimalField(max_digits=4, decimal_places=2, allow_null=True)
+
+
+class PointRequestDTO(serializers.Serializer):
+    point = serializers.DecimalField(max_digits=4, decimal_places=2, min_value=Decimal("0"), max_value=Decimal("10"))
+
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            unknown = set(data) - {"point"}
+            if unknown:
+                raise serializers.ValidationError({key: "Unknown field." for key in unknown})
+        return super().to_internal_value(data)
+
+
+class PointResponseDTO(serializers.Serializer):
+    registration_id = serializers.CharField()
+    topic_id = serializers.CharField()
+    point = serializers.DecimalField(max_digits=4, decimal_places=2)
+    updated_at = serializers.DateTimeField(allow_null=True)
 
 
 class RegistrationFilterDTO(serializers.Serializer):
@@ -35,6 +55,11 @@ class AvailableTopicDTO(serializers.Serializer):
     name = serializers.CharField()
     major_id = serializers.CharField()
     status = serializers.IntegerField()
+    req_GPA = serializers.FloatField()
+    studentQuota = serializers.IntegerField()
+    registered_count = serializers.IntegerField()
+    eligible = serializers.BooleanField()
+    ineligibility_reason = serializers.CharField(allow_null=True)
 
 
 class AvailableResponseDTO(serializers.Serializer):

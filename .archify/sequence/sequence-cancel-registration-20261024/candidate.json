@@ -1,0 +1,501 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Cancel a Registration",
+    "output": ".archify/sequence-cancel-registration-20261024/cancel-registration.html",
+    "quality_profile": "showcase",
+    "language": "en",
+    "repository": {
+      "url": "https://github.com/YangKlee/SOA_ProjectManagerment",
+      "revision": "0527ab58cd5e19bec2cea96891097588ea120bba",
+      "provider": "github"
+    },
+    "provenance": {
+      "created_at": "2026-10-24T10:37:23.587730+00:00",
+      "source": "current local working tree",
+      "base_revision": "0527ab58cd5e19bec2cea96891097588ea120bba",
+      "uncommitted_sources": false,
+      "renderer": "local SVG authoring with unchanged bundled Archify viewer",
+      "archify_certification": "not-run"
+    }
+  },
+  "layout": {
+    "width": 1640,
+    "height": 2175,
+    "participant_x": {
+      "actor": 160.0,
+      "gateway": 490.0,
+      "regist": 820.0,
+      "topic": 1150.0,
+      "reg_db": 1480.0
+    }
+  },
+  "participants": [
+    {
+      "id": "actor",
+      "label": "Student / Admin UI",
+      "type": "frontend",
+      "sublabel": "Two alternative flows",
+      "sources": [
+        {
+          "path": "fe/src/features/registrations/useStudentRegistrations.ts",
+          "line": 119,
+          "label": "Student cancellation and state refresh"
+        },
+        {
+          "path": "fe/src/features/topics/useTopicRoster.ts",
+          "line": 73,
+          "label": "Grading and admin cancellation UI"
+        }
+      ]
+    },
+    {
+      "id": "gateway",
+      "label": "API Gateway",
+      "type": "cloud",
+      "sublabel": "Nginx :8000",
+      "sources": [
+        {
+          "path": "api-gateway/discovery.py",
+          "line": 164,
+          "label": "Gateway route generation and header forwarding"
+        }
+      ]
+    },
+    {
+      "id": "regist",
+      "label": "regist-service",
+      "type": "backend",
+      "sublabel": "Django REST :8003",
+      "sources": [
+        {
+          "path": "services/regist-service/RegistTopic/services.py",
+          "line": 96,
+          "label": "Owner cancellation and topic status guard"
+        },
+        {
+          "path": "services/regist-service/RegistTopic/services.py",
+          "line": 166,
+          "label": "Admin topic-scoped cancellation"
+        }
+      ]
+    },
+    {
+      "id": "topic",
+      "label": "topic-service",
+      "type": "backend",
+      "sublabel": "Django REST :8004",
+      "sources": [
+        {
+          "path": "services/topic-service/topic_manager/registration_lookup.py",
+          "line": 35,
+          "label": "Student topic reference contract"
+        }
+      ]
+    },
+    {
+      "id": "reg_db",
+      "label": "Registrations / SQLite",
+      "type": "database",
+      "sublabel": "Owned by regist-service",
+      "sources": [
+        {
+          "path": "services/regist-service/RegistTopic/models.py",
+          "line": 3,
+          "label": "Registrations table owned by regist-service"
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 648,
+      "label": "A1. STUDENT alternative - request and ownership"
+    },
+    {
+      "from": 676,
+      "to": 1365,
+      "label": "A2. STUDENT - topic status, then local transaction"
+    },
+    {
+      "from": 1393,
+      "to": 2130,
+      "label": "B1. ADMIN alternative - topic-scoped cancellation"
+    }
+  ],
+  "messages": [
+    {
+      "from": "actor",
+      "to": "gateway",
+      "label": "DELETE /registrations/api/v1/registrations/{id}/",
+      "variant": "emphasis",
+      "id": "cancel-registration-01",
+      "lines": [
+        "DELETE /registrations/api/v1/registrations/{id}/"
+      ],
+      "y": 226,
+      "phase": 0
+    },
+    {
+      "from": "gateway",
+      "to": "regist",
+      "label": "DELETE /api/v1/registrations/{id}/",
+      "variant": "default",
+      "id": "cancel-registration-02",
+      "lines": [
+        "DELETE /api/v1/registrations/{id}/"
+      ],
+      "y": 298,
+      "phase": 0
+    },
+    {
+      "from": "regist",
+      "to": "regist",
+      "label": "Local JWT + role=3; invalid -> 401/403",
+      "variant": "emphasis",
+      "id": "cancel-registration-03",
+      "lines": [
+        "Local JWT + role=3; invalid -> 401/403"
+      ],
+      "y": 370,
+      "phase": 0
+    },
+    {
+      "from": "regist",
+      "to": "reg_db",
+      "label": "SELECT registration WHERE id AND JWT student_id",
+      "variant": "default",
+      "id": "cancel-registration-04",
+      "lines": [
+        "SELECT registration WHERE id AND JWT student_id"
+      ],
+      "y": 462,
+      "phase": 0
+    },
+    {
+      "from": "reg_db",
+      "to": "regist",
+      "label": "Owner row / missing -> 404",
+      "variant": "return",
+      "id": "cancel-registration-05",
+      "lines": [
+        "Owner row / missing -> 404"
+      ],
+      "y": 534,
+      "phase": 0
+    },
+    {
+      "from": "regist",
+      "to": "regist",
+      "label": "Already Status=0 -> 204; stop this flow",
+      "variant": "emphasis",
+      "id": "cancel-registration-06",
+      "lines": [
+        "Already Status=0 -> 204; stop this flow"
+      ],
+      "y": 606,
+      "phase": 0
+    },
+    {
+      "from": "regist",
+      "to": "topic",
+      "label": "GET /api/v1/registration-topics/{topic_id}/",
+      "variant": "default",
+      "id": "cancel-registration-07",
+      "lines": [
+        "GET /api/v1/registration-topics/{topic_id}/"
+      ],
+      "y": 742,
+      "phase": 1
+    },
+    {
+      "from": "topic",
+      "to": "regist",
+      "label": "200 status / missing 404 / unavailable 503",
+      "variant": "return",
+      "id": "cancel-registration-08",
+      "lines": [
+        "200 status / missing 404 / unavailable 503"
+      ],
+      "y": 814,
+      "phase": 1
+    },
+    {
+      "from": "regist",
+      "to": "regist",
+      "label": "Status=3 -> 409 topic_registration_closed; stop",
+      "variant": "emphasis",
+      "id": "cancel-registration-09",
+      "lines": [
+        "Status=3 -> 409 topic_registration_closed; stop"
+      ],
+      "y": 886,
+      "phase": 1
+    },
+    {
+      "from": "regist",
+      "to": "reg_db",
+      "label": "BEGIN; acquire_write_lock(); reread owner row",
+      "variant": "emphasis",
+      "id": "cancel-registration-10",
+      "lines": [
+        "BEGIN; acquire_write_lock(); reread owner row"
+      ],
+      "y": 978,
+      "phase": 1
+    },
+    {
+      "from": "reg_db",
+      "to": "regist",
+      "label": "Current row / concurrently removed -> 404",
+      "variant": "return",
+      "id": "cancel-registration-11",
+      "lines": [
+        "Current row / concurrently removed -> 404"
+      ],
+      "y": 1050,
+      "phase": 1
+    },
+    {
+      "from": "regist",
+      "to": "reg_db",
+      "label": "If active: UPDATE Status=0 + audit; COMMIT",
+      "variant": "emphasis",
+      "id": "cancel-registration-12",
+      "lines": [
+        "If active: UPDATE Status=0 + audit; COMMIT"
+      ],
+      "y": 1122,
+      "phase": 1
+    },
+    {
+      "from": "reg_db",
+      "to": "regist",
+      "label": "History retained; cancelled student frees a seat",
+      "variant": "return",
+      "id": "cancel-registration-13",
+      "lines": [
+        "History retained; cancelled student frees a seat"
+      ],
+      "y": 1194,
+      "phase": 1
+    },
+    {
+      "from": "regist",
+      "to": "gateway",
+      "label": "204 No Content / 404 / 409 / 503",
+      "variant": "return",
+      "id": "cancel-registration-14",
+      "lines": [
+        "204 No Content / 404 / 409 / 503"
+      ],
+      "y": 1266,
+      "phase": 1
+    },
+    {
+      "from": "gateway",
+      "to": "actor",
+      "label": "204 -> refresh own history and availability",
+      "variant": "return",
+      "id": "cancel-registration-15",
+      "lines": [
+        "204 -> refresh own history and availability"
+      ],
+      "y": 1338,
+      "phase": 1
+    },
+    {
+      "from": "actor",
+      "to": "gateway",
+      "label": "DELETE /registrations/api/v1/topics/{topic_id}/registrations/{registration_id}/",
+      "variant": "emphasis",
+      "id": "cancel-registration-16",
+      "lines": [
+        "DELETE /registrations/api/v1/topics/{topic_id}/",
+        "registrations/{registration_id}/"
+      ],
+      "y": 1475,
+      "phase": 2
+    },
+    {
+      "from": "gateway",
+      "to": "regist",
+      "label": "DELETE /api/v1/topics/{topic_id}/registrations/{registration_id}/",
+      "variant": "default",
+      "id": "cancel-registration-17",
+      "lines": [
+        "DELETE /api/v1/topics/{topic_id}/registrations/",
+        "{registration_id}/"
+      ],
+      "y": 1563,
+      "phase": 2
+    },
+    {
+      "from": "regist",
+      "to": "regist",
+      "label": "Local JWT + role=1; lecturers forbidden -> 403",
+      "variant": "emphasis",
+      "id": "cancel-registration-18",
+      "lines": [
+        "Local JWT + role=1; lecturers forbidden -> 403"
+      ],
+      "y": 1635,
+      "phase": 2
+    },
+    {
+      "from": "regist",
+      "to": "reg_db",
+      "label": "BEGIN + writer lock; SELECT by topic_id and registration_id",
+      "variant": "emphasis",
+      "id": "cancel-registration-19",
+      "lines": [
+        "BEGIN + writer lock; SELECT by topic_id and",
+        "registration_id"
+      ],
+      "y": 1743,
+      "phase": 2
+    },
+    {
+      "from": "reg_db",
+      "to": "regist",
+      "label": "Scoped registration / missing -> 404",
+      "variant": "return",
+      "id": "cancel-registration-20",
+      "lines": [
+        "Scoped registration / missing -> 404"
+      ],
+      "y": 1815,
+      "phase": 2
+    },
+    {
+      "from": "regist",
+      "to": "reg_db",
+      "label": "If active: UPDATE Status=0 + audit; COMMIT",
+      "variant": "emphasis",
+      "id": "cancel-registration-21",
+      "lines": [
+        "If active: UPDATE Status=0 + audit; COMMIT"
+      ],
+      "y": 1887,
+      "phase": 2
+    },
+    {
+      "from": "reg_db",
+      "to": "regist",
+      "label": "Idempotent; no topic-status REST check for admin",
+      "variant": "return",
+      "id": "cancel-registration-22",
+      "lines": [
+        "Idempotent; no topic-status REST check for admin"
+      ],
+      "y": 1959,
+      "phase": 2
+    },
+    {
+      "from": "regist",
+      "to": "gateway",
+      "label": "204 No Content / 404 / 503",
+      "variant": "return",
+      "id": "cancel-registration-23",
+      "lines": [
+        "204 No Content / 404 / 503"
+      ],
+      "y": 2031,
+      "phase": 2
+    },
+    {
+      "from": "gateway",
+      "to": "actor",
+      "label": "204 -> remove student from current roster",
+      "variant": "return",
+      "id": "cancel-registration-24",
+      "lines": [
+        "204 -> remove student from current roster"
+      ],
+      "y": 2103,
+      "phase": 2
+    }
+  ],
+  "activations": [
+    {
+      "participant": "actor",
+      "from": 223,
+      "to": 232,
+      "type": "frontend"
+    },
+    {
+      "participant": "gateway",
+      "from": 223,
+      "to": 304,
+      "type": "cloud"
+    },
+    {
+      "participant": "regist",
+      "from": 295,
+      "to": 630,
+      "type": "backend"
+    },
+    {
+      "participant": "reg_db",
+      "from": 459,
+      "to": 540,
+      "type": "database"
+    },
+    {
+      "participant": "actor",
+      "from": 1335,
+      "to": 1344,
+      "type": "frontend"
+    },
+    {
+      "participant": "gateway",
+      "from": 1263,
+      "to": 1344,
+      "type": "cloud"
+    },
+    {
+      "participant": "regist",
+      "from": 739,
+      "to": 1272,
+      "type": "backend"
+    },
+    {
+      "participant": "topic",
+      "from": 739,
+      "to": 820,
+      "type": "backend"
+    },
+    {
+      "participant": "reg_db",
+      "from": 975,
+      "to": 1200,
+      "type": "database"
+    },
+    {
+      "participant": "actor",
+      "from": 1472,
+      "to": 2109,
+      "type": "frontend"
+    },
+    {
+      "participant": "gateway",
+      "from": 1472,
+      "to": 2109,
+      "type": "cloud"
+    },
+    {
+      "participant": "regist",
+      "from": 1560,
+      "to": 2037,
+      "type": "backend"
+    },
+    {
+      "participant": "reg_db",
+      "from": 1740,
+      "to": 1965,
+      "type": "database"
+    }
+  ]
+}

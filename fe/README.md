@@ -1,6 +1,12 @@
 # Frontend — Quản lý đồ án tốt nghiệp
 
-React + Vite + TypeScript, dùng npm, React Router và Axios client chung. Đã triển khai đăng nhập, bảo vệ route theo role và dashboard chung. Quản trị viên có thể quản lý khoa, ngành, sinh viên, giảng viên và quản lý đề tài qua API Gateway. Giảng viên cũng có thể thêm, xem chi tiết, sửa và xóa mọi đề tài theo quyền đã duyệt. Các luồng đã được kiểm thử bằng API mock; chưa xác minh với tài khoản backend thực tế.
+Windows: từ thư mục gốc, chạy `start-services.bat` để mở frontend `5173` cùng
+bốn backend. Cần cài Node/npm, chạy `npm ci` trong `fe`, chuẩn bị venv/requirements
+và `.env` cho backend trước. `start-services.bat --dry-run` chỉ kiểm tra và in lệnh.
+Mỗi tiến trình có cửa sổ riêng; dùng Ctrl+C để dừng. Consul/Gateway chạy riêng,
+xem README gốc. BAT không tự cài package, tạo `.env` hoặc chạy migrations.
+
+React + Vite + TypeScript, dùng npm, React Router và Axios client chung. Đã triển khai đăng nhập, bảo vệ route theo role và dashboard chung. Quản trị viên có thể quản lý khoa, ngành, sinh viên, giảng viên và quản lý đề tài qua API Gateway. Giảng viên chỉ xem đề tài được phân hướng dẫn và chấm/sửa điểm sinh viên thuộc đề tài đó; không được tạo, sửa, xóa đề tài hoặc hủy đăng ký sinh viên. Các luồng được kiểm thử bằng API mock; chưa xác minh với tài khoản backend thực tế.
 
 ## Chạy tại máy
 
@@ -208,7 +214,7 @@ Menu nghiệp vụ nằm trong `src/components/layout/dashboard-menu.ts`:
 
 Các vai trò giữ Tổng quan và Đăng xuất. Sidebar không còn nhóm Trang cá nhân hoặc các mục học vụ/hướng dẫn cũ. Thông tin cá nhân truy cập từ bảng tài khoản trên header hoặc nút “Thông tin của tôi” ở trang tổng quan, độc lập với thứ tự menu nghiệp vụ. Trang tổng quan có lời chào, tối đa ba truy cập nhanh lấy từ menu của vai trò hiện tại và thông tin tài khoản.
 
-Việc chọn mục menu điều hướng tới route con tương ứng. Bốn mục học vụ của quản trị viên hiển thị màn hình CRUD. Quản lý đề tài hỗ trợ danh sách, chi tiết, tạo, sửa và xóa cho admin/giảng viên; thông tin cá nhân và đăng ký vẫn hiển thị “Đang phát triển”. Reload giữ nguyên URL và trang hiện tại khi token theo tab còn hợp lệ và `/auth/me/` xác thực thành công. Nội dung form và từ khóa tìm kiếm không được lưu qua reload. Chưa có API thông báo. Logo đang dùng chữ QNU tạm thời.
+Việc chọn mục menu điều hướng tới route con tương ứng. Bốn mục học vụ của quản trị viên hiển thị màn hình CRUD. Quản lý đề tài hỗ trợ danh sách, chi tiết, tạo, sửa và xóa cho admin; giảng viên chỉ xem đề tài được phân hướng dẫn và chấm điểm. Thông tin cá nhân và đăng ký quản trị vẫn hiển thị “Đang phát triển”. Reload giữ nguyên URL và trang hiện tại khi token theo tab còn hợp lệ và `/auth/me/` xác thực thành công. Nội dung form và từ khóa tìm kiếm không được lưu qua reload. Chưa có API thông báo. Logo đang dùng chữ QNU tạm thời.
 
 Trên màn hình rộng hơn 800px, sidebar mặc định mở và có thể ẩn. Ở màn hình nhỏ, sidebar mặc định đóng, mở dưới dạng drawer với nền che, khóa cuộn trang, giữ focus bàn phím bên trong và đóng bằng Escape/nút đóng/nhấn nền che/chọn mục. Các bảng trên header đóng bằng Escape hoặc nhấn ra ngoài. Có liên kết bỏ qua điều hướng để đến nội dung chính.
 
@@ -249,7 +255,7 @@ Trang login sử dụng banner `public/img/banner_QNU.jpg` và logo `public/img/
 
 ## Danh sách và tạo đề tài
 
-`/admin/topics` và `/lecture/topics` cho role 1/2 cùng quyền thêm, xem chi tiết, sửa và xóa mọi đề tài, không giới hạn theo người tạo/giảng viên hướng dẫn. Role 3 không có route quản lý đề tài; API giữ quyền chỉ đọc. Bảng có bốn cột dữ liệu **Mã đề tài**, **Tên đề tài**, **Giáo viên hướng dẫn**, **Tên ngành**, cùng cột **Thao tác**. Dữ liệu lấy từ `GET /topics/api/v1/topics/`; cột tên dùng đúng trường response `avisor_name` và `major_name`. Tên null hoặc rỗng hiển thị `—`. Chỉ lọc theo mã/tên khi nhấn **Search** hoặc submit form tìm kiếm; nhập chữ không tự lọc. Bộ lọc chạy trên danh sách đã tải.
+`/admin/topics` cho role 1 quản lý mọi đề tài. `/lecture/topics` cho role 2 chỉ xem đề tài được phân hướng dẫn; API lọc theo `advisor_id` bằng JWT `user_id` và trả 404 khi đọc chi tiết ngoài phạm vi. Giảng viên không có nút tạo/sửa/xóa đề tài; API cũng chặn các thao tác này với 403. Role 3 không có route quản lý đề tài; API giữ quyền chỉ đọc. Bảng có bốn cột dữ liệu **Mã đề tài**, **Tên đề tài**, **Giáo viên hướng dẫn**, **Tên ngành**, cùng cột **Thao tác**. Dữ liệu lấy từ `GET /topics/api/v1/topics/`; cột tên dùng đúng trường response `avisor_name` và `major_name`. Tên null hoặc rỗng hiển thị `—`. Chỉ lọc theo mã/tên khi nhấn **Search** hoặc submit form tìm kiếm; nhập chữ không tự lọc. Bộ lọc chạy trên danh sách đã tải.
 
 Popup tạo có tên (bắt buộc), mô tả (textarea, có thể bỏ trống), select giáo viên hướng dẫn và select ngành (bắt buộc). Ngành được bổ sung vì POST hiện yêu cầu `major_id`; không suy ra ngành từ khoa của giảng viên. Giảng viên lấy từ `/academic/api/v1/lecturers/`, dùng tên trong `user` và mã để phân biệt; thiếu tên hiển thị mã. Ngành lấy từ `/academic/api/majors/`; mã chữ bị vô hiệu hóa vì topic-service hiện chỉ xác thực được ngành có mã số. Không tự chọn ngành mặc định.
 
@@ -265,7 +271,7 @@ Frontend sinh UUID v4 một lần khi mở bản nháp: dùng `crypto.randomUUID
 }
 ```
 
-Các request dùng Axios/Gateway và Bearer JWT hiện tại, timeout 10 giây; không gọi trực tiếp service. Backend cho JWT role 1/2 quản lý đề tài và chặn các role khác ghi dữ liệu. Form giữ dữ liệu khi lỗi, chặn gửi trùng trong lúc chờ và chưa cho gửi khi lựa chọn chưa tải. Sau tạo thành công, popup đóng và danh sách được tải lại. Lỗi tải lại danh sách không làm mất thông báo đã tạo thành công. 401 xóa phiên và quay về đăng nhập; 403 hiển thị lỗi quyền.
+Các request dùng Axios/Gateway và Bearer JWT hiện tại, timeout 10 giây; không gọi trực tiếp service. Backend chỉ cho JWT role 1 ghi dữ liệu đề tài. Form giữ dữ liệu khi lỗi, chặn gửi trùng trong lúc chờ và chưa cho gửi khi lựa chọn chưa tải. Sau tạo thành công, popup đóng và danh sách được tải lại. Lỗi tải lại danh sách không làm mất thông báo đã tạo thành công. 401 xóa phiên và quay về đăng nhập; 403 hiển thị lỗi quyền.
 
 Khi POST lỗi mạng/timeout/5xx hoặc 409, frontend không tự gửi lại. Popup khóa dữ liệu và có nút **Kiểm tra kết quả**, gọi `GET /topics/api/v1/topics/{guid}/`: 200 xác nhận đề tài đã tồn tại và tải lại danh sách; 404 cho phép gửi lại thủ công với cùng GUID; lỗi kiểm tra giữ trạng thái chưa xác định. Hủy popup bỏ bản nháp; nếu kết quả gửi chưa rõ, nên kiểm tra trước khi hủy để tránh tạo lại cùng nội dung bằng mã mới. F5 không lưu bản nháp. Đổi trang hủy request frontend đang chờ, nhưng không đảm bảo hủy thao tác backend đã nhận.
 
@@ -273,8 +279,8 @@ Mã nằm trong `features/topics/`: `topic-api.ts`, `useTopics.ts`, `TopicPage.t
 
 ### Chi tiết, sửa và xóa đề tài
 
-- **Chi tiết** gọi `GET /topics/api/v1/topics/{id}/`, hiển thị tên, mô tả, ngành, giảng viên, tệp đính kèm (chuỗi, không tự tải), trạng thái và thông tin cập nhật. Trạng thái hiển thị nhãn Chờ duyệt (0), Đã duyệt (1), Mở đăng ký (2); giá trị cũ ngoài danh sách hiển thị Chưa xác định. Lỗi tải có nút thử lại; đóng popup hủy request đọc đang chờ.
-- **Sửa** lấy dữ liệu mới từ endpoint chi tiết. Chỉ role 1/2 nhận thêm `major_id` và `advisor_id` để điền select đúng theo mã, kể cả trùng/thiếu tên. Mã đề tài không đổi. `PATCH` chỉ gửi tên/mô tả/ngành/giảng viên và trạng thái (chỉ admin) đã thay đổi, giữ nguyên tệp, thời điểm tạo và trường không sửa. Tham chiếu cũ giữ nguyên được chấp nhận dù không còn trong lựa chọn; tham chiếu mới phải hợp lệ. Nếu không đổi gì thì không gửi PATCH.
+- **Chi tiết** gọi `GET /topics/api/v1/topics/{id}/`, hiển thị tên, mô tả, ngành, giảng viên, tệp đính kèm (chuỗi, không tự tải), trạng thái và thông tin cập nhật. Trạng thái hiển thị nhãn Chờ duyệt (0), Đã duyệt (1), Mở đăng ký (2), Đóng đăng ký (3); giá trị cũ ngoài danh sách hiển thị Chưa xác định. Lỗi tải có nút thử lại; đóng popup hủy request đọc đang chờ.
+- **Sửa** chỉ dành cho admin, lấy dữ liệu mới từ endpoint chi tiết cùng `major_id` và `advisor_id` để điền select đúng theo mã, kể cả trùng/thiếu tên. Giảng viên nhận các ID trong chi tiết đề tài được phân công để xác định quyền chấm điểm. Mã đề tài không đổi. `PATCH` chỉ gửi tên/mô tả/ngành/giảng viên và trạng thái đã thay đổi, giữ nguyên tệp, thời điểm tạo và trường không sửa. Tham chiếu cũ giữ nguyên được chấp nhận dù không còn trong lựa chọn; tham chiếu mới phải hợp lệ. Nếu không đổi gì thì không gửi PATCH.
 - **Xóa** yêu cầu **Xác nhận xóa** trước khi gửi `DELETE /topics/api/v1/topics/{id}/`; Hủy không gửi request. 204 đóng popup và tải lại danh sách; 404 thông báo đề tài không còn tồn tại. Xóa đề tài cũng xóa vĩnh viễn toàn bộ đăng ký liên quan, kể cả lịch sử đã hủy. Lỗi 409 hoặc kết quả chưa rõ yêu cầu kiểm tra lại trước khi xác nhận xóa tiếp; đăng ký có thể đã bị xóa dù đề tài còn tồn tại.
 - PATCH/DELETE lỗi mạng, timeout hoặc 5xx khóa thao tác ghi và yêu cầu **Kiểm tra kết quả**, không tự gửi lại. Với sửa, GET phải trả đúng các giá trị vừa gửi mới xác nhận dữ liệu; nếu khác, giữ bản nháp và báo cần xem lại. Với xóa, GET 404 xác nhận đề tài đã vắng; GET 200 yêu cầu xác nhận xóa lại thủ công. Lỗi kiểm tra giữ trạng thái chưa xác định. Đây là đối chiếu trạng thái hiện tại, không bảo đảm không có ghi đồng thời hoặc kết quả backend đến muộn.
 - Bộ lọc tìm kiếm giữ nguyên sau tải lại thành công. Chặn gửi trùng/đóng popup khi ghi đang chờ; đổi trang hủy request frontend nhưng không bảo đảm hủy xử lý backend. Popup hỗ trợ Escape, vòng focus và khôi phục focus khi phần tử mở còn khả dụng.
@@ -292,6 +298,7 @@ API đi qua Axios client chung và Gateway với access JWT hiện có:
 | Thao tác | Request |
 | --- | --- |
 | Lịch sử của chính sinh viên | `GET /registrations/api/v1/registrations/` |
+| Trạng thái đề tài đang đăng ký | `GET /topics/api/v1/registration-topics/{topic_id}/` |
 | Đề tài mở cùng khoa | `GET /registrations/api/v1/available-topics/?after=...` |
 | Đăng ký | `POST /registrations/api/v1/registrations/` |
 | Hủy đăng ký | `DELETE /registrations/api/v1/registrations/{registration_id}/` |
@@ -307,18 +314,24 @@ thông tin audit. Đề tài/khoa/trạng thái/quyền sở hữu do backend ki
 - **Đăng ký hiện tại:** trạng thái 0 là đã hủy; các trạng thái khác, kể cả null,
   được coi là hiện tại theo hợp đồng backend. Có đăng ký hiện tại thì nút đăng ký
   đề tài khác bị khóa. Dữ liệu legacy có nhiều đăng ký hiện tại hiển thị cảnh báo.
+  Trang đọc trạng thái đề tài qua Gateway cho từng đề tài hiện tại. Trạng thái 3
+  hiển thị thông báo đóng đăng ký và khóa nút hủy. Nếu không xác minh được trạng
+  thái, nút hủy vẫn khóa và **Tải lại** sẽ thử đọc lại.
 - **Đăng ký/hủy:** có hộp xác nhận hỗ trợ bàn phím, giữ focus và chặn gửi trùng.
   Hủy thành công giữ lịch sử và cho phép chọn lại sau khi xác nhận dữ liệu mới.
   Tên đề tài chỉ được hiển thị khi có trong dữ liệu đã tải; lịch sử luôn dùng mã
   đề tài từ backend, không giả lập tên giảng viên, ngành hoặc thông tin khác.
 - **Lịch sử:** lọc Tất cả / Hiện tại / Đã hủy ngay trên dữ liệu lịch sử đã tải.
   Ngày giờ hiển thị theo trình duyệt; metadata null hiển thị dấu gạch ngang.
-- **Lỗi:** mã topic_closed, faculty_mismatch, registration_conflict và lỗi dịch vụ
+- **Lỗi:** mã topic_closed, topic_registration_closed, faculty_mismatch, registration_conflict và lỗi dịch vụ
   được chuyển thành thông báo tiếng Việt an toàn. Không hiển thị nội dung lỗi
   nội bộ. HTTP 401 gọi logout hiện có; lỗi tải lịch sử khóa thao tác ghi cho tới
-  khi tải lại thành công. Lỗi tải đề tài không chặn xem/hủy đăng ký đã xác nhận.
+  khi tải lại thành công. Lỗi tải danh sách đề tài mở không chặn xem/hủy đăng ký
+  đã xác nhận; lỗi tra cứu trạng thái đề tài hiện tại khóa thao tác hủy.
 - **Kết quả chưa rõ:** timeout, mất mạng, phản hồi mutation sai DTO, HTTP 5xx hoặc
-  409 yêu cầu nhấn **Kiểm tra kết quả** để tải lại lịch sử. Hủy nhận 404 cũng cần
+  409 yêu cầu nhấn **Kiểm tra kết quả** để tải lại lịch sử, trừ 409
+  `topic_registration_closed`: thao tác hủy bị từ chối rõ ràng và trạng thái đề
+  tài được đọc lại. Hủy nhận 404 cũng cần
   kiểm tra lại. Khi kiểm tra thất bại, các thao tác ghi vẫn khóa; đóng hộp thoại
   không bỏ khóa này. Không tự động gửi lại POST/DELETE. Kết quả thành công đã xác
   nhận vẫn được giữ khi bước tải lại lịch sử tiếp theo thất bại.
@@ -331,26 +344,59 @@ Không thêm package, thay lockfile, thay backend, schema hoặc môi trường 
 Dùng proxy Gateway và cấu hình hiện có. Backend cần được triển khai các hợp đồng
 tra cứu academic/topic và cùng JWT_SIGNING_KEY như mô tả trong README service.
 
-Kiểm chứng: `npm run test` đạt **341 tests / 15 files**; `npm run lint`,
-`npm run typecheck` và `npm run build` đều đạt. Bao gồm 30 test API adapter,
-33 test luồng đăng ký và kiểm thử tích hợp route/session hiện có được cập nhật.
+Kiểm chứng: `npm run test`, `npm run lint`, `npm run typecheck` và
+`npm run build`. Bộ test gồm API adapter, luồng đăng ký và kiểm thử tích hợp
+route/session.
 Tests dùng jsdom/API mock; chưa kiểm chứng trình duyệt với tài khoản sinh viên và
 Gateway/backend thực. CSS có bố cục mobile và bảng cuộn ngang, nhưng chưa kiểm
 chứng trực quan trên thiết bị thực.
 
 
+### Trang quản lý đăng ký Admin
+
+Route `/admin/registrations` dành cho role 1 hiển thị selectbox mã/tên đề tài,
+mặc định chọn đề tài đầu tiên. Thông tin đề tài gồm mã, tên, GVHD, ngành,
+trạng thái, GPA yêu cầu và chỉ tiêu. Bảng sinh viên đang đăng ký hiển thị mã
+đăng ký, mã sinh viên, họ tên, học kỳ, ngày đăng ký, trạng thái và điểm.
+Có tải lại, tải thêm, trạng thái rỗng/lỗi và cảnh báo khi thiếu họ tên.
+
+Hủy đăng ký cần xác nhận; chấm/sửa điểm chỉ khi đề tài ở trạng thái 3, theo
+thang 0–10 với tối đa hai chữ số thập phân. Trong lúc xác nhận, chấm điểm hoặc
+kiểm tra kết quả ghi chưa rõ, lựa chọn đề tài bị khóa để giữ đúng đối tượng
+thao tác. Request cũ được hủy khi đổi đề tài; mỗi đề tài có trạng thái riêng.
+Danh sách chỉ gồm đăng ký chưa hủy theo API hiện có, không bổ sung hồ sơ cá
+nhân hay lịch sử hủy. Thành phần TopicRoster dùng chung với chi tiết đề tài.
+
+Kiểm thử: `npm test --prefix fe -- AdminRegistrationPage TopicPage App.test roster-api`
+từ thư mục gốc, sau đó chạy typecheck, lint và build frontend.
+
 ### Quyền chỉnh trạng thái đề tài
 
-Admin có select trạng thái trong form tạo/sửa: Chờ duyệt (0), Đã duyệt (1),
-Mở đăng ký (2); mặc định tạo là 1. Giảng viên không có select này và frontend
-không gửi status: backend tạo ở 0 và chặn thao tác đổi trạng thái qua API.
+Khi giảng viên mở form tạo đề tài, frontend chỉ tải danh sách ngành; không gọi
+`/academic/api/v1/lecturers/` vì API hồ sơ tổng hợp này dành cho Admin. GVHD được
+gán theo người dùng hiện tại và backend xác minh lại. Admin vẫn tải danh sách
+giảng viên để chọn GVHD trong form tạo/sửa.
+
+Admin duyệt đề tài bằng nút **Duyệt** trên danh sách, chỉ hiện ở đề tài Chờ duyệt
+(0). Nút gửi PATCH với status 1 (Đã duyệt), không tự mở đăng ký. Form sửa đề tài
+chờ duyệt hiển thị trạng thái chỉ đọc; cần duyệt trên danh sách trước khi mở/đóng.
+Form sửa không có lựa chọn 0/1: đề tài đã duyệt có thể chọn Mở đăng ký (2) hoặc
+Đóng đăng ký (3); nếu chưa chọn, sửa nội dung giữ nguyên trạng thái hiện tại.
+Form tạo của Admin giữ lựa chọn 2/3, mặc định 2.
+Khi duyệt có lỗi mạng/timeout, các thao tác bị khóa và có nút **Kiểm tra kết quả
+duyệt** đọc lại đề tài; không tự gửi lại PATCH. Chỉ gửi lại khi đã xác minh đề tài
+vẫn chờ duyệt. API và quyền backend hiện có không thay đổi.
+Giảng viên có nút Tạo đề tài; form ẩn GVHD và trạng thái, gửi advisor_id theo
+user_id hiện tại và status 0. Backend luôn gán lại hai giá trị này theo JWT.
+Giảng viên không có nút sửa/xóa và không được duyệt đề tài qua API.
+Khi tạo gặp timeout, dùng Kiểm tra kết quả trước khi gửi lại, giữ nguyên mã đề tài.
 Luồng sinh viên chỉ nhận đề tài status 2 từ API available-topics. Đề tài cũ
 status 1 cần admin chủ động mở đăng ký; không tự chuyển dữ liệu hiện có.
 
 
 ### Trạng thái và sinh viên đăng ký trong quản lý đề tài
 
-Bảng đề tài có cột Trạng thái: Chờ duyệt (0), Đã duyệt (1), Mở đăng ký (2);
+Bảng đề tài có cột Trạng thái: Chờ duyệt (0), Đã duyệt (1), Mở đăng ký (2), Đóng đăng ký (3);
 null/giá trị cũ hiển thị Chưa xác định. Popup Chi tiết của admin/giảng viên
 đọc thêm `/registrations/api/v1/topics/{topic_id}/registrations/` để hiển thị
 mã sinh viên, họ tên, học kỳ và ngày đăng ký. Chỉ liệt kê đăng ký hiện tại;
@@ -366,7 +412,7 @@ không gửi lại thao tác ghi, không lộ email/số điện thoại/điểm
 
 ### Hủy đăng ký sinh viên từ chi tiết đề tài
 
-Admin/giảng viên có nút **Hủy đăng ký** trên từng dòng sinh viên. Xác nhận
+Chỉ admin có nút **Hủy đăng ký** trên từng dòng sinh viên. Xác nhận
 hiển thị họ tên/mã sinh viên; **Quay lại** không gửi request. Xác nhận gửi DELETE
 `/registrations/api/v1/topics/{topic_id}/registrations/{registration_id}/`.
 Khi thành công, chỉ dòng đăng ký đó được bỏ khỏi danh sách; lịch sử vẫn giữ
@@ -382,6 +428,19 @@ JWT401 đăng xuất;403 báo không có quyền;404 bỏ dòng đăng ký khôn
 
 ### Xóa đề tài kèm đăng ký liên quan
 
-Popup **Xóa đề tài** cảnh báo rằng toàn bộ đăng ký liên quan, kể cả lịch sử đã hủy, sẽ bị xóa vĩnh viễn. Chỉ admin/giảng viên có quyền quản lý được xác nhận xóa; Hủy không gửi request. Frontend gửi một DELETE đề tài, backend điều phối việc xóa dữ liệu qua regist-service.
+Popup **Xóa đề tài** cảnh báo rằng toàn bộ đăng ký liên quan, kể cả lịch sử đã hủy, sẽ bị xóa vĩnh viễn. Chỉ admin được xác nhận xóa; Hủy không gửi request. Frontend gửi một DELETE đề tài, backend điều phối việc xóa dữ liệu qua regist-service.
 
 Khi lỗi mạng/timeout/5xx hoặc409, popup yêu cầu **Kiểm tra kết quả**, không tự gửi DELETE lại. Thông báo nêu rõ đề tài có thể đã đóng và lịch sử đăng ký có thể đã mất. GET404 xác nhận đề tài hiện không còn; GET200 cho phép xác nhận xóa lại thủ công nhưng không tuyên bố lịch sử đăng ký còn nguyên. Các tests mock kiểm tra cảnh báo, khóa gửi trùng và đối chiếu kết quả; chưa xóa dữ liệu thật để kiểm thử.
+
+### Điểm đăng ký
+
+Sinh viên xem điểm của mình (hoặc “Chưa chấm”) trong đăng ký hiện tại và lịch sử. Admin có thể chấm/sửa điểm của mọi đăng ký còn hiệu lực trong danh sách sinh viên của từng đề tài, kể cả đề tài chưa có giảng viên hướng dẫn. Giảng viên chỉ chấm/sửa điểm thuộc đề tài mình hướng dẫn. Nút chấm/sửa điểm chỉ xuất hiện khi chi tiết đề tài có trạng thái 3; backend kiểm tra lại trạng thái khi nhận PUT và trả 409 `topic_not_closed` nếu đề tài chưa đóng. Điểm từ 0–10, tối đa hai chữ số thập phân. UI gửi một PUT cho mỗi lần xác nhận; nếu kết quả chưa rõ, dùng **Kiểm tra điểm** để đọc đúng giá trị đã lưu trước khi thử lại. Sinh viên tải lại trang để xem điểm vừa được chấm.
+
+
+## GPA và chỉ tiêu đề tài
+
+Quản lý đề tài có hai ô `GPA yêu cầu` (0–4, mặc định 0) và `Chỉ tiêu sinh viên` (số nguyên dương, mặc định 1); hiển thị trong bảng và chi tiết. Giao diện đăng ký hiển thị GPA yêu cầu cùng số đã đăng ký/chỉ tiêu. Nút đăng ký bị khóa và giải thích khi BE trả `eligible=false`; FE không tự quyết định nghiệp vụ dựa trên GPA do người dùng gửi.
+
+API available-topics bổ sung `req_GPA`, `studentQuota`, `registered_count`, `eligible`, `ineligibility_reason`. Parser từ chối dữ liệu thiếu/sai trường. Khi gửi đăng ký mà BE báo `gpa_requirement_not_met` hoặc `topic_quota_full`, FE hiển thị thông báo tiếng Việt và tải lại eligibility, không tự gửi lại POST. Danh sách chỗ cũng được tải lại sau đăng ký/hủy thành công. Các quy tắc khoa, trạng thái đề tài và một đăng ký hiện tại vẫn được giữ.
+
+Quota storage bound: `studentQuota` is limited to 1–2147483647 (Django integer range); oversized values return validation errors.

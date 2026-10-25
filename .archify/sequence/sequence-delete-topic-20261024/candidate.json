@@ -1,0 +1,437 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Delete a Topic",
+    "output": ".archify/sequence-delete-topic-20261024/delete-topic.html",
+    "quality_profile": "showcase",
+    "language": "en",
+    "repository": {
+      "url": "https://github.com/YangKlee/SOA_ProjectManagerment",
+      "revision": "0527ab58cd5e19bec2cea96891097588ea120bba",
+      "provider": "github"
+    },
+    "provenance": {
+      "created_at": "2026-10-24T10:37:23.587730+00:00",
+      "source": "current local working tree",
+      "base_revision": "0527ab58cd5e19bec2cea96891097588ea120bba",
+      "uncommitted_sources": false,
+      "renderer": "local SVG authoring with unchanged bundled Archify viewer",
+      "archify_certification": "not-run"
+    }
+  },
+  "layout": {
+    "width": 1840,
+    "height": 1776,
+    "participant_x": {
+      "actor": 160.0,
+      "gateway": 464.0,
+      "topic": 768.0,
+      "regist": 1072.0,
+      "topic_db": 1376.0,
+      "reg_db": 1680.0
+    }
+  },
+  "participants": [
+    {
+      "id": "actor",
+      "label": "Admin / React UI",
+      "type": "frontend",
+      "sublabel": "Role 1",
+      "sources": [
+        {
+          "path": "fe/src/features/topics/useTopics.ts",
+          "line": 206,
+          "label": "Topic deletion and reconciliation"
+        }
+      ]
+    },
+    {
+      "id": "gateway",
+      "label": "API Gateway",
+      "type": "cloud",
+      "sublabel": "Nginx :8000",
+      "sources": [
+        {
+          "path": "api-gateway/discovery.py",
+          "line": 164,
+          "label": "Gateway route generation and header forwarding"
+        }
+      ]
+    },
+    {
+      "id": "topic",
+      "label": "topic-service",
+      "type": "backend",
+      "sublabel": "Django REST :8004",
+      "sources": [
+        {
+          "path": "services/topic-service/topic_manager/services.py",
+          "line": 78,
+          "label": "Topic closure, cleanup orchestration and deletion"
+        }
+      ]
+    },
+    {
+      "id": "regist",
+      "label": "regist-service",
+      "type": "backend",
+      "sublabel": "Django REST :8003",
+      "sources": [
+        {
+          "path": "services/regist-service/RegistTopic/services.py",
+          "line": 175,
+          "label": "Permanent registration cleanup"
+        }
+      ]
+    },
+    {
+      "id": "topic_db",
+      "label": "Topics / SQLite",
+      "type": "database",
+      "sublabel": "Owned by topic-service",
+      "sources": [
+        {
+          "path": "services/topic-service/topic_manager/models.py",
+          "line": 4,
+          "label": "Topics table owned by topic-service"
+        }
+      ]
+    },
+    {
+      "id": "reg_db",
+      "label": "Registrations / SQLite",
+      "type": "database",
+      "sublabel": "Owned by regist-service",
+      "sources": [
+        {
+          "path": "services/regist-service/RegistTopic/models.py",
+          "line": 3,
+          "label": "Registrations table owned by regist-service"
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 561,
+      "label": "1. Authorize and find the topic"
+    },
+    {
+      "from": 589,
+      "to": 770,
+      "label": "2. First topic transaction - disable new registrations"
+    },
+    {
+      "from": 798,
+      "to": 1286,
+      "label": "3. Registration-owned cleanup - a separate transaction"
+    },
+    {
+      "from": 1314,
+      "to": 1731,
+      "label": "4. Second topic transaction - remove the topic"
+    }
+  ],
+  "messages": [
+    {
+      "from": "actor",
+      "to": "gateway",
+      "label": "DELETE /topics/api/v1/topics/{topic_id}/",
+      "variant": "emphasis",
+      "id": "delete-topic-01",
+      "lines": [
+        "DELETE /topics/api/v1/topics/{topic_id}/"
+      ],
+      "y": 226,
+      "phase": 0
+    },
+    {
+      "from": "gateway",
+      "to": "topic",
+      "label": "DELETE /api/v1/topics/{topic_id}/",
+      "variant": "default",
+      "id": "delete-topic-02",
+      "lines": [
+        "DELETE /api/v1/topics/{topic_id}/"
+      ],
+      "y": 298,
+      "phase": 0
+    },
+    {
+      "from": "topic",
+      "to": "topic",
+      "label": "Local JWT + admin role=1; invalid -> 401/403",
+      "variant": "emphasis",
+      "id": "delete-topic-03",
+      "lines": [
+        "Local JWT + admin role=1; invalid -> 401/403"
+      ],
+      "y": 370,
+      "phase": 0
+    },
+    {
+      "from": "topic",
+      "to": "topic_db",
+      "label": "SELECT topic by TopicId",
+      "variant": "default",
+      "id": "delete-topic-04",
+      "lines": [
+        "SELECT topic by TopicId"
+      ],
+      "y": 462,
+      "phase": 0
+    },
+    {
+      "from": "topic_db",
+      "to": "topic",
+      "label": "Existing topic / missing -> 404",
+      "variant": "return",
+      "id": "delete-topic-05",
+      "lines": [
+        "Existing topic / missing -> 404"
+      ],
+      "y": 534,
+      "phase": 0
+    },
+    {
+      "from": "topic",
+      "to": "topic_db",
+      "label": "BEGIN; UPDATE Status=0 + audit; COMMIT",
+      "variant": "emphasis",
+      "id": "delete-topic-06",
+      "lines": [
+        "BEGIN; UPDATE Status=0 + audit; COMMIT"
+      ],
+      "y": 655,
+      "phase": 1
+    },
+    {
+      "from": "topic_db",
+      "to": "topic",
+      "label": "Closure committed / missing 404 / conflict 409 / storage 503",
+      "variant": "return",
+      "id": "delete-topic-07",
+      "lines": [
+        "Closure committed / missing 404 / conflict 409 /",
+        "storage 503"
+      ],
+      "y": 743,
+      "phase": 1
+    },
+    {
+      "from": "topic",
+      "to": "regist",
+      "label": "DELETE /api/v1/topics/{topic_id}/registrations/",
+      "variant": "emphasis",
+      "id": "delete-topic-08",
+      "lines": [
+        "DELETE /api/v1/topics/{topic_id}/registrations/"
+      ],
+      "y": 864,
+      "phase": 2
+    },
+    {
+      "from": "regist",
+      "to": "regist",
+      "label": "Validate forwarded JWT; admin only -> 401/403",
+      "variant": "emphasis",
+      "id": "delete-topic-09",
+      "lines": [
+        "Validate forwarded JWT; admin only -> 401/403"
+      ],
+      "y": 936,
+      "phase": 2
+    },
+    {
+      "from": "regist",
+      "to": "reg_db",
+      "label": "BEGIN + writer lock; DELETE current AND cancelled rows",
+      "variant": "emphasis",
+      "id": "delete-topic-10",
+      "lines": [
+        "BEGIN + writer lock; DELETE current AND cancelled rows"
+      ],
+      "y": 1028,
+      "phase": 2
+    },
+    {
+      "from": "reg_db",
+      "to": "regist",
+      "label": "COMMIT deleted_count; zero rows is valid",
+      "variant": "return",
+      "id": "delete-topic-11",
+      "lines": [
+        "COMMIT deleted_count; zero rows is valid"
+      ],
+      "y": 1100,
+      "phase": 2
+    },
+    {
+      "from": "regist",
+      "to": "topic",
+      "label": "200 {topic_id, deleted_count} / non-2xx or timeout",
+      "variant": "return",
+      "id": "delete-topic-12",
+      "lines": [
+        "200 {topic_id, deleted_count} / non-2xx or timeout"
+      ],
+      "y": 1172,
+      "phase": 2
+    },
+    {
+      "from": "topic",
+      "to": "topic",
+      "label": "Cleanup unconfirmed -> 503 deletion_incomplete; stop",
+      "variant": "emphasis",
+      "id": "delete-topic-13",
+      "lines": [
+        "Cleanup unconfirmed -> 503 deletion_incomplete; stop"
+      ],
+      "y": 1244,
+      "phase": 2
+    },
+    {
+      "from": "topic",
+      "to": "topic_db",
+      "label": "BEGIN; DELETE Topics by TopicId; COMMIT",
+      "variant": "emphasis",
+      "id": "delete-topic-14",
+      "lines": [
+        "BEGIN; DELETE Topics by TopicId; COMMIT"
+      ],
+      "y": 1380,
+      "phase": 3
+    },
+    {
+      "from": "topic_db",
+      "to": "topic",
+      "label": "Deleted / failure -> 503 deletion_incomplete",
+      "variant": "return",
+      "id": "delete-topic-15",
+      "lines": [
+        "Deleted / failure -> 503 deletion_incomplete"
+      ],
+      "y": 1452,
+      "phase": 3
+    },
+    {
+      "from": "topic",
+      "to": "topic",
+      "label": "Failure preserves earlier commits; no distributed rollback",
+      "variant": "emphasis",
+      "id": "delete-topic-16",
+      "lines": [
+        "Failure preserves earlier commits; no distributed",
+        "rollback"
+      ],
+      "y": 1540,
+      "phase": 3
+    },
+    {
+      "from": "topic",
+      "to": "gateway",
+      "label": "204 No Content / 503 deletion_incomplete",
+      "variant": "return",
+      "id": "delete-topic-17",
+      "lines": [
+        "204 No Content / 503 deletion_incomplete"
+      ],
+      "y": 1632,
+      "phase": 3
+    },
+    {
+      "from": "gateway",
+      "to": "actor",
+      "label": "204 -> reload list; uncertain -> check before retry",
+      "variant": "return",
+      "id": "delete-topic-18",
+      "lines": [
+        "204 -> reload list; uncertain -> check before retry"
+      ],
+      "y": 1704,
+      "phase": 3
+    }
+  ],
+  "activations": [
+    {
+      "participant": "actor",
+      "from": 223,
+      "to": 232,
+      "type": "frontend"
+    },
+    {
+      "participant": "gateway",
+      "from": 223,
+      "to": 304,
+      "type": "cloud"
+    },
+    {
+      "participant": "topic",
+      "from": 295,
+      "to": 540,
+      "type": "backend"
+    },
+    {
+      "participant": "topic_db",
+      "from": 459,
+      "to": 540,
+      "type": "database"
+    },
+    {
+      "participant": "topic",
+      "from": 652,
+      "to": 749,
+      "type": "backend"
+    },
+    {
+      "participant": "topic_db",
+      "from": 652,
+      "to": 749,
+      "type": "database"
+    },
+    {
+      "participant": "topic",
+      "from": 861,
+      "to": 1268,
+      "type": "backend"
+    },
+    {
+      "participant": "regist",
+      "from": 861,
+      "to": 1178,
+      "type": "backend"
+    },
+    {
+      "participant": "reg_db",
+      "from": 1025,
+      "to": 1106,
+      "type": "database"
+    },
+    {
+      "participant": "actor",
+      "from": 1701,
+      "to": 1710,
+      "type": "frontend"
+    },
+    {
+      "participant": "gateway",
+      "from": 1629,
+      "to": 1710,
+      "type": "cloud"
+    },
+    {
+      "participant": "topic",
+      "from": 1377,
+      "to": 1638,
+      "type": "backend"
+    },
+    {
+      "participant": "topic_db",
+      "from": 1377,
+      "to": 1458,
+      "type": "database"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase
@@ -88,6 +89,8 @@ class PlaintextLoginTests(SimpleTestCase):
                 self.assertEqual(response.data["user"]["user_id"], self.user.userid)
                 self.assertNotIn("password", response.data["user"])
                 self.assertNotIn(self.user.password, response.content.decode())
+                access = AccessToken(response.data["access"])
+                self.assertEqual(access["exp"] - access["iat"], 1800)
                 for token in [AccessToken(response.data["access"]),
                               RefreshToken(response.data["refresh"])]:
                     self.assertEqual(token["user_id"], self.user.userid)
@@ -140,6 +143,7 @@ class PlaintextLoginTests(SimpleTestCase):
         refresh = self.client.post("/token/refresh/", {"refresh": login.data["refresh"]}, format="json")
         self.assertEqual(refresh.status_code, 200)
         access = AccessToken(refresh.data["access"])
+        self.assertEqual(access["exp"] - access["iat"], 1800)
         self.assertEqual(access["user_id"], self.user.userid)
         self.assertEqual(access["role"], 1)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.data['access']}")
@@ -152,6 +156,22 @@ class PlaintextLoginTests(SimpleTestCase):
         self.assertEqual(self.client.get("/me/").status_code, 401)
         self.client.credentials(HTTP_AUTHORIZATION="Bearer invalid-token")
         self.assertEqual(self.client.get("/me/").status_code, 401)
+
+    def test_access_token_is_accepted_before_expiry_and_rejected_at_expiry(self):
+        from datetime import datetime, timezone
+
+        from rest_framework_simplejwt.tokens import AccessToken
+
+        login = self.login(userid=self.user.userid, password=self.user.password)
+        access = AccessToken(login.data["access"])
+        issued_at = datetime.fromtimestamp(access["iat"], tz=timezone.utc)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
+
+        with patch("jwt.api_jwt.datetime") as clock:
+            clock.now.return_value = issued_at + timedelta(minutes=29, seconds=59)
+            self.assertEqual(self.client.get("/me/").status_code, 200)
+            clock.now.return_value = issued_at + timedelta(minutes=30)
+            self.assertEqual(self.client.get("/me/").status_code, 401)
 
     def test_refresh_rejects_invalid_token_and_missing_user(self):
         response = self.client.post("/token/refresh/", {"refresh": "invalid-token"}, format="json")

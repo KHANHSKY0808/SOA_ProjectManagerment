@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "status": "historical",
+  "appliesToCurrentArtifact": false,
+  "invalidatedAt": "2026-10-24T11:15:00.796202+00:00",
+  "reason": "ERD updated against current SQLite schema; old Archify/browser checks do not verify this artifact.",
+  "historical_receipt": {
+    "schemaVersion": 1,
+    "receiptId": "78babfff-96fe-4338-8d28-fa9f39dbd25e",
+    "status": "current",
+    "command": "deliver",
+    "type": "erd",
+    "input": "D:\\Work\\SOA_ProjectManagerment\\.archify\\erd-project-management-db-20261014-220854\\candidate.json",
+    "output": "D:\\Work\\SOA_ProjectManagerment\\.archify\\erd-project-management-db-20261014-220854\\database-erd.html",
+    "specification": {
+      "sha256": "81a90326234e20f309a60b26d2bb48e0b486b67c0c5f6b82162d85a8564116a2",
+      "bytes": 10718
+    },
+    "artifact": {
+      "sha256": "ad5cf4bd4d813ada3e93493973cdbfa5d70e9967cc8d85a324c4864b82c44600",
+      "bytes": 873206
+    }
+  }
+}

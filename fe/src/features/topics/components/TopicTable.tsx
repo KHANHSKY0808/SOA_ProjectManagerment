@@ -1,24 +1,26 @@
 import { topicStatusLabel } from '../topic-api'
 import type { Topic } from '../topic-api'
 
-export function TopicTable({ rows, total, canManage, disabled, onAction }: {
+export function TopicTable({ rows, total, canManage, disabled, onAction, onApprove }: {
   rows: Topic[]; total: number; canManage: boolean; disabled: boolean
   onAction: (row: Topic, action: 'detail' | 'edit' | 'delete') => void
+  onApprove: (row: Topic) => void
 }) {
   return <>
     <p className="academic-count">Hiển thị {rows.length} / {total} đề tài</p>
     <div className="academic-table"><table aria-label="Danh sách đề tài">
-      <thead><tr><th scope="col">Mã đề tài</th><th scope="col">Tên đề tài</th><th scope="col">Giáo viên hướng dẫn</th><th scope="col">Tên ngành</th><th scope="col">Trạng thái</th><th scope="col">Thao tác</th></tr></thead>
+      <thead><tr><th scope="col">Mã đề tài</th><th scope="col">Tên đề tài</th><th scope="col">Giáo viên hướng dẫn</th><th scope="col">Tên ngành</th><th scope="col">GPA yêu cầu</th><th scope="col">Chỉ tiêu</th><th scope="col">Trạng thái</th><th scope="col">Thao tác</th></tr></thead>
       <tbody>{rows.map(row => <tr key={row.topic_id}>
-        <td>{row.topic_id}</td><td>{row.name}</td><td>{row.avisor_name || '—'}</td><td>{row.major_name || '—'}</td><td>{topicStatusLabel(row.status)}</td>
+        <td>{row.topic_id}</td><td>{row.name}</td><td>{row.avisor_name || '—'}</td><td>{row.major_name || '—'}</td><td>{row.req_GPA}</td><td>{row.studentQuota}</td><td>{topicStatusLabel(row.status)}</td>
         <td><div className="academic-actions topic-row-actions">
           <button type="button" disabled={disabled} aria-label={`Xem chi tiết ${row.topic_id}`} onClick={() => onAction(row, 'detail')}>Chi tiết</button>
           {canManage && <>
+            {row.status === 0 && <button type="button" className="academic-primary" disabled={disabled} aria-label={`Duyệt ${row.topic_id}`} onClick={() => onApprove(row)}>Duyệt</button>}
             <button type="button" disabled={disabled} aria-label={`Sửa ${row.topic_id}`} onClick={() => onAction(row, 'edit')}>Sửa</button>
             <button type="button" disabled={disabled} className="topic-danger" aria-label={`Xóa ${row.topic_id}`} onClick={() => onAction(row, 'delete')}>Xóa</button>
           </>}
         </div></td>
-      </tr>)}{rows.length === 0 && <tr><td colSpan={6}>Không có đề tài phù hợp.</td></tr>}</tbody>
+      </tr>)}{rows.length === 0 && <tr><td colSpan={8}>Không có đề tài phù hợp.</td></tr>}</tbody>
     </table></div>
   </>
 }

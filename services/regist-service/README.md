@@ -1,5 +1,12 @@
 # Registration Service
 
+Windows: from the repository root, run `start-services.bat` to launch this service
+on port 8003 alongside Auth, Academic, Topic and the frontend. Prepare each
+service venv/requirements and `.env`, plus frontend dependencies, first.
+Use `start-services.bat --dry-run` to check prerequisites without starting servers.
+Stop each server with Ctrl+C in its own window. Consul/Gateway run separately;
+see the root README for setup and individual startup commands.
+
 This service owns the existing `Registrations` table and implements student topic
 registration. It reads academic/topic references through REST, validates JWTs
 locally, and never queries another service's tables. No schema migration is needed.
@@ -40,8 +47,9 @@ rejected. Successful registration response:
 
 GET registrations returns an array of those DTOs, newest first, restricted to the
 caller. Use `?status=active` or `?status=cancelled`; without a filter, both current
-and cancelled records are returned. No cross-service lookup is needed to list or
-cancel. Another student's registration ID returns the same 404 as an unknown ID.
+and cancelled records are returned. Listing needs no cross-service lookup.
+Student cancellation checks topic status through topic-service REST; another
+student's registration ID returns the same 404 as an unknown ID.
 
 ### Business rules and history
 
@@ -55,6 +63,9 @@ cancel. Another student's registration ID returns the same 404 as an unknown ID.
   records produce 409; this service does not silently repair legacy data.
 - DELETE changes only registration status, update time and server-derived actor;
   it preserves history. After cancellation, the student may register again.
+- Topic status 3 means registration is closed: student self-cancellation returns
+  409 `topic_registration_closed` without changing the record. An already cancelled
+  record still returns 204 without a topic lookup. Only status 2 accepts new registrations.
 - Repeating POST with the same current topic and semester returns the existing
   record, provided current academic/topic validation still passes. A different
   topic/semester or multiple current records returns 409. After an ambiguous
@@ -91,7 +102,7 @@ validation map. For example:
 | 401 | Missing, invalid or expired access JWT |
 | 403 | Non-student role, missing student or valid faculty (`permission_denied`) |
 | 404 | Missing topic, or missing/non-owned registration (`not_found`) |
-| 409 | Existing current registration or changed storage references (`registration_conflict`) |
+| 409 | Existing current registration, closed topic for student cancellation (`topic_registration_closed`), or changed storage references (`registration_conflict`) |
 | 503 | Dependency unavailable/malformed (`dependency_unavailable`) or storage lock/failure (`storage_unavailable`) |
 
 Response `X-Request-ID` is forwarded to dependencies. Mutation logs contain only
@@ -278,14 +289,21 @@ duplicates and keep one service instance per configured port.
 
 `GET /api/v1/topics/{topic_id}/registrations/?after=R099` (Gateway prefix
 `/registrations`) requires a bearer JWT with integer role1/admin or role2/lecturer.
-The existing shared topic-management policy allows both roles to read any topic
-roster. Student role3 and other roles receive403; missing/invalid JWT401.
+Administrators can read any roster. Lecturers can read only the roster of an
+assigned topic: the existing topic-service management REST client checks JWT
+user_id against advisor_id before reading registrations or looking up student names.
+Other/unassigned topics return 404 from topic-service (403 if an ownership mismatch
+is returned by the dependency); dependency outages return 503 without roster data.
+This uses existing `TOPIC_CLIENT` discovery, timeout (default 3 seconds, maximum
+10 seconds), and circuit settings, without automatic retries or a new rate limiter.
+Ownership is checked per read; concurrent reassignment is not atomic across services.
+Student role3 and other roles receive403; missing/invalid JWT401.
 Only registration-owned records are queried; no foreign table or ORM access.
 Cancelled status0 records are excluded. Nonzero and legacy null statuses remain
 current, consistent with existing registration policy. Order is registration_id
 ascending, up to100 rows/page; next_after is null on the final page. An unknown
-topic with no registrations returns an empty page (topic existence is handled
-by topic-service, not duplicated here). Unknown query fields or oversized cursor400;
+topic with no registrations returns an empty page for administrators; lecturer
+reads require successful topic ownership validation. Unknown query fields or oversized cursor400;
 unsupported writes405; registration storage failure503 with safe error DTO.
 
 Example response:
@@ -308,9 +326,10 @@ No new environment variables or schema changes are required.
 
 Management endpoint (Gateway prefix `/registrations`):
 `/api/v1/topics/{topic_id}/registrations/{registration_id}/`.
-Both GET and DELETE require a locally validated bearer JWT with integer role1
-(admin) or2 (lecturer), using the same shared topic management policy as the
-roster. Student self-cancellation endpoints and permissions remain unchanged.
+GET requires a locally validated bearer JWT with integer role 1 (admin) or 2
+(lecturer), with the same assigned-topic ownership check as the roster.
+DELETE requires role 1 (admin); lecturers receive 403 before any mutation.
+Student self-cancellation endpoints and permissions remain unchanged.
 
 - DELETE returns204 and soft-cancels the matching registration with status0.
   The record, student/topic references, semester and historical fields remain.
@@ -336,6 +355,28 @@ No new environment variables, schema or migrations.
 
 DELETE /registrations/api/v1/topics/{topic_id}/registrations/ through the gateway (direct /api/v1/topics/{topic_id}/registrations/) permanently removes all registrations for that exact topic, including status0 cancelled history and legacy-null statuses. This bulk operation differs from DELETE on an individual registration, which remains soft cancellation.
 
-Authentication: Bearer JWT validated locally; only integer roles1/admin and2/lecturer under the existing shared management policy. No student-supplied ownership or actor field is trusted. Success200: {"topic_id":"T1","deleted_count":3}. Missing/previously cleaned topic returns200 with count0; the service owns registrations and does not query the Topics table. The deletion occurs in one local transaction using the existing writer lock. Other topic registrations and student/user data remain intact. Request IDs are propagated and operation metadata logged without personal data or tokens.
+Authentication: Bearer JWT validated locally; only integer role 1/admin. Lecturers receive 403 before deletion. No student-supplied ownership or actor field is trusted. Success200: {"topic_id":"T1","deleted_count":3}. Missing/previously cleaned topic returns200 with count0; the service owns registrations and does not query the Topics table. The deletion occurs in one local transaction using the existing writer lock. Other topic registrations and student/user data remain intact. Request IDs are propagated and operation metadata logged without personal data or tokens.
 
 Errors:401 absent/invalid authentication,403 unauthorized role,409 changed storage references,503 unavailable storage. The topic-service caller uses bounded discovery/request timeouts and no automatic write retries. No new rate limiter is introduced. This endpoint is one step in topic deletion; it does not claim cross-service atomicity or restore history if the later topic deletion fails. Existing roster GET pagination and individual cancellation routes remain compatible.
+
+## Registration points
+
+The database-first `Registrations` table owns nullable `Point` (`NUMERIC`). `NULL` means ungraded. Apply `database/add_registration_point.py` to an older database before starting this backend, with `--db` and a new `--backup` path outside the repository. The script makes a SQLite backup, adds the nullable column in a transaction, and does not run Django migrations. Existing rows retain their data. Stop writers before schema deployment. To roll back the schema, stop writers and restore the backup after preserving any points entered since backup time. SQLite's shared writer lock and 3-second storage timeout still apply.
+
+`PUT /api/v1/topics/{topic_id}/registrations/{registration_id}/point/` (Gateway prefix `/registrations`) accepts `{"point":"8.50"}`. Decimal values must be 0–10 with at most two fractional digits. It requires a locally validated bearer JWT with integer role 1 (admin) or 2 (lecturer). Admin may grade any current registration, including topics without an advisor. A lecturer's JWT `user_id` must equal the topic's `advisor_id`. Grading and score revision require topic status 3 (registration closed); other statuses return 409 `topic_not_closed` without changing Point or audit fields. Both roles require the topic to exist: regist-service reads its management detail from topic-service's published `GET /api/v1/topics/{topic_id}/`; it never queries `Topics` directly. Discovery, bounded timeout (default 3 seconds, max 10), and circuit behavior use the existing `TOPIC_CLIENT` settings. Authorization is checked at request time; a concurrent topic change after lookup is not atomic across services. No automatic write retries or extra endpoint rate limiter are installed.
+
+Success `200` returns `{"registration_id":"R1","topic_id":"T1","point":"8.50","updated_at":"2026-10-14T01:00:00Z"}`. Repeating the same value succeeds without changing audit metadata. A changed value updates `Point`, `UpdatedAt`, and `UpdatedBy` (from the JWT) in one local transaction. `400` means invalid or extra fields; `401` invalid/missing JWT; `403` wrong role/advisor; `404` unknown or mismatched topic/registration; `409` cancelled registration; `503` topic reference or registration storage unavailable. Errors use `{ "code": "...", "detail": "..." }` without private values. `X-Request-ID` is forwarded and logged with method/status only.
+
+The student's existing `GET /api/v1/registrations/` returns `point` for only their own rows, including cancelled history. Admin role 1 and lecturer role 2 see `point` on the existing current-registration roster `GET /api/v1/topics/{topic_id}/registrations/`; cancelled rows remain excluded. The exact management `GET /api/v1/topics/{topic_id}/registrations/{registration_id}/` also returns `point` for reconciliation after an uncertain PUT. It uses the roster's existing read permissions. Clients must read this exact state before manually retrying an uncertain grade result.
+
+## GPA and capacity eligibility
+
+New registrations require `student.gpa >= topic.req_GPA` and `active distinct student count < topic.studentQuota`. Student context and topic reference fields come from published academic/topic REST DTOs over the existing Consul-discovered clients (bounded existing timeout/circuit policy; no new rate limit or automatic write retry). Never accept GPA, capacity or eligibility from the applicant and never query another service's tables. Malformed/missing requirements return 503 dependency_unavailable before writing.
+
+`POST /api/v1/registrations/` returns 400 `{"code":"gpa_requirement_not_met","detail":"Student GPA is below the topic requirement."}` for low GPA, or 409 `{"code":"topic_quota_full","detail":"Topic student quota has been reached."}` for full capacity. GPA equality passes. Existing JWT owner, faculty, open-topic and one-current-registration restrictions still apply. An equivalent existing topic/semester remains 200 after GPA/quota changes. Legacy/current records with Status NULL or nonzero count; Status 0 does not. Count DISTINCT non-null StudentId across all semesters. Cancelling releases capacity, and duplicate legacy rows for one student consume one seat.
+
+Capacity count/check/insert occur after acquiring the existing SQLite writer lock inside one transaction, so concurrent applicants cannot exceed the last seat. No REST request holds that lock. GPA/topic policy changes after their REST lookup are not atomic across services; requirements apply to new registrations without cancelling old ones.
+
+`GET /api/v1/available-topics/` keeps faculty filtering and upstream cursor behavior, including empty filtered pages. Each item adds `req_GPA`, `studentQuota`, `registered_count`, `eligible`, `ineligibility_reason`. Example: `{"topic_id":"T1","name":"SOA","major_id":"M1","status":2,"req_GPA":3,"studentQuota":2,"registered_count":1,"eligible":true,"ineligibility_reason":null}`. Ineligible topics stay visible; reason is `gpa_requirement_not_met` (first precedence) or `topic_quota_full`. Eligibility describes GPA/capacity only; owner/current-registration and status checks still run on submission. Counts are batched on registration-owned data. Topic default 0/1 and schema rollout/rollback are documented in the root README; no Registrations schema change is required.
+
+Quota storage bound: `studentQuota` is limited to 1–2147483647 (Django integer range); oversized values return validation errors.

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "command": "local-diagram-verification",
+  "status": "pass",
+  "verifiedAt": "2026-10-24T10:37:23.587730+00:00",
+  "specification": {
+    "path": ".archify/sequence-grade-registration-20261024/candidate.json",
+    "sha256": "8b3a12063588ba321b0ae158de4c3807a77b5bd98b52c9b4678aef2fcc2c5963",
+    "bytes": 9700
+  },
+  "artifact": {
+    "path": ".archify/sequence-grade-registration-20261024/grade-registration.html",
+    "sha256": "66725745a64f6d04c0ee97649d7da235145a278824848802787b599e913e8524",
+    "bytes": 836049
+  },
+  "counts": {
+    "participants": 5,
+    "messages": 16,
+    "phases": 4,
+    "noteBoxes": 0,
+    "secondaryAnnotations": 0,
+    "sideCards": 0
+  },
+  "checks": {
+    "jsonSvgAndEmbeddedSpec": "pass",
+    "messageReferencesLabelsAndOrdering": "pass",
+    "labelMasksAndPhaseBounds": "pass",
+    "localSourceAnchors": "pass",
+    "englishAuthoredContent": "pass",
+    "unchangedViewerRuntime": "pass",
+    "sourceContractAndGuardOrdering": "pass",
+    "offlineTextMeasurements": "pass: zero overflow; System.Drawing/Consolas approximation",
+    "offlineSvgGeometryPreview": "reviewed: no clipping/overlapping message labels detected; not a browser screenshot",
+    "viewerScriptCompilationAndEmbeddedJson": "pass"
+  },
+  "archifyCertification": "not-run",
+  "browserCheck": "unavailable: Computer Use reported no apps/browsers and a native pipe unavailable error",
+  "limitations": [
+    "Authored locally using the unchanged bundled viewer; original Archify CLI is unavailable.",
+    "Static source/geometry checks do not certify live browser fonts, interactions or export.",
+    "REST dependencies and APIs were not executed for this documentation-only task.",
+    "Offline preview approximates SVG using System.Drawing and Consolas; live browser/narrow viewport/export behavior was not verified."
+  ],
+  "sourceFiles": [
+    {
+      "path": "api-gateway/discovery.py",
+      "sha256": "e68d795a57287a7605dbaa41581b44e1df06152f27800928abebb9173b5ed2e6"
+    },
+    {
+      "path": "fe/src/features/topics/useTopicRoster.ts",
+      "sha256": "e6a51c61e64be357fed0cb9610d95b9a0e43902e12cefc92a7c5b5d6dc19fea6"
+    },
+    {
+      "path": "services/regist-service/RegistTopic/models.py",
+      "sha256": "65af77bd0b06bea6c614c444d431310aeb140a9f102734275ffac91fc9da8fc7"
+    },
+    {
+      "path": "services/regist-service/RegistTopic/services.py",
+      "sha256": "a9b14b5fa953f106b438f4b5a9fdb3c993042e61ddc19cc617f9cab067ee501b"
+    },
+    {
+      "path": "services/topic-service/topic_manager/views.py",
+      "sha256": "c6b91177e55f1d3b48e4a03b635596064dc6392c52cf5b0e8a58395a91fb1767"
+    }
+  ]
+}

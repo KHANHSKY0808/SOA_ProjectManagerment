@@ -25,11 +25,11 @@ class RegistrationReferenceTests(SimpleTestCase):
     @patch.object(Major.objects, "filter")
     @patch.object(Student.objects, "filter")
     def test_self_text_identity_and_faculty(self, students, majors):
-        students.return_value.first.return_value = SimpleNamespace(pk="SV001", major_id="M1")
+        students.return_value.first.return_value = SimpleNamespace(pk="SV001", major_id="M1", gpa=3.2)
         majors.return_value.values_list.return_value.first.return_value = "F1"
         result = self.client.get("/api/v1/registration-context/?student_id=other")
         self.assertEqual(result.status_code, 200)
-        self.assertEqual(result.data, {"student_id": "SV001", "department_id": "F1"})
+        self.assertEqual(result.data, {"student_id": "SV001", "department_id": "F1", "gpa": 3.2})
         students.assert_called_once_with(pk="SV001")
         majors.assert_called_once_with(pk="M1")
         self.faculties.return_value.exists.return_value = False

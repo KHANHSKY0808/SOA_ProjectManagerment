@@ -31,7 +31,7 @@ class RegistrationAPIView(APIView):
     def finalize_response(self, request, response, *args, **kwargs):
         response = super().finalize_response(request, response, *args, **kwargs)
         response["X-Request-ID"] = self.request_id
-        if request.method in {"POST", "DELETE"}:
+        if request.method in {"POST", "PUT", "DELETE"}:
             LOG.info("Registration operation method=%s status=%s request_id=%s",
                      request.method, response.status_code, self.request_id)
         return response
@@ -72,7 +72,8 @@ class RegistrationListCreateView(RegistrationAPIView):
 
 class RegistrationCancelView(RegistrationAPIView):
     def delete(self, request, pk):
-        services.cancel(request.auth["user_id"], pk)
+        services.cancel(request.auth["user_id"], pk,
+                        request.headers.get("Authorization", ""), self.request_id)
         return Response(status=204)
 
 

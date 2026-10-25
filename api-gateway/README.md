@@ -154,3 +154,74 @@ identity business logic. Public login/refresh/me forwarding is unchanged.
 Rebuild/recreate Gateway when deploying this policy; building the image alone
 leaves existing containers running their old configuration. Unit and isolated
 real-Nginx integration tests exercise the deny with public routing regressions.
+
+## Swagger and OpenAPI
+
+Open **http://localhost:8000/swagger/** for Swagger UI, or
+**http://localhost:8000/openapi.json** for the OpenAPI 3.0.3 document. Swagger UI
+5.33.1 JS/CSS and its license are vendored under `docs/vendor/`; their official
+release URLs and SHA-256 hashes are recorded in `manifest.json`. No CDN or remote
+schema validator is contacted at page load. The UI sets `validatorUrl: null`,
+`persistAuthorization: false`, and `queryConfigEnabled: false` using the
+[official Swagger UI configuration](https://swagger.io/docs/open-source-tools/swagger-ui/usage/configuration/).
+
+The static specification documents 38 paths and 75 operations across auth,
+academic (including legacy and composite profile endpoints), topics (both
+aliases), registrations, and gateway/service health. Log-service currently has
+no public business API or gateway prefix, so none is invented here. Internal
+auth contracts and Django admin pages are excluded. Documentation introduces no
+Django imports, schema introspection, database access, or runtime dependencies
+in any service. `nginx-docs.conf` is included by both the bootstrap configuration
+and discovery-generated configurations, so documentation survives discovery
+reloads and backend/Consul outages.
+
+The OpenAPI server URL `/` targets the gateway origin serving this page. Obtain
+an access token from `POST /auth/login/`, click **Authorize**, and paste only the
+access token; Swagger adds the `Bearer` prefix. A refresh token is not an access
+token. Authorization stays in memory and is cleared on page reload. The UI
+does not execute operations automatically. **Try it out → Execute** uses the
+existing endpoints, including real writes if selected. Service role/ownership
+checks apply exactly as they do for the frontend. A 503 from an API dependency
+does not prevent browsing documentation and does not imply an uncertain write
+can be safely replayed.
+
+Deployment: rebuild/recreate only the gateway from its directory:
+
+```powershell
+docker compose up -d --build api-gateway
+```
+
+No Django package install, migration, backend restart, new service, or port
+change is needed. Existing containers retain their previous files until
+recreated. For a separate, disposable verification image without replacing the
+running gateway:
+
+```powershell
+docker compose config --quiet
+docker build -t soa-api-gateway:swagger-test .
+docker run --rm --entrypoint nginx soa-api-gateway:swagger-test -t
+docker run --rm --mount "type=bind,source=$($PWD.Path)\tests,target=/tests,readonly" --entrypoint python3 soa-api-gateway:swagger-test /tests/integration.py
+```
+
+Maintain `docs/openapi.json` in the same task as route/DTO changes. It is a static
+contract, not a runtime-generated schema. `tests/test_openapi.py` checks published
+route/method coverage against service URL/view source, inherited DTO field
+coverage, local references, operation IDs, security declarations, partial update
+schemas, UI configuration, and vendored asset hashes without importing Django
+or querying a database. It does not prove all business rules or DTO constraints
+match; review those descriptions alongside affected service tests. The
+OpenAPI validator is test-only and is never installed into service environments
+or the gateway image. From the repository root, use an isolated tooling venv:
+
+```powershell
+python -m venv "$env:TEMP\soa-docs-venv"
+& "$env:TEMP\soa-docs-venv\Scripts\python.exe" -m pip install -r api-gateway/tests/requirements-docs.txt
+& "$env:TEMP\soa-docs-venv\Scripts\python.exe" -m unittest discover -s api-gateway/tests -p 'test_*.py'
+```
+
+Without the optional validator installed, the semantic-validation test is
+explicitly skipped; CI installs it and runs all checks. Isolated real-Nginx
+integration tests check documentation during bootstrap outages, after discovery
+reloads, local asset MIME types, HEAD/redirect behavior, rejected documentation
+writes, unknown assets, and existing JWT forwarding/internal-route blocks. They
+use mock backends and never contact real services or the project database.

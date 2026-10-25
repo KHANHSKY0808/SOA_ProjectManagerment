@@ -6,10 +6,18 @@ from rest_framework.response import Response
 from .clients import academic_client, DependencyUnavailable
 from .models import Registration
 from . import services
+from .serializers import PointRequestDTO, PointResponseDTO
 from .views import RegistrationAPIView
 
 
 class TopicManagerPermission(BasePermission):
+    def has_permission(self, request, view):
+        role = request.auth.get("role") if request.auth else None
+        return bool(request.user and request.user.is_authenticated and type(role) is int
+                    and (role == 1 or (role == 2 and request.method in ("GET", "HEAD", "OPTIONS"))))
+
+
+class TopicGraderPermission(BasePermission):
     def has_permission(self, request, view):
         role = request.auth.get("role") if request.auth else None
         return bool(request.user and request.user.is_authenticated and type(role) is int and role in (1, 2))
@@ -31,6 +39,7 @@ class RosterStudent(serializers.Serializer):
     semester = serializers.CharField(allow_null=True)
     status = serializers.IntegerField(allow_null=True)
     created_at = serializers.DateTimeField(allow_null=True)
+    point = serializers.DecimalField(max_digits=4, decimal_places=2, allow_null=True)
 
 
 class RosterPage(serializers.Serializer):
@@ -44,7 +53,15 @@ class RegistrationPurgeDTO(serializers.Serializer):
     deleted_count = serializers.IntegerField(min_value=0)
 
 
-class TopicRegistrationsView(RegistrationAPIView):
+class AdvisorReadMixin:
+    def check_advisor(self, request, topic_id):
+        if request.auth["role"] == 2:
+            services.require_topic_advisor(
+                request.auth["user_id"], topic_id,
+                request.headers.get("Authorization", ""), self.request_id)
+
+
+class TopicRegistrationsView(AdvisorReadMixin, RegistrationAPIView):
     permission_classes = [TopicManagerPermission]
     http_method_names = ["get", "delete", "head", "options"]
 
@@ -53,6 +70,7 @@ class TopicRegistrationsView(RegistrationAPIView):
         return Response(RegistrationPurgeDTO({"topic_id": topic_id, "deleted_count": count}).data)
 
     def get(self, request, topic_id):
+        self.check_advisor(request, topic_id)
         query = RosterQuery(data=request.query_params)
         query.is_valid(raise_exception=True)
         rows = list(Registration.objects.filter(topic_id=topic_id,
@@ -71,7 +89,7 @@ class TopicRegistrationsView(RegistrationAPIView):
                 incomplete = True
         results = [{"registration_id": row.pk, "student_id": row.student_id,
                     "student_name": names.get(row.student_id), "semester": row.semester,
-                    "status": row.status, "created_at": row.created_at} for row in page]
+                    "status": row.status, "created_at": row.created_at, "point": row.point} for row in page]
         return Response(RosterPage({"results": results,
                         "next_after": page[-1].pk if len(rows) > 100 else None,
                         "names_unavailable": incomplete}).data)
@@ -81,13 +99,28 @@ class RegistrationStateDTO(serializers.Serializer):
     registration_id = serializers.CharField()
     topic_id = serializers.CharField()
     status = serializers.IntegerField(allow_null=True)
+    point = serializers.DecimalField(max_digits=4, decimal_places=2, allow_null=True)
 
 
-class TopicRegistrationDetailView(RegistrationAPIView):
+class TopicRegistrationPointView(RegistrationAPIView):
+    permission_classes = [TopicGraderPermission]
+    http_method_names = ["put", "options"]
+
+    def put(self, request, topic_id, registration_id):
+        dto = PointRequestDTO(data=request.data)
+        dto.is_valid(raise_exception=True)
+        obj = services.grade_topic_registration(
+            request.auth["user_id"], request.auth["role"], topic_id, registration_id, dto.validated_data["point"],
+            request.headers.get("Authorization", ""), self.request_id)
+        return Response(PointResponseDTO(obj).data)
+
+
+class TopicRegistrationDetailView(AdvisorReadMixin, RegistrationAPIView):
     permission_classes = [TopicManagerPermission]
     http_method_names = ["get", "delete", "head", "options"]
 
     def get(self, request, topic_id, registration_id):
+        self.check_advisor(request, topic_id)
         obj = services.get_topic_registration(topic_id, registration_id)
         return Response(RegistrationStateDTO(obj).data)
 

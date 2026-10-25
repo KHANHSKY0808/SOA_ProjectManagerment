@@ -172,6 +172,7 @@ def render(instances):
             lines.extend(f"server {server};" for server in servers)
             lines.append("}")
     lines.extend(["server {", "listen 80;", "server_name _;", "default_type application/json;",
+                  "include /opt/gateway/docs/nginx-docs.conf;",
                   '''location = /health/ { return 200 '{"status":"ok","service":"api-gateway"}'; }''',
                   'error_page 502 504 =503 @unavailable;',
                   '''location @unavailable { return 503 '{"detail":"Service unavailable."}'; }''',

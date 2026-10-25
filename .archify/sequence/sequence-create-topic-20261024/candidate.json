@@ -1,0 +1,433 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Create a Topic",
+    "output": ".archify/sequence-create-topic-20261024/create-topic.html",
+    "quality_profile": "showcase",
+    "language": "en",
+    "repository": {
+      "url": "https://github.com/YangKlee/SOA_ProjectManagerment",
+      "revision": "0527ab58cd5e19bec2cea96891097588ea120bba",
+      "provider": "github"
+    },
+    "provenance": {
+      "created_at": "2026-10-24T10:37:23.587730+00:00",
+      "source": "current local working tree",
+      "base_revision": "0527ab58cd5e19bec2cea96891097588ea120bba",
+      "uncommitted_sources": false,
+      "renderer": "local SVG authoring with unchanged bundled Archify viewer",
+      "archify_certification": "not-run"
+    }
+  },
+  "layout": {
+    "width": 1640,
+    "height": 1923,
+    "participant_x": {
+      "actor": 160.0,
+      "gateway": 490.0,
+      "topic": 820.0,
+      "academic": 1150.0,
+      "topic_db": 1480.0
+    }
+  },
+  "participants": [
+    {
+      "id": "actor",
+      "label": "Admin / React UI",
+      "type": "frontend",
+      "sublabel": "Role 1",
+      "sources": [
+        {
+          "path": "fe/src/features/topics/useTopics.ts",
+          "line": 156,
+          "label": "Topic creation and update forms"
+        }
+      ]
+    },
+    {
+      "id": "gateway",
+      "label": "API Gateway",
+      "type": "cloud",
+      "sublabel": "Nginx :8000",
+      "sources": [
+        {
+          "path": "api-gateway/discovery.py",
+          "line": 164,
+          "label": "Gateway route generation and header forwarding"
+        }
+      ]
+    },
+    {
+      "id": "topic",
+      "label": "topic-service",
+      "type": "backend",
+      "sublabel": "Django REST :8004",
+      "sources": [
+        {
+          "path": "services/topic-service/topic_manager/services.py",
+          "line": 36,
+          "label": "Topic save transaction and reference validation"
+        }
+      ]
+    },
+    {
+      "id": "academic",
+      "label": "academic-service",
+      "type": "backend",
+      "sublabel": "Django REST :8002",
+      "sources": [
+        {
+          "path": "services/topic-service/topic_manager/clients.py",
+          "line": 82,
+          "label": "Academic reference and name contracts"
+        }
+      ]
+    },
+    {
+      "id": "topic_db",
+      "label": "Topics / SQLite",
+      "type": "database",
+      "sublabel": "Owned by topic-service",
+      "sources": [
+        {
+          "path": "services/topic-service/topic_manager/models.py",
+          "line": 4,
+          "label": "Topics table owned by topic-service"
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 504,
+      "label": "1. Submit a new topic"
+    },
+    {
+      "from": 532,
+      "to": 1112,
+      "label": "2. Validate academic references before writing"
+    },
+    {
+      "from": 1140,
+      "to": 1449,
+      "label": "3. Topic-owned local transaction"
+    },
+    {
+      "from": 1477,
+      "to": 1878,
+      "label": "4. Enrich the committed response and return"
+    }
+  ],
+  "messages": [
+    {
+      "from": "actor",
+      "to": "actor",
+      "label": "Generate topic UUID; enter topic fields and GPA/quota",
+      "variant": "emphasis",
+      "id": "create-topic-01",
+      "lines": [
+        "Generate topic UUID; enter topic fields and GPA/quota"
+      ],
+      "y": 226,
+      "phase": 0
+    },
+    {
+      "from": "actor",
+      "to": "gateway",
+      "label": "POST /topics/api/v1/topics/",
+      "variant": "emphasis",
+      "id": "create-topic-02",
+      "lines": [
+        "POST /topics/api/v1/topics/"
+      ],
+      "y": 318,
+      "phase": 0
+    },
+    {
+      "from": "gateway",
+      "to": "topic",
+      "label": "POST /api/v1/topics/ + Bearer JWT",
+      "variant": "default",
+      "id": "create-topic-03",
+      "lines": [
+        "POST /api/v1/topics/ + Bearer JWT"
+      ],
+      "y": 390,
+      "phase": 0
+    },
+    {
+      "from": "topic",
+      "to": "topic",
+      "label": "Admin role=1 + DTO validation; failures -> 401/403/400",
+      "variant": "emphasis",
+      "id": "create-topic-04",
+      "lines": [
+        "Admin role=1 + DTO validation; failures -> 401/403/400"
+      ],
+      "y": 462,
+      "phase": 0
+    },
+    {
+      "from": "topic",
+      "to": "academic",
+      "label": "GET /api/majors/{major_id}/",
+      "variant": "default",
+      "id": "create-topic-05",
+      "lines": [
+        "GET /api/majors/{major_id}/"
+      ],
+      "y": 598,
+      "phase": 1
+    },
+    {
+      "from": "academic",
+      "to": "topic",
+      "label": "200 major / 404 missing / lookup failure",
+      "variant": "return",
+      "id": "create-topic-06",
+      "lines": [
+        "200 major / 404 missing / lookup failure"
+      ],
+      "y": 670,
+      "phase": 1
+    },
+    {
+      "from": "topic",
+      "to": "topic",
+      "label": "Missing reference -> 400; lookup failure -> 503; stop",
+      "variant": "emphasis",
+      "id": "create-topic-07",
+      "lines": [
+        "Missing reference -> 400; lookup failure -> 503; stop"
+      ],
+      "y": 742,
+      "phase": 1
+    },
+    {
+      "from": "topic",
+      "to": "academic",
+      "label": "[If advisor_id] GET /api/lecturers/{advisor_id}/",
+      "variant": "default",
+      "id": "create-topic-08",
+      "lines": [
+        "[If advisor_id] GET /api/lecturers/{advisor_id}/"
+      ],
+      "y": 834,
+      "phase": 1
+    },
+    {
+      "from": "academic",
+      "to": "topic",
+      "label": "200 lecturer / 404 missing / lookup failure",
+      "variant": "return",
+      "id": "create-topic-09",
+      "lines": [
+        "200 lecturer / 404 missing / lookup failure"
+      ],
+      "y": 906,
+      "phase": 1
+    },
+    {
+      "from": "topic",
+      "to": "topic",
+      "label": "Missing reference -> 400; lookup failure -> 503; stop",
+      "variant": "emphasis",
+      "id": "create-topic-10",
+      "lines": [
+        "Missing reference -> 400; lookup failure -> 503; stop"
+      ],
+      "y": 978,
+      "phase": 1
+    },
+    {
+      "from": "topic",
+      "to": "topic",
+      "label": "Omitted defaults: status=1, req_GPA=0, studentQuota=1",
+      "variant": "emphasis",
+      "id": "create-topic-11",
+      "lines": [
+        "Omitted defaults: status=1, req_GPA=0, studentQuota=1"
+      ],
+      "y": 1070,
+      "phase": 1
+    },
+    {
+      "from": "topic",
+      "to": "topic_db",
+      "label": "BEGIN; SELECT duplicate TopicId",
+      "variant": "emphasis",
+      "id": "create-topic-12",
+      "lines": [
+        "BEGIN; SELECT duplicate TopicId"
+      ],
+      "y": 1206,
+      "phase": 2
+    },
+    {
+      "from": "topic_db",
+      "to": "topic",
+      "label": "Duplicate -> 409; otherwise continue",
+      "variant": "return",
+      "id": "create-topic-13",
+      "lines": [
+        "Duplicate -> 409; otherwise continue"
+      ],
+      "y": 1278,
+      "phase": 2
+    },
+    {
+      "from": "topic",
+      "to": "topic_db",
+      "label": "INSERT Topics + created/updated audit fields",
+      "variant": "emphasis",
+      "id": "create-topic-14",
+      "lines": [
+        "INSERT Topics + created/updated audit fields"
+      ],
+      "y": 1350,
+      "phase": 2
+    },
+    {
+      "from": "topic_db",
+      "to": "topic",
+      "label": "COMMIT new topic / conflict 409 / storage 503",
+      "variant": "return",
+      "id": "create-topic-15",
+      "lines": [
+        "COMMIT new topic / conflict 409 / storage 503"
+      ],
+      "y": 1422,
+      "phase": 2
+    },
+    {
+      "from": "topic",
+      "to": "academic",
+      "label": "POST /api/v1/topic-display-names/",
+      "variant": "default",
+      "id": "create-topic-16",
+      "lines": [
+        "POST /api/v1/topic-display-names/"
+      ],
+      "y": 1543,
+      "phase": 3
+    },
+    {
+      "from": "academic",
+      "to": "topic",
+      "label": "200 major/advisor names / lookup failure",
+      "variant": "return",
+      "id": "create-topic-17",
+      "lines": [
+        "200 major/advisor names / lookup failure"
+      ],
+      "y": 1615,
+      "phase": 3
+    },
+    {
+      "from": "topic",
+      "to": "topic",
+      "label": "[On lookup failure] keep saved topic; names=null",
+      "variant": "emphasis",
+      "id": "create-topic-18",
+      "lines": [
+        "[On lookup failure] keep saved topic; names=null"
+      ],
+      "y": 1687,
+      "phase": 3
+    },
+    {
+      "from": "topic",
+      "to": "gateway",
+      "label": "201 Created - TopicResponseDTO",
+      "variant": "return",
+      "id": "create-topic-19",
+      "lines": [
+        "201 Created - TopicResponseDTO"
+      ],
+      "y": 1779,
+      "phase": 3
+    },
+    {
+      "from": "gateway",
+      "to": "actor",
+      "label": "201 -> close form and reload topic list",
+      "variant": "return",
+      "id": "create-topic-20",
+      "lines": [
+        "201 -> close form and reload topic list"
+      ],
+      "y": 1851,
+      "phase": 3
+    }
+  ],
+  "activations": [
+    {
+      "participant": "actor",
+      "from": 223,
+      "to": 324,
+      "type": "frontend"
+    },
+    {
+      "participant": "gateway",
+      "from": 315,
+      "to": 396,
+      "type": "cloud"
+    },
+    {
+      "participant": "topic",
+      "from": 387,
+      "to": 486,
+      "type": "backend"
+    },
+    {
+      "participant": "topic",
+      "from": 595,
+      "to": 1094,
+      "type": "backend"
+    },
+    {
+      "participant": "academic",
+      "from": 595,
+      "to": 912,
+      "type": "backend"
+    },
+    {
+      "participant": "topic",
+      "from": 1203,
+      "to": 1428,
+      "type": "backend"
+    },
+    {
+      "participant": "topic_db",
+      "from": 1203,
+      "to": 1428,
+      "type": "database"
+    },
+    {
+      "participant": "actor",
+      "from": 1848,
+      "to": 1857,
+      "type": "frontend"
+    },
+    {
+      "participant": "gateway",
+      "from": 1776,
+      "to": 1857,
+      "type": "cloud"
+    },
+    {
+      "participant": "topic",
+      "from": 1540,
+      "to": 1785,
+      "type": "backend"
+    },
+    {
+      "participant": "academic",
+      "from": 1540,
+      "to": 1621,
+      "type": "backend"
+    }
+  ]
+}

@@ -10,6 +10,7 @@ import { AcademicRoutePage } from './AcademicRoutePage'
 import { NotFoundPage } from './NotFoundPage'
 import { TopicPage } from '../features/topics/TopicPage'
 import { StudentRegistrationPage } from '../features/registrations/StudentRegistrationPage'
+import { AdminRegistrationPage } from '../features/registrations/AdminRegistrationPage'
 
 export function App() {
   return (
@@ -24,7 +25,8 @@ export function App() {
             const academicId = role === 1 ? ACADEMIC_PAGE_IDS.find((id) => id === item.id) : undefined
             return <Route key={item.id} path={item.path} element={academicId
               ? <AcademicRoutePage id={academicId} /> : item.id === 'topics' ? <TopicPage /> : role === 3 && item.id === 'registrations'
-                ? <StudentRegistrationPage /> : <DashboardPlaceholderPage />} />
+                ? <StudentRegistrationPage /> : role === 1 && item.id === 'registrations'
+                  ? <AdminRegistrationPage /> : <DashboardPlaceholderPage />} />
           })}
           <Route path="*" element={<NotFoundPage withinLayout />} />
         </Route>

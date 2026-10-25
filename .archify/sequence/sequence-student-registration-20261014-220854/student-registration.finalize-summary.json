@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "status": "historical",
+  "appliesToCurrentArtifact": false,
+  "invalidatedAt": "2026-10-24T10:18:16.962444+00:00",
+  "reason": "Diagram specification and SVG updated for current GPA/quota implementation; prior Archify/visual checks do not verify this artifact.",
+  "historical_receipt": {
+    "schemaVersion": 1,
+    "ok": true,
+    "command": "finalize",
+    "status": "pass",
+    "type": "sequence",
+    "quality": "showcase",
+    "specification": {
+      "path": "D:\\Work\\SOA_ProjectManagerment\\.archify\\sequence-student-registration-20261014-220854\\candidate.json",
+      "sha256": "4ccae4d6561611b86e707e4d1f914dc91171d62f5c10342106916a578541467e",
+      "bytes": 6741
+    },
+    "artifact": {
+      "path": "D:\\Work\\SOA_ProjectManagerment\\.archify\\sequence-student-registration-20261014-220854\\student-registration.html",
+      "sha256": "067a99af1e33c60eb5cacc7186e92741d36c6705fe8d023fc567bdddbc1d5d99",
+      "bytes": 835276
+    },
+    "gates": {
+      "validate": "pass",
+      "deliver": "pass",
+      "check": "pass",
+      "browser-check": "pass"
+    },
+    "diagnostics": [],
+    "diagnosticSummary": {
+      "total": 0,
+      "shown": 0,
+      "truncated": false
+    },
+    "evidence": {
+      "receipt": "D:\\Work\\SOA_ProjectManagerment\\.archify\\sequence-student-registration-20261014-220854\\student-registration.finalize.json",
+      "summaryReceipt": "D:\\Work\\SOA_ProjectManagerment\\.archify\\sequence-student-registration-20261014-220854\\student-registration.finalize-summary.json",
+      "browserCheckReceipt": "D:\\Work\\SOA_ProjectManagerment\\.archify\\sequence-student-registration-20261014-220854\\student-registration.browser-check.json"
+    },
+    "update": {
+      "status": "current",
+      "installedVersion": "3.1.0",
+      "availableVersion": "3.1.0",
+      "releaseNotes": null,
+      "checkedAt": "2026-10-14T14:04:48.132Z",
+      "source": "cache",
+      "noticeRequired": false,
+      "noticeText": null
+    },
+    "visualReview": "not-requested",
+    "durationMs": 14209
+  }
+}

@@ -6,7 +6,7 @@ import { createTopic, deleteTopic, getTopic, getTopicDetail, listTopics, updateT
 import type { CreateTopic, Topic, TopicDetail, TopicUpdate, TopicStatus } from './topic-api'
 import { createTopicId } from './topic-id'
 
-export type TopicField = 'status' | 'name' | 'description' | 'advisor_id' | 'major_id'
+export type TopicField = 'status' | 'name' | 'description' | 'advisor_id' | 'major_id' | 'req_GPA' | 'studentQuota'
 export const numericMajor = (id: string) => /^[0-9]+$/.test(id)
 type DialogMode = 'create' | 'detail' | 'edit' | 'delete' | null
 const fields = ['name', 'description', 'advisor_id', 'major_id'] as const
@@ -15,7 +15,8 @@ const ambiguousWrite = (cause: unknown) => {
   return failure.kind === 'network' || failure.kind === 'timeout' || failure.kind === 'unknown' || (failure.status ?? 0) >= 500
 }
 
-export function useTopics(canManage: boolean, logout: () => void, canSetStatus = false) {
+export function useTopics(canManage: boolean, logout: () => void, canSetStatus = false, canCreate = canManage, userRole?: number, currentUserId?: string) {
+  const isLecturer = userRole === 2
   const [rows, setRows] = useState<Topic[]>([])
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState('')
@@ -37,6 +38,8 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
   const [busy, setBusy] = useState(false)
   const [uncertain, setUncertain] = useState(false)
   const [notice, setNotice] = useState('')
+  const [approval, setApproval] = useState<Topic | null>(null)
+  const [approvalError, setApprovalError] = useState('')
   const locked = useRef(false)
   const original = useRef<CreateTopic | null>(null)
   const pendingPatch = useRef<TopicUpdate>({})
@@ -83,7 +86,8 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
     setOptionsReady(false); setOptionsLoading(true); setOptionsError('')
     try {
       const [courses, advisors] = await Promise.all([
-        listRecords('majors', controller.signal), listRecords('lecturers', controller.signal),
+        listRecords('majors', controller.signal),
+        isLecturer ? Promise.resolve<Lecturer[]>([]) : listRecords('lecturers', controller.signal),
       ])
       if (controller.signal.aborted) return
       setMajors(courses); setLecturers(advisors); setOptionsReady(true)
@@ -97,11 +101,11 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
     setDetail(null); setDetailError(''); setDraft(null); original.current = null
   }
   function open() {
-    if (!canManage || locked.current || mode) return
+    if (!canCreate || locked.current || mode || approval) return
     try {
       const id = createTopicId()
       resetForm(); setMode('create'); setSelected(null)
-      setDraft({ topic_id: id, name: '', description: '', advisor_id: '', major_id: '', ...(canSetStatus ? { status: 1 as const } : {}) })
+      setDraft({ topic_id: id, name: '', description: '', advisor_id: isLecturer ? (currentUserId || '') : '', major_id: '', req_GPA: 0, studentQuota: 1, ...(canSetStatus ? { status: 2 as const } : isLecturer ? { status: 0 as const } : {}) })
       void loadOptions()
     } catch {
       setListError('Không thể sinh mã đề tài. Vui lòng thử lại hoặc cập nhật trình duyệt.')
@@ -118,8 +122,8 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
       if (editing) {
         if (typeof result.major_id !== 'string' || !result.major_id ||
             !(result.advisor_id === null || typeof result.advisor_id === 'string')) throw new Error('Missing management references')
-        const value: CreateTopic = { topic_id: result.topic_id, name: result.name, description: result.description ?? '',
-          major_id: result.major_id, advisor_id: result.advisor_id ?? '', ...(canSetStatus && (result.status === 0 || result.status === 1 || result.status === 2) ? { status: result.status } : {}) }
+        const value: CreateTopic = { topic_id: result.topic_id, name: result.name, description: result.description ?? '', req_GPA: result.req_GPA, studentQuota: result.studentQuota,
+          major_id: result.major_id, advisor_id: result.advisor_id ?? '', ...(canSetStatus && (result.status === 0 || result.status === 1 || result.status === 2 || result.status === 3) ? { status: result.status } : {}) }
         original.current = value; setDraft(value)
       }
       setDetail(result)
@@ -128,7 +132,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
     } finally { if (!controller.signal.aborted) setDetailLoading(false) }
   }
   function show(row: Topic, next: 'detail' | 'edit' | 'delete') {
-    if (locked.current || mode || (next !== 'detail' && !canManage)) return
+    if (locked.current || mode || approval || (next !== 'detail' && !canManage)) return
     resetForm(); setSelected(row); setMode(next)
     if (next !== 'delete') void loadDetail(row, next === 'edit')
     if (next === 'edit') void loadOptions()
@@ -145,8 +149,9 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
     if (!locked.current) dismiss()
   }
   function change(key: TopicField, value: string) {
-    if (locked.current || uncertain || (key === 'status' && !canSetStatus)) return
-    setDraft(previous => previous && { ...previous, [key]: key === 'status' ? (value === '' ? undefined : Number(value) as TopicStatus) : value })
+    if (locked.current || uncertain || (key === 'status' && !canSetStatus) || (key === 'advisor_id' && isLecturer)) return
+    if (key === 'status' && (![2, 3].includes(Number(value)) || (mode === 'edit' && original.current?.status === 0))) return
+    setDraft(previous => previous && { ...previous, [key]: key === 'status' ? (value === '' ? undefined : Number(value) as TopicStatus) : key === 'req_GPA' || key === 'studentQuota' ? (value === '' ? NaN : Number(value)) : value })
     setErrors(previous => ({ ...previous, [key]: undefined }))
   }
   async function saved(message: string) {
@@ -154,19 +159,27 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
     await reload()
   }
   async function save(): Promise<TopicField | undefined> {
-    if (!canManage || !draft || locked.current || !optionsReady || uncertain || (mode !== 'create' && mode !== 'edit')) return
+    if (!canCreate || !draft || locked.current || !optionsReady || uncertain || (mode !== 'create' && mode !== 'edit')) return
+
     const editing = mode === 'edit'
-    const values = { ...draft, name: draft.name.trim() }
+    if (editing && !canManage) return
+
+    const values = { ...draft, name: draft.name.trim(), ...(isLecturer ? { advisor_id: currentUserId || draft.advisor_id, status: 0 as const } : {}) }
     const changed = (key: TopicField) => !editing || values[key] !== original.current?.[key]
     const invalid: Partial<Record<TopicField, string>> = {}
+    if (!Number.isFinite(values.req_GPA) || values.req_GPA < 0 || values.req_GPA > 4) invalid.req_GPA = 'GPA yêu cầu phải từ 0 đến 4.'
+    if (!Number.isSafeInteger(values.studentQuota) || values.studentQuota < 1 || values.studentQuota > 2147483647) invalid.studentQuota = 'Chỉ tiêu phải là số nguyên dương tối đa 2147483647.'
     if (!values.name) invalid.name = 'Vui lòng nhập tên đề tài.'
-    if (changed('advisor_id') && !lecturers.some(row => row.lecturer_id === draft.advisor_id)) invalid.advisor_id = 'Vui lòng chọn giáo viên hướng dẫn.'
+    if (!isLecturer && changed('advisor_id') && !lecturers.some(row => row.lecturer_id === draft.advisor_id)) invalid.advisor_id = 'Vui lòng chọn giáo viên hướng dẫn.'
     if (changed('major_id') && (!majors.some(row => row.major_id === draft.major_id) || !numericMajor(draft.major_id))) invalid.major_id = 'Vui lòng chọn ngành có mã số hợp lệ.'
-    if (canSetStatus && (!editing || changed('status')) && ![0, 1, 2].includes(values.status as number)) invalid.status = 'Vui lòng chọn trạng thái hợp lệ.'
+    if (canSetStatus && (!editing || changed('status')) &&
+        (![2, 3].includes(values.status as number) || (editing && original.current?.status === 0))) invalid.status = 'Vui lòng chọn trạng thái hợp lệ.'
     setErrors(invalid)
     const first = Object.keys(invalid)[0] as TopicField | undefined
     if (first) return first
     const patch: TopicUpdate = {}
+    if (changed('req_GPA')) patch.req_GPA = values.req_GPA
+    if (changed('studentQuota')) patch.studentQuota = values.studentQuota
     for (const key of fields) if (changed(key)) patch[key] = key === 'description' ? values[key].trim() : values[key]
     if (canSetStatus && changed('status') && values.status !== undefined) patch.status = values.status
     if (editing && !Object.keys(patch).length) { close(); setNotice('Không có thay đổi.'); return }
@@ -178,7 +191,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
       if (editing) await updateTopic(draft.topic_id, patch, controller.signal)
       else {
         const { status, ...input } = values
-        await createTopic(canSetStatus ? { ...input, status } : input, controller.signal)
+        await createTopic(canSetStatus || isLecturer ? { ...input, status } : input, controller.signal)
       }
       if (!controller.signal.aborted) {
         await saved(editing ? 'Đã cập nhật đề tài.' : 'Đã tạo đề tài.')
@@ -193,7 +206,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
       if (failure.status === 400 && failure.details && typeof failure.details === 'object') {
         const details = failure.details as Record<string, unknown>
         const next: Partial<Record<TopicField, string>> = {}
-        for (const key of [...fields, 'status'] as const) if (key in details) next[key] = 'Giá trị không hợp lệ. Vui lòng kiểm tra lại.'
+        for (const key of [...fields, 'status', 'req_GPA', 'studentQuota'] as const) if (key in details) next[key] = 'Giá trị không hợp lệ. Vui lòng kiểm tra lại.'
         setErrors(next)
         return Object.keys(next)[0] as TopicField | undefined
       }
@@ -222,7 +235,7 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
   }
   async function checkResult() {
     const id = draft?.topic_id ?? selected?.topic_id
-    if (!canManage || !id || !uncertain || locked.current) return
+    if (!(canManage || (canCreate && mode === 'create')) || !id || !uncertain || locked.current) return
     locked.current = true; setBusy(true); setFormError('')
     const controller = new AbortController()
     mutation.current = controller
@@ -252,11 +265,48 @@ export function useTopics(canManage: boolean, logout: () => void, canSetStatus =
       } else setFormError(failureMessage(cause))
     } finally { locked.current = false; if (!controller.signal.aborted) setBusy(false) }
   }
+  async function approve(row: Topic, checking = false) {
+    if (!canManage || locked.current || mode || (checking ? approval?.topic_id !== row.topic_id : !!approval || row.status !== 0)) return
+    locked.current = true; setBusy(true); setApproval(row); setApprovalError(''); setNotice('')
+    loadRequest.current?.abort()
+    const controller = new AbortController()
+    mutation.current = controller
+    try {
+      if (checking) {
+        const current = await getTopic(row.topic_id, controller.signal)
+        if (controller.signal.aborted) return
+        setApproval(null)
+        setRows(previous => previous.map(item => item.topic_id === current.topic_id ? current : item))
+        if (current.status === 1) setNotice('Đã xác nhận đề tài được duyệt.')
+        else if (current.status === 0) setApprovalError('Đề tài vẫn chờ duyệt. Bạn có thể bấm Duyệt lại nếu cần.')
+        else setApprovalError('Trạng thái đề tài đã thay đổi. Hãy kiểm tra danh sách trước khi thao tác tiếp.')
+      } else {
+        await updateTopic(row.topic_id, { status: 1 }, controller.signal)
+        if (controller.signal.aborted) return
+        setApproval(null)
+        setRows(previous => previous.map(item => item.topic_id === row.topic_id ? { ...item, status: 1 } : item))
+        setNotice('Đã duyệt đề tài.')
+      }
+      await reload()
+    } catch (cause) {
+      if (controller.signal.aborted) return
+      const failure = normalizeApiError(cause)
+      if (failure.status === 404) {
+        setApproval(null); setApprovalError('Đề tài không còn tồn tại.'); await reload()
+      } else {
+        if (!checking && !ambiguousWrite(cause)) setApproval(null)
+        const message = failureMessage(cause)
+        setApprovalError(checking ? `${message} Chưa kiểm tra được kết quả duyệt. Vui lòng kiểm tra lại.` :
+          ambiguousWrite(cause) ? `${message} Chưa xác định kết quả duyệt. Hãy kiểm tra trước khi gửi lại.` : message)
+      }
+    } finally { locked.current = false; if (!controller.signal.aborted) setBusy(false) }
+  }
   const normalized = appliedQuery.toLocaleLowerCase('vi')
   const visibleRows = rows.filter(row => [row.topic_id, row.name].some(value => value.toLocaleLowerCase('vi').includes(normalized)))
   return { rows: visibleRows, total: rows.length, loading, listError, query, setQuery,
     search: () => setAppliedQuery(query.trim()), reload, mode, selected, detail, detailLoading, detailError, retryDetail,
-    canSetStatus, draft, majors, lecturers, optionsReady, optionsLoading, optionsError, loadOptions, formError, errors, busy,
-    uncertain, notice, open, show, close, change, save, remove, checkResult }
+    canSetStatus, isLecturer, draft, majors, lecturers, optionsReady, optionsLoading, optionsError, loadOptions, formError, errors, busy,
+    uncertain, notice, open, show, close, change, save, remove, checkResult,
+    approval, approvalError, approve, checkApproval: () => { if (approval) void approve(approval, true) } }
 }
 export type TopicState = ReturnType<typeof useTopics>

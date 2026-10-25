@@ -1,0 +1,213 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Django & DRF HTTP Request-Response Lifecycle",
+    "output": ".archify/workflow-django-request-lifecycle-20261014-220854/request-lifecycle.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/YangKlee/SOA_ProjectManagerment",
+      "revision": "75e912c2f0899e34fb02c6b6238acb28affb1ef3",
+      "provider": "github"
+    }
+  },
+  "lanes": [
+    { "id": "ingress", "label": "Client & Protocol Interface" },
+    { "id": "middleware", "label": "Django Middleware Pipeline" },
+    { "id": "routing", "label": "URLconf & DRF Controller" },
+    { "id": "execution", "label": "Serializer & ORM Execution" }
+  ],
+  "phases": [
+    { "id": "phase-ingress", "label": "1. Ingress & Middlewares", "fromCol": 0, "toCol": 1 },
+    { "id": "phase-dispatch", "label": "2. Routing & Controller", "fromCol": 2, "toCol": 3 },
+    { "id": "phase-exec", "label": "3. Validation, ORM & Response", "fromCol": 4, "toCol": 5 }
+  ],
+  "groups": [
+    { "id": "group-routing", "label": "Routing & Dispatch", "lane": "routing", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "group-exec", "label": "Data Persistence", "lane": "execution", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": [
+    "client_req",
+    "middleware_stack",
+    "url_resolver",
+    "drf_controller",
+    "serializer_val",
+    "orm_db",
+    "client_res"
+  ],
+  "nodes": [
+    {
+      "id": "client_req",
+      "lane": "ingress",
+      "col": 0,
+      "type": "frontend",
+      "label": "HTTP Client Request",
+      "sublabel": "Headers + JSON Payload",
+      "tag": "GET / POST / PUT",
+      "sources": [
+        {
+          "path": "fe/package.json",
+          "line": 1,
+          "end_line": 23,
+          "label": "React Client Request"
+        }
+      ]
+    },
+    {
+      "id": "middleware_stack",
+      "lane": "middleware",
+      "col": 1,
+      "type": "security",
+      "label": "Django Middlewares",
+      "sublabel": "Security, CORS & Auth",
+      "tag": "process_request()",
+      "sources": [
+        {
+          "path": "api-gateway/nginx.conf",
+          "line": 8,
+          "end_line": 28,
+          "label": "Ingress Security Policy"
+        }
+      ]
+    },
+    {
+      "id": "url_resolver",
+      "lane": "routing",
+      "col": 2,
+      "type": "cloud",
+      "label": "URLconf Resolver",
+      "sublabel": "urls.py pattern matching",
+      "tag": "Resolve View Handler",
+      "sources": [
+        {
+          "path": "services/auth-service/config/urls.py",
+          "line": 22,
+          "end_line": 31,
+          "label": "URLconf Matching"
+        }
+      ]
+    },
+    {
+      "id": "drf_controller",
+      "lane": "routing",
+      "col": 3,
+      "type": "backend",
+      "label": "DRF APIView Dispatch",
+      "sublabel": "initial(request, *args)",
+      "tag": "Auth, Perms & Content Neg",
+      "sources": [
+        {
+          "path": "services/auth-service/authentication/views.py",
+          "line": 20,
+          "end_line": 30,
+          "label": "APIView Dispatch Method"
+        }
+      ]
+    },
+    {
+      "id": "perm_rejected",
+      "lane": "middleware",
+      "col": 4,
+      "type": "security",
+      "label": "Permission Denied",
+      "sublabel": "401 Unauthorized / 403",
+      "tag": "Security Stop Gate",
+      "sources": [
+        {
+          "path": "services/auth-service/authentication/views.py",
+          "line": 6,
+          "end_line": 15,
+          "label": "Auth Token Errors"
+        }
+      ]
+    },
+    {
+      "id": "serializer_val",
+      "lane": "execution",
+      "col": 4,
+      "type": "backend",
+      "label": "DRF Serializer",
+      "sublabel": "Validation & DTO Mapping",
+      "tag": "is_valid() check",
+      "sources": [
+        {
+          "path": "services/auth-service/authentication/serializers.py",
+          "line": 1,
+          "end_line": 30,
+          "label": "Serializer DTO Validation"
+        }
+      ]
+    },
+    {
+      "id": "orm_db",
+      "lane": "execution",
+      "col": 5,
+      "type": "database",
+      "label": "Django ORM & Database",
+      "sublabel": "QuerySet filter() / save()",
+      "tag": "SQL Persistence",
+      "sources": [
+        {
+          "path": "README.md",
+          "line": 94,
+          "end_line": 96,
+          "label": "Database Storage Execution"
+        }
+      ]
+    },
+    {
+      "id": "client_res",
+      "lane": "ingress",
+      "col": 5,
+      "type": "frontend",
+      "label": "HTTP JSON Response",
+      "sublabel": "HTTP 200/201 Success",
+      "tag": "Final Delivery",
+      "sources": [
+        {
+          "path": "fe/package.json",
+          "line": 18,
+          "end_line": 23,
+          "label": "Axios Client Receiver"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    { "id": "e1", "from": "client_req", "to": "middleware_stack", "label": "HTTP Request" },
+    { "id": "e2", "from": "middleware_stack", "to": "url_resolver", "label": "process_request" },
+    { "id": "e3", "from": "url_resolver", "to": "drf_controller", "label": "dispatch view", "variant": "emphasis" },
+    { "id": "e4", "from": "drf_controller", "to": "serializer_val", "label": "authenticated", "variant": "emphasis" },
+    { "id": "e5", "from": "drf_controller", "to": "perm_rejected", "label": "unauthorized", "variant": "security", "role": "error" },
+    { "id": "e6", "from": "serializer_val", "to": "orm_db", "label": "validated_data", "variant": "emphasis" },
+    { "id": "e7", "from": "orm_db", "to": "client_res", "label": "JSON Response", "variant": "emphasis", "role": "return", "fromSide": "right", "toSide": "right", "route": "outside-right", "labelSegment": 1, "width": 1.2 }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Ingress & Middleware Stack",
+      "items": [
+        "WSGI/ASGI Handler nhận TCP stream từ client, phân tích HTTP headers và khởi tạo đối tượng WSGIRequest.",
+        "Middlewares lần lượt kiểm tra CORS, bảo vệ CSRF và kích hoạt cơ chế nhận dạng người dùng trước khi định tuyến."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "URL Routing & DRF Controller Dispatch",
+      "items": [
+        "URLconf giải quyết đường dẫn tới controller tương ứng dựa trên biểu thức định tuyến trong urls.py.",
+        "DRF APIView tiến hành Content Negotiation (JSON/HTML), kiểm tra JWT Token và phân quyền (IsAuthenticated).",
+        "Nếu vi phạm bảo mật, quy trình dừng lại ngay tại Permission Gate và trả về lỗi 401 Unauthorized hoặc 403 Forbidden."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Validation, ORM & Response Pipeline",
+      "items": [
+        "Serializer kiểm định tính toàn vẹn của payload (is_valid); nếu lỗi trả về 400 Bad Request.",
+        "Action Handler gọi Django ORM để thực thi câu lệnh SQL với Database và nhận về Model instance.",
+        "Dữ liệu được tuần tự hóa thành JSON và chuyển ngược qua Response Middlewares về lại cho Client."
+      ]
+    }
+  ]
+}

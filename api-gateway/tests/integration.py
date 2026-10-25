@@ -58,14 +58,19 @@ def server(handler):
     return result
 
 
-def request(path, method="GET", body=None, headers=None):
+def request_raw(path, method="GET", body=None, headers=None):
     connection = http.client.HTTPConnection("127.0.0.1", 80, timeout=2)
     try:
         connection.request(method, path, body, headers or {})
         response = connection.getresponse()
-        return response.status, json.loads(response.read())
+        return response.status, dict(response.getheaders()), response.read()
     finally:
         connection.close()
+
+
+def request(path, method="GET", body=None, headers=None):
+    status, _, payload = request_raw(path, method, body, headers)
+    return status, json.loads(payload)
 
 
 def eventually(check, timeout=8):
@@ -100,6 +105,7 @@ class GatewayIntegrationTests(unittest.TestCase):
         eventually(lambda: request("/health/")[0] == 200)
         if request("/auth/health/")[0] != 503:
             raise AssertionError("Bootstrap must fail closed when registry is unavailable")
+        cls.verify_documentation()
         STATE["registry_error"] = False
         eventually(lambda: request("/auth/health/")[0] == 200)
 
@@ -114,6 +120,40 @@ class GatewayIntegrationTests(unittest.TestCase):
     def setUp(self):
         STATE.update(healthy=True, registry_error=False, port=self.a.server_port, writes=[], address="127.0.0.1")
         eventually(lambda: request("/auth/probe")[1].get("port") == self.a.server_port)
+
+    @classmethod
+    def verify_documentation(cls):
+        for path, content_type, marker in [
+            ("/swagger/", "text/html", b"Swagger"),
+            ("/swagger/swagger-config.js", "application/javascript", b"persistAuthorization: false"),
+            ("/swagger/vendor/swagger-ui-bundle.js", "application/javascript", b"SwaggerUIBundle"),
+            ("/swagger/vendor/swagger-ui.css", "text/css", b"swagger-ui"),
+            ("/openapi.json", "application/json", b'"openapi": "3.0.3"'),
+        ]:
+            status, headers, body = request_raw(path)
+            if status != 200 or not headers.get("Content-Type", "").startswith(content_type) or marker not in body:
+                raise AssertionError(f"Invalid documentation response at {path}: {status}, {headers}")
+            if headers.get("X-Content-Type-Options") != "nosniff":
+                raise AssertionError(f"Missing content type protection at {path}")
+
+    def test_documentation_after_discovery_reload_and_without_backends(self):
+        self.verify_documentation()
+        STATE["healthy"] = False
+        eventually(lambda: request("/auth/login/")[0] == 503)
+        self.verify_documentation()
+        self.assertEqual(STATE["writes"], [])
+
+    def test_documentation_redirect_head_methods_and_unknown_assets(self):
+        status, headers, _ = request_raw("/swagger")
+        self.assertEqual(status, 308)
+        self.assertTrue(headers["Location"].endswith("/swagger/"))
+        self.assertEqual(request_raw("/openapi.json", "HEAD")[0], 200)
+        self.assertEqual(request_raw("/swagger/", "HEAD")[2], b"")
+        for path in ["/swagger/", "/openapi.json", "/swagger/vendor/swagger-ui.css"]:
+            self.assertEqual(request_raw(path, "POST", "ignored")[0], 403)
+        self.assertEqual(request_raw("/swagger/vendor/missing.js")[0], 404)
+        self.assertEqual(request_raw("/swagger/missing")[0], 404)
+        self.assertEqual(STATE["writes"], [])
 
     def test_all_prefixes_preserve_query_and_authorization(self):
         for prefix in ["auth", "academic", "registrations", "topics"]:

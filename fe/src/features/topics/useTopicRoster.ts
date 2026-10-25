@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { normalizeApiError } from '../../services/api-error'
-import { getTopicRoster, cancelTopicRegistration, getTopicRegistrationState } from './roster-api'
+import { getTopicRoster, cancelTopicRegistration, getTopicRegistrationState, getTopicRegistrationDetail, gradeTopicRegistration } from './roster-api'
 import type { RegisteredStudent } from './roster-api'
 
-export function useTopicRoster(topicId: string | undefined, logout: () => void) {
+export function useTopicRoster(topicId: string | undefined, logout: () => void, onGradeStatusChanged?: () => void, canCancel = false) {
   const [rows, setRows] = useState<RegisteredStudent[]>([])
   const [next, setNext] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -19,6 +19,10 @@ export function useTopicRoster(topicId: string | undefined, logout: () => void) 
   const [uncertain, setUncertain] = useState(false)
   const [actionError, setActionError] = useState('')
   const [notice, setNotice] = useState('')
+  const [grading, setGrading] = useState<RegisteredStudent | null>(null)
+  const [gradeDraft, setGradeDraft] = useState('')
+  const [gradeError, setGradeError] = useState('')
+  const [gradeUncertain, setGradeUncertain] = useState(false)
   const load = useCallback(async (after: string) => {
     if (!topicId || locked.current) return
     active.current?.abort()
@@ -43,26 +47,79 @@ export function useTopicRoster(topicId: string | undefined, logout: () => void) 
     let disposed = false
     void Promise.resolve().then(() => {
       if (disposed) return
-      setSelected(null); setBusy(false); setUncertain(false); setActionError(''); setNotice(''); locked.current = false
+      setSelected(null); setGrading(null); setGradeDraft(''); setGradeError(''); setGradeUncertain(false)
+      setBusy(false); setUncertain(false); setActionError(''); setNotice(''); locked.current = false
       setRows([]); setNext(null); setIncomplete(false); setReady(false); setError(''); setLoading(false)
       if (topicId) void load('')
     })
     return () => { disposed = true; active.current?.abort(); mutation.current?.abort() }
   }, [topicId, load])
   function choose(student: RegisteredStudent) {
-    if (locked.current || uncertain || loading) return
+    if (!canCancel || locked.current || uncertain || loading || grading) return
     setSelected(student); setActionError(''); setNotice('')
   }
   function back() {
     if (locked.current || uncertain) return
     setSelected(null); setActionError('')
   }
+  function chooseGrade(student: RegisteredStudent) {
+    if (locked.current || uncertain || loading || selected) return
+    setGrading(student); setGradeDraft(student.point ?? ''); setGradeError(''); setGradeUncertain(false); setNotice('')
+  }
+  function backGrade() {
+    if (locked.current || gradeUncertain) return
+    setGrading(null); setGradeError('')
+  }
+  async function submitGrade(checking: boolean) {
+    if (!topicId || !grading || locked.current || loading || (gradeUncertain && !checking)) return
+    const student = grading
+    if (!checking && (!/^(?:\d|10)(?:\.\d{1,2})?$/.test(gradeDraft.trim()) || Number(gradeDraft.trim()) > 10)) {
+      setGradeError('Điểm phải từ 0 đến 10, tối đa 2 chữ số thập phân.'); return
+    }
+    locked.current = true; setBusy(true); setGradeError('')
+    active.current?.abort()
+    const controller = new AbortController()
+    mutation.current = controller
+    try {
+      const point = checking
+        ? (await getTopicRegistrationDetail(topicId, student.registration_id, controller.signal)).point
+        : await gradeTopicRegistration(topicId, student.registration_id, gradeDraft.trim(), controller.signal)
+      if (controller.signal.aborted) return
+      if (checking && point !== Number(gradeDraft.trim()).toFixed(2)) {
+        setGradeUncertain(false)
+        setGradeError('Điểm hiện tại chưa khớp. Kiểm tra điểm rồi xác nhận lưu lại nếu cần.')
+        setRows(previous => previous.map(row => row.registration_id === student.registration_id ? { ...row, point } : row))
+      } else {
+        setRows(previous => previous.map(row => row.registration_id === student.registration_id ? { ...row, point } : row))
+        setGrading(null); setGradeUncertain(false); setNotice('Đã lưu điểm đăng ký.')
+      }
+    } catch (cause) {
+      if (controller.signal.aborted) return
+      const failure = normalizeApiError(cause)
+      if (failure.status === 401) { logout(); return }
+      if (!checking && failure.status === 409 && failure.details && typeof failure.details === 'object' &&
+          'code' in failure.details && failure.details.code === 'topic_not_closed') {
+        setGrading(null); setGradeUncertain(false)
+        setGradeError('Đề tài chưa đóng đăng ký nên không thể chấm điểm. Đang cập nhật trạng thái đề tài.')
+        onGradeStatusChanged?.()
+        return
+      }
+      const ambiguous = !checking && (['network', 'timeout', 'unknown'].includes(failure.kind) || (failure.status ?? 0) >= 500)
+      setGradeUncertain(ambiguous || gradeUncertain)
+      setGradeError(ambiguous ? 'Chưa xác định kết quả chấm điểm. Hãy kiểm tra trước khi thử lại.' :
+        checking ? 'Chưa kiểm tra được điểm. Vui lòng thử lại.' : failure.status === 403 ? 'Bạn không có quyền chấm điểm đăng ký này.' :
+          failure.status === 409 ? 'Đăng ký đã hủy, không thể chấm điểm.' : 'Không thể lưu điểm. Vui lòng kiểm tra lại.')
+    } finally {
+      locked.current = false
+      if (!controller.signal.aborted) setBusy(false)
+    }
+  }
   function completed(message: string, id: string) {
     setRows(previous => previous.filter(row => row.registration_id !== id))
     setSelected(null); setUncertain(false); setActionError(''); setNotice(message)
   }
   async function perform(checking: boolean) {
-    if (!topicId || !selected || locked.current || loading || (uncertain && !checking)) return
+    if (!canCancel || !topicId || !selected || locked.current || loading || (uncertain && !checking)) return
     const student = selected
     locked.current = true; setBusy(true); setActionError('')
     active.current?.abort()
@@ -100,7 +157,10 @@ export function useTopicRoster(topicId: string | undefined, logout: () => void) 
     }
   }
   return { rows, loading, error, incomplete, ready, next, selected, busy, uncertain, actionError, notice,
+    grading, gradeDraft, setGradeDraft, gradeError, gradeUncertain, chooseGrade, backGrade,
+    saveGrade: () => { void submitGrade(false) }, checkGrade: () => { void submitGrade(true) },
     choose, back, cancel: () => { void perform(false) }, check: () => { void perform(true) },
     retry: () => { if (!selected && !uncertain) void load(cursor.current) },
-    more: () => { if (next && !loading && !selected && !uncertain) void load(next) } }
+    reload: () => { if (!selected && !grading && !uncertain && !gradeUncertain) void load('') },
+    more: () => { if (next && !loading && !selected && !grading && !uncertain && !gradeUncertain) void load(next) } }
 }
