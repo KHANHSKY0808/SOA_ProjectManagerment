@@ -1,0 +1,805 @@
+openapi: 3.0.3
+info:
+  title: Hệ Thống Quản Lý Đồ Án Tốt Nghiệp - Kiến Trúc SOA
+  description: |
+    Tài liệu OpenAPI và giao diện kiểm thử Swagger UI tập trung cho toàn bộ hệ thống SOA.
+    Mọi yêu cầu được định tuyến qua **API Gateway** (`http://localhost:8000`).
+    
+    ### Phân quyền các Role trong hệ thống:
+    - `role = 1`: Quản trị viên (Admin) / Phòng đào tạo
+    - `role = 2`: Giảng viên (Lecturer)
+    - `role = 3`: Sinh viên (Student)
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: API Gateway (Port 8000)
+
+tags:
+  - name: 1. Auth Service (:8001)
+    description: Xác thực danh tính, đăng nhập, phát hành và làm mới JWT Token
+  - name: 2. Academic Service (:8002)
+    description: Quản lý Khoa, Ngành, Chuyên ngành, Giảng viên và Sinh viên
+  - name: 3. Topic Service (:8004)
+    description: Quản lý danh sách Đề tài tốt nghiệp và trạng thái phê duyệt
+  - name: 4. Registration Service (:8003)
+    description: Nghiệp vụ đăng ký, hủy đăng ký đề tài và kiểm tra điều kiện sinh viên
+
+paths:
+  # ==========================================
+  # AUTH SERVICE
+  # ==========================================
+  /auth/login/:
+    post:
+      tags:
+        - 1. Auth Service (:8001)
+      summary: Đăng nhập hệ thống để nhận JWT Token
+      description: Nhận `identifier` (hoặc email/userid) cùng mật khẩu để cấp cặp `access` và `refresh` JWT token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - identifier
+                - password
+              properties:
+                identifier:
+                  type: string
+                  example: "4651050118"
+                  description: "Email hoặc User ID (VD: 'admin' hoặc '4651050118')"
+                password:
+                  type: string
+                  example: "4651050118"
+                  description: Mật khẩu người dùng
+      responses:
+        "200":
+          description: Đăng nhập thành công, trả về JWT Access Token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access:
+                    type: string
+                    description: JWT Access Token (dùng gắn vào Header Bearer)
+                  refresh:
+                    type: string
+                    description: JWT Refresh Token
+        "400":
+          description: Thiếu thông tin đăng nhập hoặc dữ liệu không hợp lệ
+        "401":
+          description: Sai tên đăng nhập hoặc mật khẩu
+
+  /auth/token/refresh/:
+    post:
+      tags:
+        - 1. Auth Service (:8001)
+      summary: Làm mới Access Token bằng Refresh Token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh
+              properties:
+                refresh:
+                  type: string
+      responses:
+        "200":
+          description: Cấp Access Token mới thành công
+        "401":
+          description: Refresh Token không hợp lệ hoặc đã hết hạn
+
+  /auth/me/:
+    get:
+      tags:
+        - 1. Auth Service (:8001)
+      summary: Lấy thông tin tài khoản hiện tại
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Thông tin tài khoản người dùng đang đăng nhập
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                    example: "SV001"
+                  email:
+                    type: string
+                    example: "sv001@example.com"
+                  role:
+                    type: integer
+                    example: 3
+                    description: "1: Admin, 2: Giảng viên, 3: Sinh viên"
+        "401":
+          description: Chưa truyền hoặc Token không hợp lệ
+
+  # ==========================================
+  # ACADEMIC SERVICE
+  # ==========================================
+  /academic/api/departments/:
+    get:
+      tags:
+        - 2. Academic Service (:8002)
+      summary: Lấy danh sách các Khoa (Departments / Faculties)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Danh sách các khoa
+
+  /academic/api/majors/:
+    get:
+      tags:
+        - 2. Academic Service (:8002)
+      summary: Lấy danh sách các Ngành học (Majors)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Danh sách các ngành học
+
+  /academic/api/sub-majors/:
+    get:
+      tags:
+        - 2. Academic Service (:8002)
+      summary: Lấy danh sách Chuyên ngành (Sub-majors)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Danh sách các chuyên ngành
+
+  /academic/api/students/:
+    get:
+      tags:
+        - 2. Academic Service (:8002)
+      summary: Lấy danh sách Sinh viên
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Danh sách sinh viên
+    post:
+      tags:
+        - 2. Academic Service (:8002)
+      summary: Thêm mới hồ sơ Sinh viên (Yêu cầu role 1)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - student_id
+                - major_id
+              properties:
+                student_id:
+                  type: string
+                  example: "SV999"
+                major_id:
+                  type: string
+                  example: "1"
+                sub_major_id:
+                  type: string
+                  nullable: true
+                  example: null
+                accumulated_credits:
+                  type: integer
+                  example: 120
+                gpa:
+                  type: number
+                  example: 3.5
+      responses:
+        "201":
+          description: Tạo sinh viên thành công
+        "403":
+          description: Không đủ quyền (Cần Role 1)
+
+  /academic/api/students/{id}/:
+    get:
+      tags:
+        - 2. Academic Service (:8002)
+      summary: Xem chi tiết hồ sơ một Sinh viên
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "SV001"
+      responses:
+        "200":
+          description: Chi tiết sinh viên
+        "404":
+          description: Không tìm thấy sinh viên
+
+  /academic/api/lecturers/:
+    get:
+      tags:
+        - 2. Academic Service (:8002)
+      summary: Lấy danh sách Giảng viên
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Danh sách giảng viên
+
+  # ==========================================
+  # TOPIC SERVICE
+  # ==========================================
+  /topics/api/v1/topics/:
+    get:
+      tags:
+        - 3. Topic Service (:8004)
+      summary: Lấy danh sách tất cả Đề tài
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Danh sách đề tài đồ án
+    post:
+      tags:
+        - 3. Topic Service (:8004)
+      summary: Tạo mới Đề tài đồ án (Yêu cầu role 1 hoặc 2)
+      description: |
+        Tạo mới một đề tài:
+        - Giảng viên (`role: 2`): Trạng thái đề tài tự động đặt là `status: 0` (Chờ duyệt) và người hướng dẫn gắn với tài khoản đang đăng nhập.
+        - Quản trị viên (`role: 1`): Có thể chỉ định trạng thái ban đầu (`status: 1` hoặc `2`).
+        - Các trường yêu cầu mới trên UI: `req_GPA` (GPA tối thiểu yêu cầu từ 0.0 - 4.0) và `studentQuota` (chỉ tiêu sinh viên tối đa >= 1).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - topic_id
+                - name
+                - major_id
+              properties:
+                topic_id:
+                  type: string
+                  example: "DT001"
+                  description: Mã đề tài
+                name:
+                  type: string
+                  example: "Xây dựng hệ thống quản lý đồ án theo kiến trúc SOA"
+                  description: Tên đề tài đồ án
+                req_GPA:
+                  type: number
+                  minimum: 0
+                  maximum: 4
+                  example: 2.5
+                  description: Điểm GPA tích lũy tối thiểu yêu cầu (từ 0.0 đến 4.0)
+                studentQuota:
+                  type: integer
+                  minimum: 1
+                  maximum: 2147483647
+                  example: 2
+                  description: Chỉ tiêu số lượng sinh viên tối đa được phép đăng ký đề tài
+                major_id:
+                  type: string
+                  example: "105"
+                  description: Mã ngành học phụ trách đề tài
+                advisor_id:
+                  type: string
+                  nullable: true
+                  example: "GV0001"
+                  description: Mã giảng viên hướng dẫn (với role 2 tự động gán theo token)
+                description:
+                  type: string
+                  example: "Nghiên cứu microservices và API Gateway"
+                  description: Nội dung mô tả chi tiết đề tài
+                status:
+                  type: integer
+                  description: "Trạng thái: 0: Chờ duyệt, 1: Đã duyệt, 2: Mở đăng ký, 3: Đóng đăng ký"
+                  example: 0
+      responses:
+        "201":
+          description: Tạo đề tài thành công
+        "400":
+          description: Dữ liệu không hợp lệ hoặc thiếu trường bắt buộc
+        "403":
+          description: Không đủ quyền (Cần Role 1 hoặc Role 2)
+
+  /topics/api/v1/topics/{id}/:
+    get:
+      tags:
+        - 3. Topic Service (:8004)
+      summary: Xem chi tiết một Đề tài
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "DT001"
+      responses:
+        "200":
+          description: Thông tin chi tiết đề tài
+        "404":
+          description: Không tìm thấy đề tài
+    put:
+      tags:
+        - 3. Topic Service (:8004)
+      summary: Cập nhật toàn bộ Đề tài (Yêu cầu role 1 Admin)
+      description: Cập nhật toàn bộ thông tin đề tài. Chỉ Admin (Role 1) mới có quyền chỉnh sửa.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "DT001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - topic_id
+                - name
+                - major_id
+              properties:
+                topic_id:
+                  type: string
+                  example: "DT001"
+                name:
+                  type: string
+                  example: "Xây dựng hệ thống quản lý đồ án theo kiến trúc SOA"
+                major_id:
+                  type: string
+                  example: "105"
+                advisor_id:
+                  type: string
+                  nullable: true
+                  example: "GV0001"
+                req_GPA:
+                  type: number
+                  minimum: 0
+                  maximum: 4
+                  example: 2.5
+                  description: Điểm GPA tích lũy tối thiểu yêu cầu (0.0 - 4.0)
+                studentQuota:
+                  type: integer
+                  minimum: 1
+                  maximum: 2147483647
+                  example: 2
+                  description: Chỉ tiêu số lượng sinh viên tối đa
+                description:
+                  type: string
+                  example: "Nghiên cứu microservices và API Gateway"
+                status:
+                  type: integer
+                  description: "0: Chờ duyệt, 1: Đã duyệt, 2: Mở đăng ký, 3: Đóng đăng ký"
+                  example: 2
+      responses:
+        "200":
+          description: Cập nhật thành công
+        "400":
+          description: Dữ liệu không hợp lệ
+        "403":
+          description: Không đủ quyền (Cần Role 1 Admin)
+    patch:
+      tags:
+        - 3. Topic Service (:8004)
+      summary: Cập nhật một phần Đề tài (Yêu cầu role 1 Admin)
+      description: Dùng để duyệt đề tài (đổi status sang 1 hoặc 2), đóng đăng ký (status sang 3) hoặc sửa từng trường riêng biệt.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "DT001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: integer
+                  description: "Đổi trạng thái đề tài: 1 (Đã duyệt), 2 (Mở đăng ký), 3 (Đóng đăng ký)"
+                  example: 2
+                req_GPA:
+                  type: number
+                  minimum: 0
+                  maximum: 4
+                  example: 2.5
+                studentQuota:
+                  type: integer
+                  minimum: 1
+                  maximum: 2147483647
+                  example: 2
+                name:
+                  type: string
+                description:
+                  type: string
+                major_id:
+                  type: string
+                advisor_id:
+                  type: string
+      responses:
+        "200":
+          description: Cập nhật thành công
+        "403":
+          description: Không đủ quyền (Cần Role 1 Admin)
+    delete:
+      tags:
+        - 3. Topic Service (:8004)
+      summary: Xóa Đề tài (Yêu cầu role 1 Admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Xóa thành công (Body rỗng)
+        "403":
+          description: Không đủ quyền (Cần Role 1 Admin)
+
+  # ==========================================
+  # REGISTRATION SERVICE
+  # ==========================================
+  /registrations/api/v1/available-topics/:
+    get:
+      tags:
+        - 4. Registration Service (:8003)
+      summary: Lấy danh sách đề tài mở phù hợp với Khoa của Sinh viên
+      description: |
+        Endpoint chỉ dành cho Sinh viên (`role: 3`). 
+        Service tự động trích xuất `student_id` từ JWT Token, liên hệ Academic-Service để lấy Khoa của sinh viên và lọc ra các đề tài đang ở trạng thái `status: 2` (Open).
+        Mỗi đề tài trả về đầy đủ các trường GPA yêu cầu, chỉ tiêu, số lượng đã đăng ký và cờ đánh giá đủ điều kiện.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Danh sách đề tài sinh viên được phép đăng ký
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        topic_id:
+                          type: string
+                          example: "DT001"
+                        name:
+                          type: string
+                          example: "Xây dựng hệ thống quản lý đồ án theo kiến trúc SOA"
+                        major_id:
+                          type: string
+                          example: "105"
+                        status:
+                          type: integer
+                          example: 2
+                        req_GPA:
+                          type: number
+                          example: 2.5
+                          description: GPA tối thiểu yêu cầu của đề tài
+                        studentQuota:
+                          type: integer
+                          example: 2
+                          description: Chỉ tiêu tối đa sinh viên
+                        registered_count:
+                          type: integer
+                          example: 0
+                          description: Số lượng sinh viên đã đăng ký
+                        eligible:
+                          type: boolean
+                          example: true
+                          description: Sinh viên hiện tại có đủ điều kiện đăng ký không
+                        ineligibility_reason:
+                          type: string
+                          nullable: true
+                          example: null
+                          description: Lý do không đủ điều kiện nếu eligible = false
+                  next_after:
+                    type: string
+                    nullable: true
+        "401":
+          description: Thiếu hoặc sai Token
+        "403":
+          description: Tài khoản không phải vai trò Sinh viên (Role 3)
+
+  /registrations/api/v1/registrations/:
+    get:
+      tags:
+        - 4. Registration Service (:8003)
+      summary: Xem lịch sử / trạng thái đăng ký của chính Sinh viên hiện tại
+      description: Trả về danh sách các đề tài sinh viên đã đăng ký (mới nhất lên đầu).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Lọc theo trạng thái ('active' hoặc 'cancelled')
+          schema:
+            type: string
+            enum: [active, cancelled]
+      responses:
+        "200":
+          description: Lịch sử đăng ký của sinh viên
+    post:
+      tags:
+        - 4. Registration Service (:8003)
+      summary: Sinh viên đăng ký Đề tài đồ án
+      description: |
+        Đăng ký một đề tài tốt nghiệp:
+        - Sinh viên chỉ được có tối đa 1 đề tài hiện thời (`status: 1`).
+        - Đề tài phải đang ở trạng thái mở (`status: 2`).
+        - Khoa của sinh viên và khoa của đề tài phải trùng khớp.
+        - Điểm GPA của sinh viên phải thỏa mãn GPA yêu cầu của đề tài và đề tài chưa vượt quá chỉ tiêu.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - topic_id
+              properties:
+                topic_id:
+                  type: string
+                  example: "DT001"
+                  description: Mã đề tài muốn đăng ký
+                semester:
+                  type: string
+                  example: "2026-1"
+                  description: Học kỳ đăng ký
+      responses:
+        "201":
+          description: Đăng ký thành công bản ghi mới
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  registration_id:
+                    type: string
+                    example: "c4b14d8e-1736-4d1a-9694-8ab36fba7c18"
+                  topic_id:
+                    type: string
+                    example: "DT001"
+                  semester:
+                    type: string
+                    example: "2026-1"
+                  status:
+                    type: integer
+                    example: 1
+                    description: "1: Đang hoạt động, 0: Đã hủy"
+        "200":
+          description: Đã đăng ký đề tài này từ trước (Idempotent response)
+        "400":
+          description: Đề tài chưa mở hoặc không cùng khoa hoặc không đủ điều kiện GPA / hết chỉ tiêu
+        "409":
+          description: Sinh viên đã có đăng ký đề tài khác đang hoạt động
+
+  /registrations/api/v1/registrations/{id}/:
+    delete:
+      tags:
+        - 4. Registration Service (:8003)
+      summary: Sinh viên tự hủy đăng ký đề tài
+      description: "Đổi trạng thái lượt đăng ký của chính mình thành đã hủy (status: 0), bảo toàn lịch sử."
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Mã registration_id
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Hủy đăng ký thành công (Body rỗng)
+
+  /registrations/api/v1/topics/{topic_id}/registrations/:
+    get:
+      tags:
+        - 4. Registration Service (:8003)
+      summary: Giảng viên / Admin xem danh sách sinh viên đăng ký đề tài (Role 1 hoặc 2)
+      description: |
+        Xem danh sách sinh viên đã đăng ký đề tài:
+        - Quản trị viên (`role: 1`): Xem danh sách đăng ký của bất kỳ đề tài nào.
+        - Giảng viên (`role: 2`): Chỉ được xem danh sách đăng ký của các đề tài do chính mình phụ trách (`advisor_id` khớp với user_id).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: topic_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "DT001"
+        - name: after
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Con trỏ phân trang (registration_id cuối của trang trước)
+      responses:
+        "200":
+          description: Danh sách sinh viên đăng ký đề tài
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        registration_id:
+                          type: string
+                          example: "c4b14d8e-1736-4d1a-9694-8ab36fba7c18"
+                        student_id:
+                          type: string
+                          example: "4651050118"
+                        student_name:
+                          type: string
+                          nullable: true
+                          example: "Nguyen Van A"
+                        semester:
+                          type: string
+                          example: "2026-1"
+                        status:
+                          type: integer
+                          example: 1
+                          description: "1: Hoạt động, 0: Đã hủy"
+                        point:
+                          type: string
+                          nullable: true
+                          example: "8.50"
+                          description: Điểm đánh giá nếu đã chấm
+                        created_at:
+                          type: string
+                          example: "2026-10-26T07:00:00Z"
+                  next_after:
+                    type: string
+                    nullable: true
+                  names_unavailable:
+                    type: boolean
+                    example: false
+        "403":
+          description: Yêu cầu quyền Giảng viên phụ trách đề tài hoặc Admin
+
+  /registrations/api/v1/topics/{topic_id}/registrations/{registration_id}/point/:
+    put:
+      tags:
+        - 4. Registration Service (:8003)
+      summary: Chấm điểm đồ án cho sinh viên (Yêu cầu role 1 hoặc 2)
+      description: |
+        Nhập điểm tốt nghiệp cho sinh viên đăng ký đề tài:
+        - Yêu cầu đề tài đã đóng đăng ký (`status: 3`).
+        - Điểm từ `0.00` đến `10.00` với tối đa 2 chữ số thập phân.
+        - Giảng viên (`role: 2`) chỉ được chấm điểm đề tài mình hướng dẫn. Quản trị viên (`role: 1`) có thể chấm điểm mọi đề tài.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: topic_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "DT001"
+        - name: registration_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "c4b14d8e-1736-4d1a-9694-8ab36fba7c18"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - point
+              properties:
+                point:
+                  type: string
+                  example: "8.50"
+                  description: Điểm số từ 0.00 đến 10.00 (VD: "8.50")
+      responses:
+        "200":
+          description: Chấm điểm thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  registration_id:
+                    type: string
+                    example: "c4b14d8e-1736-4d1a-9694-8ab36fba7c18"
+                  topic_id:
+                    type: string
+                    example: "DT001"
+                  point:
+                    type: string
+                    example: "8.50"
+                  updated_at:
+                    type: string
+                    example: "2026-10-26T08:00:00Z"
+        "400":
+          description: Điểm số không hợp lệ
+        "403":
+          description: Không đủ quyền (Không phải giảng viên hướng dẫn của đề tài)
+        "409":
+          description: Đề tài chưa đóng đăng ký (status khác 3) hoặc lượt đăng ký đã bị hủy
+
+  /registrations/api/v1/topics/{topic_id}/registrations/{registration_id}/:
+    delete:
+      tags:
+        - 4. Registration Service (:8003)
+      summary: Admin hủy 1 lượt đăng ký của sinh viên (Yêu cầu role 1 Admin)
+      description: |
+        Hủy lượt đăng ký của sinh viên từ phía quản trị viên.
+        Đổi trạng thái lượt đăng ký thành đã hủy (`status: 0`), bảo toàn lịch sử đăng ký.
+        Chỉ Admin (`role: 1`) có quyền thực hiện.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: topic_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "DT001"
+        - name: registration_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "c4b14d8e-1736-4d1a-9694-8ab36fba7c18"
+      responses:
+        "204":
+          description: Hủy đăng ký thành công (Body rỗng)
+        "403":
+          description: Không đủ quyền (Chỉ Admin Role 1 mới được hủy đăng ký ở endpoint này)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Nhập JWT Access Token thu được từ endpoint `POST /auth/login/` (không cần gõ chữ 'Bearer ')"
+
+

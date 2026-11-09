@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOA Project - Swagger UI API Explorer</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f8fafc;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .custom-header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: white;
+      padding: 1.25rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .custom-header h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .badge {
+      background: #3b82f6;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .header-links {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      font-size: 0.875rem;
+    }
+    .header-link {
+      color: #94a3b8;
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+    .header-link:hover {
+      color: white;
+    }
+    #swagger-ui {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem 3rem;
+    }
+    /* Polish default Swagger UI container */
+    .swagger-ui .topbar {
+      display: none;
+    }
+    .swagger-ui .info {
+      margin: 20px 0 30px;
+    }
+    .swagger-ui .info .title {
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .swagger-ui .btn.authorize {
+      border-color: #2563eb;
+      color: #2563eb;
+      border-radius: 6px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .swagger-ui .btn.authorize svg {
+      fill: #2563eb;
+    }
+    .swagger-ui .btn.authorize:hover {
+      background: #eff6ff;
+    }
+    .swagger-ui .opblock {
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.08);
+      margin-bottom: 12px;
+    }
+    .swagger-ui .opblock .opblock-summary {
+      padding: 8px 16px;
+    }
+  </style>
+</head>
+<body>
+  <header class="custom-header">
+    <h1>
+      <span>🎓 SOA Graduation Project</span>
+      <span class="badge">Swagger UI Client</span>
+    </h1>
+    <div class="header-links">
+      <span>API Gateway: <strong>http://localhost:8000</strong></span>
+      <a href="./openapi.yaml" target="_blank" class="header-link">📄 Tải OpenAPI Spec</a>
+    </div>
+  </header>
+
+  <div id="swagger-ui"></div>
+
+  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
+  <script>
+    window.onload = function() {
+      // Determine URL to openapi.yaml
+      const specUrl = window.location.pathname.startsWith('/docs') ? '/openapi.yaml' : './openapi.yaml';
+      
+      const ui = SwaggerUIBundle({
+        url: specUrl,
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "BaseLayout",
+        defaultModelsExpandDepth: -1,
+        docExpansion: "list",
+        filter: true,
+        tryItOutEnabled: true,
+        persistAuthorization: true
+      });
+      window.ui = ui;
+    };
+  </script>
+</body>
+</html>
